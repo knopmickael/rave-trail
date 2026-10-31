@@ -41,13 +41,32 @@ describe('catálogo compartilhado', () => {
 
   it('preserva os conjuntos aprovados do chefão, curandeiros e protagonistas', () => {
     const guardian = units.find((unit) => unit.id === 'passage-guardian-base')!;
-    expect(guardian.abilityIds).toEqual(['main-special', 'female-special', 'retain-energy', 'extra-turn']);
+    expect(guardian.abilityIds).toEqual(['main-special', 'fast-move', 'retain-energy', 'extra-turn']);
     for (const unit of units.filter((unit) => unit.characterId.startsWith('guardian-healer'))) {
-      expect(unit.abilityIds).toEqual(['simple-strike', 'guard', 'retain-energy', 'heal']);
+      expect(unit.abilityIds).toEqual(['simple-strike', 'female-special', 'retain-energy', 'heal']);
     }
-    expect(abilities['main-special'].effects).toEqual([{ kind: 'damage', amount: 35 }]);
+    expect(abilities['main-special'].effects).toEqual([{ kind: 'damage', amount: 30 }]);
     expect(abilities['secondary-special'].target).toBe('all-enemies');
     expect(abilities['female-special'].target).toBe('all-allies');
+  });
+
+  it('cadastra custos e efeitos do balanceamento e das novas habilidades', () => {
+    expect(abilities['retain-energy']).toMatchObject({ energyCost: 0, effects: [{ kind: 'restore-energy', amount: 20 }] });
+    expect(abilities['retain-energy-plus']).toMatchObject({ energyCost: 0, effects: [{ kind: 'restore-energy', amount: 35 }] });
+    expect(abilities.guard).toMatchObject({ effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }] });
+    expect(abilities['secondary-special']).toMatchObject({ energyCost: 25, effects: [{ kind: 'damage', amount: 20 }] });
+    expect(abilities['strong-strike']).toMatchObject({ energyCost: 30 });
+    expect(abilities['soul-drain']).toMatchObject({ energyCost: 25 });
+    expect(abilities['extra-turn']).toMatchObject({ energyCost: 40 });
+    expect(abilities['fury-scream']).toMatchObject({ energyCost: 30 });
+    expect(abilities['simple-strike-ii']).toMatchObject({ name: 'Golpe simples II', energyCost: 20, target: 'enemy',
+      icon: '/media/abilities/simple-strike-II.png', effects: [{ kind: 'damage', amount: 30 }] });
+    expect(abilities['quick-slash']).toMatchObject({ energyCost: 35, target: 'enemy',
+      effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 10, turns: 3 }] });
+    expect(abilities['dark-vortex']).toMatchObject({ energyCost: 30, target: 'all-enemies',
+      effects: [{ kind: 'damage', amount: 15 }, { kind: 'attack-block', teamTurns: 1 }] });
+    expect(abilities['fast-move']).toMatchObject({ name: 'Invulnerabilidade', energyCost: 15, target: 'self',
+      effects: [{ kind: 'invulnerable', teamTurns: 1 }] });
   });
 
   it('representa transformação como outra unidade e identifica conteúdo temporário', () => {
@@ -80,14 +99,14 @@ describe('catálogo compartilhado', () => {
   it.each([
     ['road-raider-2-base', ['simple-strike', 'guard', 'retain-energy', 'secondary-special']],
     ['rival-a-base', ['simple-strike', 'guard', 'retain-energy', 'main-special']],
-    ['jung-de-grimoria-ii', ['simple-strike', 'guard', 'retain-energy', 'main-special']],
+    ['jung-de-grimoria-ii', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash']],
     ['rival-b-base', ['simple-strike', 'guard', 'retain-energy', 'soul-drain']],
-    ['passage-guardian-base', ['main-special', 'female-special', 'retain-energy', 'extra-turn']],
-    ['guerreiros-habilidosos-a', ['main-special', 'guard', 'retain-energy', 'secondary-special']],
-    ['guerreiros-habilidosos-b', ['main-special', 'guard', 'retain-energy', 'female-special']],
-    ['guerreiros-habilidosos-c', ['main-special', 'guard', 'retain-energy-plus', 'secondary-special']],
-    ['protagonist-main-transformed', ['main-special', 'guard', 'retain-energy-plus', 'fury-scream']],
-    ['rival-b-final-mode', ['main-special', 'female-special', 'retain-energy-plus', 'soul-drain-plus']],
+    ['passage-guardian-base', ['main-special', 'fast-move', 'retain-energy', 'extra-turn']],
+    ['guerreiros-habilidosos-a', ['main-special', 'fast-move', 'retain-energy', 'secondary-special']],
+    ['guerreiros-habilidosos-b', ['main-special', 'fast-move', 'retain-energy', 'female-special']],
+    ['guerreiros-habilidosos-c', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'secondary-special']],
+    ['protagonist-main-transformed', ['simple-strike-ii', 'female-special', 'retain-energy-plus', 'fury-scream']],
+    ['rival-b-final-mode', ['dark-vortex', 'fast-move', 'retain-energy-plus', 'soul-drain-plus']],
     ['legendary-beast-premium', ['heal-plus', 'female-special', 'retain-energy-plus', 'resurrection']],
   ])('aplica o conjunto aprovado em %s', (id, expected) => {
     expect(units.find((unit) => unit.id === id)?.abilityIds).toEqual(expected);
@@ -105,12 +124,13 @@ describe('catálogo compartilhado', () => {
     expect(rosterUnits.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: 19 }, (_, index) => index));
   });
 
-  it('cadastra Jung II como uma unidade independente com o mesmo personagem e habilidades do Jung original', () => {
+  it('cadastra Jung II como uma unidade independente com o mesmo personagem e conjunto próprio de habilidades', () => {
     const original = units.find((unit) => unit.id === 'rival-a-base')!;
     const second = units.find((unit) => unit.id === 'jung-de-grimoria-ii')!;
     expect(second.characterId).toBe(original.characterId);
     expect(second.id).not.toBe(original.id);
-    expect(second.abilityIds).toEqual(original.abilityIds);
+    expect(second.abilityIds).toEqual(['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash']);
+    expect(second.abilityIds).not.toEqual(original.abilityIds);
     expect(second.maxHp).toBe(original.maxHp);
     expect(second.portrait).toBe('/media/characters/jung-de-grimoria-ii-face.png');
     expect(second.illustration).toBe('/media/characters/jung-de-grimoria-ii-body.png');

@@ -75,9 +75,8 @@ it('marca personagens derrotados com X vermelho e desativa suas habilidades', ()
 it.each(['path-1-encounter-1', 'path-1-encounter-6', FINAL_ENCOUNTER_ID, null])('usa o cenário das trevas somente na batalha final (%s)', (encounterId) => {
   const { container } = render(<BattleScreen initialBattle={{ ...initial(), encounterId }} title="Batalha" {...handlers()} />);
   expect((container.firstElementChild as HTMLElement).style.backgroundImage).toContain(encounterId === FINAL_ENCOUNTER_ID
-    ? 'evil-fight-background.png' : 'Clareira');
-  expect(container.querySelector('.battle-background video')).toHaveAttribute('src', expect.stringContaining(encounterId === FINAL_ENCOUNTER_ID
-    ? 'battle-darkness.webm' : 'battle-clearing.webm'));
+    ? 'fight-exal-background.png' : 'fight-background.png');
+  expect(container.querySelector('video')).toBeNull();
 });
 
 it('substitui o único Ravi por Berserk com novas habilidades e registra a transformação após o turno oficial', async () => {
@@ -213,7 +212,7 @@ it('seleciona uma ação por personagem, mantém a ordem do combo e remove somen
   render(<BattleScreen initialBattle={initial()} title="Batalha" {...handlers()} />);
   expect(skill('Varredura tática', 'Doko de Berdal')).toBeDisabled();
   await user.click(skill('Reter energia'));
-  expect(energy()).toHaveAttribute('aria-valuenow', '30');
+  expect(energy()).toHaveAttribute('aria-valuenow', '35');
   expect(skill('Varredura tática', 'Doko de Berdal')).toBeEnabled();
   await user.click(skill('Varredura tática', 'Doko de Berdal'));
   const combo = screen.getByRole('region', { name: 'Combo do turno' });
@@ -221,14 +220,14 @@ it('seleciona uma ação por personagem, mantém a ordem do combo e remove somen
   expect(comboRows).toHaveLength(2);
   expect(within(comboRows[1]).getAllByRole('img', { name: /^Alvo: / })).toHaveLength(3);
   await user.click(skill('Reter energia', 'Anna de Berdal'));
-  expect(energy()).toHaveAttribute('aria-valuenow', '15');
+  expect(energy()).toHaveAttribute('aria-valuenow', '30');
   expect(skill('Guarda', 'Doko de Berdal')).toBeDisabled();
   await user.click(skill('Reter energia', 'Anna de Berdal'));
-  expect(energy()).toHaveAttribute('aria-valuenow', '15');
+  expect(energy()).toHaveAttribute('aria-valuenow', '30');
   const rowsAfterAnna = within(combo).getAllByRole('listitem');
   expect(rowsAfterAnna).toHaveLength(3);
   await user.click(within(rowsAfterAnna[2]).getByRole('button', { name: 'Remover ação 3' }));
-  expect(energy()).toHaveAttribute('aria-valuenow', '0');
+  expect(energy()).toHaveAttribute('aria-valuenow', '10');
   await user.click(endTurn());
   await vi.waitFor(() => expect(api.turn).toHaveBeenCalledWith(initial().id, 0, expect.any(String), [
     { actorId: 'player-0', abilityId: 'retain-energy' }, { actorId: 'player-1', abilityId: 'secondary-special' },
@@ -401,7 +400,7 @@ it('atualizações de relógio e consultas da mesma revisão preservam a fila es
   await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
   expect(within(endTurn()).getByRole('timer')).toHaveTextContent('44s');
   expect(skill('Reter energia')).toHaveAttribute('aria-pressed', 'true');
-  expect(energy()).toHaveAttribute('aria-valuenow', '30');
+  expect(energy()).toHaveAttribute('aria-valuenow', '35');
 });
 
 it('bloqueia os controles durante o turno do bot e libera somente após a resposta oficial atrasada', async () => {

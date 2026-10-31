@@ -44,7 +44,8 @@ it('mostra sete pontos e abre título, três rostos e história somente no encon
   render(<CampaignMap {...handlers} />);
   const first = await screen.findByRole('button', { name: 'Batalha 1: Saqueadores da estrada' });
   expect(screen.getAllByRole('button', { name: /^Batalha \d:/ })).toHaveLength(7);
-  expect(document.querySelector('.map-world video')).toHaveAttribute('src', expect.stringContaining('mapa-campanha-animado-v2.webm'));
+  expect(document.querySelector('.map-world video')).toBeNull();
+  expect(screen.getByRole('img', { name: 'Mapa de Berdal e das rotas da primeira jornada' })).toHaveAttribute('src', '/media/images/mapa-campanha-01.png');
   expect(screen.queryByRole('navigation', { name: 'Mover o mapa' })).not.toBeInTheDocument();
   const team = screen.getByRole('region', { name: 'Minha equipe' });
   expect(team.querySelector('.team-panel')).toBeInTheDocument();
@@ -75,6 +76,36 @@ it('inicia a batalha no servidor e entrega o estado retornado para a navegação
   await user.click(screen.getByRole('button', { name: 'Iniciar batalha' }));
   expect(api.startBattle).toHaveBeenCalledWith('path-1-encounter-1');
   await vi.waitFor(() => expect(handlers.onBattleStarted).toHaveBeenCalledWith(battle, 'Saqueadores da estrada'));
+});
+
+it('abre o prólogo pelo pergaminho ao lado do título e fecha a história sem iniciar uma batalha', async () => {
+  const user = userEvent.setup();
+  render(<CampaignMap {...props()} />);
+  const title = await screen.findByRole('heading', { name: 'Pondo o pé na estrada' });
+  const scroll = within(title.parentElement!).getByRole('button', { name: 'Ler história de Rave Trail' });
+  expect(scroll).toHaveAttribute('aria-haspopup', 'dialog');
+  expect(screen.queryByRole('dialog', { name: 'História de Rave Trail' })).not.toBeInTheDocument();
+  await user.click(scroll);
+  const dialog = screen.getByRole('dialog', { name: 'História de Rave Trail' });
+  expect(within(dialog).getByText(/três jovens camponeses vivem pacificamente/)).toBeInTheDocument();
+  expect(within(dialog).getByText(/ataques coordenados destroem estruturas comerciais/)).toBeInTheDocument();
+  expect(within(dialog).getByText(/a missão de investigar os responsáveis pelos ataques/)).toBeInTheDocument();
+  expect(within(dialog).queryByText(encounters[0].story)).not.toBeInTheDocument();
+  await user.click(within(dialog).getByRole('button', { name: 'Fechar história' }));
+  expect(dialog).not.toHaveAttribute('open');
+  await user.click(scroll);
+  expect(dialog).toHaveAttribute('open');
+  await user.click(dialog);
+  expect(dialog).not.toHaveAttribute('open');
+  expect(api.startBattle).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Batalha 1: Saqueadores da estrada' })).toBeEnabled();
+});
+
+it('mostra o pergaminho de introdução somente na primeira campanha', async () => {
+  vi.mocked(api.campaignMap).mockResolvedValue({ campaign: { ...campaigns[1], available: true }, encounters: [] });
+  render(<CampaignMap {...props()} campaignId="path-2" />);
+  await screen.findByRole('heading', { name: 'Nada era o que parecia' });
+  expect(screen.queryByRole('button', { name: 'Ler história de Rave Trail' })).not.toBeInTheDocument();
 });
 
 it('exibe os slots vazios e orienta escolher personagens sem oferecer montagem no modal', async () => {

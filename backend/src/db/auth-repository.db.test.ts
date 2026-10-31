@@ -100,7 +100,7 @@ it('lê catálogo persistido, com os nomes aprovados e quatro habilidades por un
   expect(catalog.units.slice(0, 6).map((unit) => unit.name)).toEqual([
     'Ravi de Berdal', 'Doko de Berdal', 'Anna de Berdal', 'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
   ]);
-  expect(catalog.abilities).toHaveLength(15);
+  expect(catalog.abilities).toHaveLength(19);
   for (const unit of catalog.units) expect(unit.abilityIds).toHaveLength(4);
   await pool.query("UPDATE units SET description = 'Descrição do banco' WHERE id = 'protagonist-main-base'");
   expect((await gameRepository.getCatalog()).units.find((unit) => unit.id === 'protagonist-main-base')?.description).toBe('Descrição do banco');
@@ -115,7 +115,7 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
     'guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c', 'protagonist-main-transformed', 'rival-b-final-mode', 'legendary-beast-premium'];
   await pool.query("UPDATE abilities SET target = 'ally' WHERE id = 'guard'");
   await pool.query("UPDATE abilities SET energy_cost = 30 WHERE id = 'heal'");
-  await pool.query('DELETE FROM unit_abilities WHERE unit_id = ANY($1::text[])', [changedIds]);
+  await pool.query('DELETE FROM unit_abilities');
   for (const id of changedIds) {
     const previous = id === 'passage-guardian-base' ? ['strong-strike', 'guard', 'retain-energy', 'extra-turn']
       : ['simple-strike', 'guard', 'retain-energy', id === 'protagonist-main-transformed' ? 'main-special' : 'strong-strike'];
@@ -123,10 +123,10 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
       await pool.query('INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES ($1,$2,$3)', [id, slot, abilityId]);
     }
   }
-  await pool.query("DELETE FROM abilities WHERE id IN ('retain-energy-plus', 'soul-drain', 'soul-drain-plus', 'fury-scream', 'heal-plus', 'resurrection')");
+  await pool.query("DELETE FROM abilities WHERE id IN ('retain-energy-plus', 'soul-drain', 'soul-drain-plus', 'fury-scream', 'heal-plus', 'resurrection', 'simple-strike-ii', 'quick-slash', 'dark-vortex', 'fast-move')");
   await pool.query('ALTER TABLE abilities DROP CONSTRAINT abilities_target_check');
   await pool.query("ALTER TABLE abilities ADD CONSTRAINT abilities_target_check CHECK (target IN ('enemy', 'ally', 'all-enemies', 'all-allies', 'team'))");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql', '022_abilities_balance_and_new_skills.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);

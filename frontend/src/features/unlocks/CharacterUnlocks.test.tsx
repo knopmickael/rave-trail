@@ -12,7 +12,7 @@ vi.mock('../../api', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../api')>();
   return { ...original, api: { ...original.api, characterUnlocks: vi.fn() } };
 });
-const props = () => ({ onBack: vi.fn(), onOpenCharacters: vi.fn(), onSessionExpired: vi.fn() });
+const props = () => ({ onBack: vi.fn(), onSessionExpired: vi.fn() });
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
@@ -26,6 +26,8 @@ afterEach(cleanup);
 it('mostra todos os requisitos dentro dos cartões e os preços com compra desabilitada', async () => {
   render(<CharacterUnlocks {...props()} />);
   const raider = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
+  expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveClass('unlocks-container');
+  expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveAttribute('tabindex', '0');
   expect(within(raider).getByRole('progressbar')).toHaveAttribute('aria-valuemax', '5');
   expect(within(raider).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
   const jung = screen.getByRole('region', { name: 'Jung de Grimória' });
@@ -75,34 +77,6 @@ it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado'
   expect(document.querySelectorAll('.unlock-card')).toHaveLength(16);
 });
 
-it('navega por botões e esconde cada seta ao alcançar a respectiva borda, inclusive após redimensionar', async () => {
-  const user = userEvent.setup();
-  render(<CharacterUnlocks {...props()} />);
-  const track = await screen.findByRole('region', { name: 'Lista de missões' });
-  Object.defineProperty(track, 'clientWidth', { configurable: true, value: 620 });
-  Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 1250 });
-  const move = vi.fn(({ left }: ScrollToOptions) => {
-    track.scrollLeft = Math.max(0, Math.min(track.scrollWidth - track.clientWidth, track.scrollLeft + (left ?? 0)));
-    fireEvent.scroll(track);
-  });
-  Object.defineProperty(track, 'scrollBy', { configurable: true, value: move });
-  fireEvent.resize(window);
-  expect(screen.queryByRole('button', { name: 'Ver missões anteriores' })).not.toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Ver próximas missões' }));
-  expect(move).toHaveBeenCalledWith({ left: 620, behavior: 'smooth' });
-  expect(track).toHaveFocus();
-  expect(screen.getByRole('button', { name: 'Ver missões anteriores' })).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Ver próximas missões' }));
-  expect(screen.queryByRole('button', { name: 'Ver próximas missões' })).not.toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Ver missões anteriores' }));
-  await user.click(screen.getByRole('button', { name: 'Ver missões anteriores' }));
-  expect(screen.queryByRole('button', { name: 'Ver missões anteriores' })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Ver próximas missões' })).toBeInTheDocument();
-  Object.defineProperty(track, 'clientWidth', { configurable: true, value: 1250 });
-  fireEvent.resize(window);
-  expect(screen.queryByRole('button', { name: 'Ver próximas missões' })).not.toBeInTheDocument();
-});
-
 it('atualiza o progresso ao retornar à janela e reflete a disponibilidade sem notificações', async () => {
   const victories = Array.from({ length: 4 }, () => ({ mode: 'quick' as const, playerUnitIds: ['protagonist-main-base'], enemyUnitIds: ['road-raider-1-base'] }));
   vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, [], victories));
@@ -117,12 +91,12 @@ it('atualiza o progresso ao retornar à janela e reflete a disponibilidade sem n
   expect(screen.queryByText(/desbloqueado com sucesso/i)).not.toBeInTheDocument();
 });
 
-it('permite abrir a Lista de personagens e voltar ao menu', async () => {
+it('exibe somente a listagem de missões e permite voltar ao menu', async () => {
   const handlers = props(); const user = userEvent.setup();
   render(<CharacterUnlocks {...handlers} />);
   await screen.findByRole('region', { name: 'Saqueador da estrada I' });
-  await user.click(screen.getByRole('button', { name: 'Abrir Lista de personagens' }));
-  expect(handlers.onOpenCharacters).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole('button', { name: 'Abrir Lista de personagens' })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Derrote os personagens na campanha para habilitar suas missões/)).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
   expect(handlers.onBack).toHaveBeenCalledTimes(1);
 });

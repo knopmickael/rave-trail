@@ -1,8 +1,4 @@
-.battle-page { position: relative; isolation: isolate; min-height: 100svh; padding: 24px var(--page-content-inset) 28px; background-position: center; background-size: cover; background-attachment: fixed; color: #233b38; }
-.battle-background { position: fixed; z-index: -1; inset: 0; overflow: hidden; opacity: 0; pointer-events: none; transition: opacity .35s ease; }
-.battle-background.is-playing { opacity: 1; }
-.battle-background video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
-.battle-background::after { position: absolute; inset: 0; background: linear-gradient(#12312918, #12312945); content: ''; }
+.battle-page { --battle-arena-gap: clamp(16px, 2vw, 32px); position: relative; isolation: isolate; min-height: 100svh; padding: 24px var(--page-content-inset) 28px; background-position: center; background-size: cover; background-attachment: fixed; color: #233b38; }
 .battle-header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: 20px; min-height: 106px; }
 .battle-heading { width: fit-content; max-width: 100%; padding: 10px 14px; border: 1px solid #b78c4a; border-radius: 8px; background: #fff9efef; }
 .battle-heading h1 { margin: 0; font-size: clamp(16px, 1.7vw, 23px); }
@@ -11,7 +7,7 @@
 .battle-header .battle-end-turn { min-width: 0; margin-top: 4px; padding: 13px 26px; font-size: 18px; }
 .battle-turn-clock { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .battle-log-toggle { position: fixed; z-index: 4; top: 28px; right: var(--page-content-inset); padding: 12px 16px; border: 1px solid var(--button-border); border-radius: 7px; background: var(--button-background); color: var(--button-ink); font-weight: 700; cursor: pointer; }
-.battle-arena { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) minmax(0, 3fr); align-items: start; gap: clamp(16px, 2vw, 32px); width: 100%; margin: 20px auto 28px; }
+.battle-arena { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) minmax(0, 3fr); align-items: start; gap: var(--battle-arena-gap); width: 100%; margin: 20px auto 28px; }
 .battle-team { min-width: 0; }
 .battle-team-header { margin: 0 0 20px; padding: 12px 16px; border: 1px solid #9a7651; border-radius: 8px; background: #fff9efed; }
 .battle-team-header h2 { margin: 0 0 10px; font-size: 16px; }
@@ -82,7 +78,7 @@
 .battle-surrender { position: fixed; z-index: 3; bottom: var(--page-content-inset); left: var(--page-content-inset); padding: 12px 20px; border: 1px solid #923f24; border-radius: 7px; background: #fff0df; color: #8c291b; font-weight: 700; cursor: pointer; }
 .battle-feedback { position: relative; z-index: 5; margin: 16px auto; }
 .battle-transformation { width: fit-content; max-width: 100%; margin: 12px auto; padding: 12px 18px; border: 2px solid #bb6fdf; border-radius: 8px; background: #f6e9ff; color: #4c2064; font-size: 15px; line-height: 1.6; font-weight: 700; text-align: center; }
-.battle-result { position: fixed; z-index: 5; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(500px, calc(100% - 32px)); padding: 28px; border: 2px solid #d4a64d; border-radius: 10px; background: #fff9ef; box-shadow: 0 15px 60px #08192366; text-align: center; }
+.battle-result { position: fixed; z-index: 5; top: 58%; left: 50%; transform: translate(-50%, -50%); width: min(500px, calc(100% - 32px)); padding: 28px; border: 2px solid #d4a64d; border-radius: 10px; background: #fff9ef; box-shadow: 0 15px 60px #08192366; text-align: center; }
 .battle-result h2 { margin: 0 0 12px; font-size: 30px; }
 .battle-result p { font-size: 14px; line-height: 1.6; }
 .battle-result .fantasy-button { min-width: 0; }
@@ -111,8 +107,9 @@
 .battle-log-scroll .combo-targets img { display: block; flex: 0 0 auto; width: 32px; height: 32px; object-fit: cover; border: 1px solid #9a7651; border-radius: 4px; }
 .battle-page button:focus-visible, .ability-tooltip-anchor:focus-visible, .battle-log-scroll:focus-visible { outline: 3px solid #497db4; outline-offset: 3px; }
 .battle-page button:disabled { cursor: default; }
-@media (max-width: 1100px) { .battle-arena { gap: 24px; } .fighter-abilities { --fighter-portrait-width: 84px; gap: 10px; padding: 10px; } }
+@media (min-width: 901px) { .battle-result { width: min(500px, calc((100% - 2 * var(--page-content-inset) - 2 * var(--battle-arena-gap)) / 4 - 32px)); padding: clamp(12px, 1.4vw, 28px); } .battle-result .fantasy-button { max-width: 100%; padding-inline: 12px; } }
+@media (max-width: 1100px) { .battle-page { --battle-arena-gap: 24px; } .fighter-abilities { --fighter-portrait-width: 84px; gap: 10px; padding: 10px; } }
 @media (max-width: 900px) { .battle-arena { grid-template-columns: minmax(0, 1fr); gap: 18px; } }
 @media (max-width: 760px) { .battle-page { padding: 16px 12px 86px; } .battle-header { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 12px; padding-top: 48px; } .battle-turn-controls { justify-self: center; } .battle-header .battle-end-turn { padding: 12px; font-size: 15px; } .battle-log-toggle { top: 12px; right: 12px; padding: 10px 12px; font-size: 12px; } .battle-arena { gap: 16px; margin-top: 16px; } .battle-team-header { padding: 10px; margin-bottom: 14px; } .battle-team-header h2 { font-size: 13px; } .fighter-abilities { --fighter-portrait-width: 58px; padding: 8px; gap: 8px; } .fighter-primary-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); } .battle-skill { padding: 3px; } .hp-track b { font-size: 8px; } .battle-fighters { gap: 14px; } .battle-combo { padding: 12px; } .battle-surrender { bottom: 16px; left: 12px; } }
 @media (max-width: 600px) { .battle-arena { grid-template-columns: minmax(0, 1fr); gap: 28px; } .fighter-abilities { --fighter-portrait-width: 76px; gap: 10px; } .fighter-primary-abilities { grid-template-columns: repeat(4, minmax(0, 1fr)); } .battle-team-header h2 { font-size: 15px; } }
-@media (prefers-reduced-motion: reduce) { .hp-track > span, .energy-track > span, .battle-background { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .hp-track > span, .energy-track > span { transition: none; } }

@@ -6,7 +6,6 @@ import { assets } from '../../assets';
 import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
 import { playSoundEffect } from '../../audio/soundEffects';
 import { AbilityTooltip } from './AbilityTooltip';
-import { BattleBackground } from './BattleBackground';
 import './battle.css';
 
 export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }: {
@@ -277,6 +276,24 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
                       <img src={effect.icon} alt={`Efeito ativo: ${effect.name}`} />
                     </AbilityTooltip></li> : null;
                   })()}
+                  {unit.invulnerableExpiresAt != null && state.abilities['fast-move'] && <li>
+                    <AbilityTooltip ability={state.abilities['fast-move']} resetKey={tooltipReset} focusable
+                      extra="Invulnerável no próximo turno da equipe inimiga.">
+                      <img src={state.abilities['fast-move'].icon} alt="Efeito ativo: Invulnerabilidade" />
+                    </AbilityTooltip>
+                  </li>}
+                  {unit.attackBlockedExpiresAt != null && state.abilities['dark-vortex'] && <li>
+                    <AbilityTooltip ability={state.abilities['dark-vortex']} resetKey={tooltipReset} focusable
+                      extra={`Impedido de atacar por ${Math.max(0, unit.attackBlockedExpiresAt - state.teams[side].turns)} turno(s) da equipe.`}>
+                      <img src={state.abilities['dark-vortex'].icon} alt="Efeito ativo: ataques bloqueados" />
+                    </AbilityTooltip>
+                  </li>}
+                  {(unit.bleedTurns ?? 0) > 0 && state.abilities['quick-slash'] && <li>
+                    <AbilityTooltip ability={state.abilities['quick-slash']} resetKey={tooltipReset} focusable
+                      extra={`Sangramento: ${unit.bleedAmount ?? 0} de dano por ${unit.bleedTurns} turno(s) restantes.`}>
+                      <img src={state.abilities['quick-slash'].icon} alt="Efeito ativo: sangramento" />
+                    </AbilityTooltip>
+                  </li>}
                 </ul>
                 <div className="fighter-primary-abilities" aria-label={`Habilidades de ${unit.name}`}>
               {unit.abilityIds.map((id) => {
@@ -307,7 +324,6 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
   }
 
   return <main className={`battle-page${targetingEnemy ? ' battle-page--targeting' : ''}`} style={{ backgroundImage: `linear-gradient(#12312918, #12312945), url("${finalBattle ? assets.finalBattle : assets.battle}")` }}>
-    <BattleBackground key={finalBattle ? 'final' : 'regular'} finalBattle={finalBattle} />
     <header className="battle-header">
       <div className="battle-heading"><h1>{title}</h1><p>Turno {state.turn} · {active ? state.activeSide === 'player' ? 'Sua vez' : battle.botActsAt ? 'Turno do BOT COM' : 'Turno do adversário' : state.status === 'victory' ? 'Vitória' : state.status === 'abandoned' ? 'Desistência' : 'Derrota'}</p></div>
       {active && <div className="battle-turn-controls">

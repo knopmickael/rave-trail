@@ -96,7 +96,7 @@ it('transforma no servidor uma única vez, persiste após recarga e conclui o du
   transformed.state.teams.enemy.units[0].hp = 1;
   await pool.query('UPDATE battles SET state = $2 WHERE id = $1', [final.id, JSON.stringify(transformed.state)]);
   const victoryId = randomUUID();
-  const finishing = [{ actorId: 'player-0', abilityId: 'main-special', targetId: 'enemy-0' }];
+  const finishing = [{ actorId: 'player-0', abilityId: 'simple-strike-ii', targetId: 'enemy-0' }];
   const victory = await battles.submitTurn(user.id, final.id, transformed.revision, victoryId, finishing);
   expect(victory.battle.state.status).toBe('victory');
   expect(await battles.submitTurn(user.id, final.id, transformed.revision, victoryId, finishing)).toEqual(victory);

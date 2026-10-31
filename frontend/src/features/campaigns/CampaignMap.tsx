@@ -6,6 +6,7 @@ import { api, ApiError } from '../../api';
 import { assets } from '../../assets';
 import { CharacterArt } from '../characters/CharacterArt';
 import { CampaignMapBackground } from './CampaignMapBackground';
+import { CampaignStory } from './CampaignStory';
 import '../characters/characters.css';
 import './campaign-map.css';
 
@@ -89,7 +90,10 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
 
       <header className="map-header">
         <button className="campaign-back" onClick={onBack} aria-label="Voltar às campanhas"><span aria-hidden="true">←</span></button>
-        <div><h1>{map?.campaign.title ?? 'Primeira campanha'}</h1>
+        <div className="map-heading"><div className="map-title-row">
+          <h1>{map?.campaign.title ?? 'Primeira campanha'}</h1>
+          {campaignId === 'path-1' && <CampaignStory />}
+        </div>
           {map && <p>{map.encounters.filter((entry) => entry.completed).length} de {map.encounters.length} batalhas vencidas</p>}
         </div>
       </header>

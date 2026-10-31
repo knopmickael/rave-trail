@@ -11,10 +11,7 @@ export const assets = {
   playerDeathAudio: '/media/audio/player-death.wav',
   battleWinAudio: '/media/audio/battle-win.wav',
   battleLoseAudio: '/media/audio/battle-lose.mp3',
-  battle: encodeURI('/media/images/Clareira Florestal Sob o Céu Azul.png'),
-  finalBattle: '/media/images/evil-fight-background.png',
-  battleVideo: '/media/video/battle-clearing.webm',
-  finalBattleVideo: '/media/video/battle-darkness.webm',
+  battle: '/media/images/fight-background.png',
+  finalBattle: '/media/images/fight-exal-background.png',
   campaignMap: '/media/images/mapa-campanha-01.png',
-  campaignMapVideo: '/media/video/mapa-campanha-animado-v2.webm',
 };

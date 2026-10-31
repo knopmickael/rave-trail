@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import type { CharacterUnlockData } from '@game/contracts';
 import { api, ApiError } from '../../api';
 import '../characters/characters.css';
@@ -6,17 +6,13 @@ import './unlocks.css';
 
 const price = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' });
 
-export function CharacterUnlocks({ onBack, onOpenCharacters, onSessionExpired }: {
+export function CharacterUnlocks({ onBack, onSessionExpired }: {
   onBack: () => void;
-  onOpenCharacters: () => void;
   onSessionExpired: () => void;
 }) {
   const [data, setData] = useState<CharacterUnlockData | null>(null);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
-  const [canPrevious, setCanPrevious] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-  const track = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -35,42 +31,6 @@ export function CharacterUnlocks({ onBack, onOpenCharacters, onSessionExpired }:
     return () => window.removeEventListener('focus', refresh);
   }, []);
 
-  useEffect(() => {
-    const element = track.current;
-    if (!element) { setCanPrevious(false); setCanNext(false); return; }
-    const measure = () => {
-      setCanPrevious(element.scrollLeft > 1);
-      setCanNext(element.scrollWidth - element.clientWidth - element.scrollLeft > 1);
-    };
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-    observer?.observe(element);
-    element.addEventListener('scroll', measure);
-    window.addEventListener('resize', measure);
-    measure();
-    return () => {
-      observer?.disconnect();
-      element.removeEventListener('scroll', measure);
-      window.removeEventListener('resize', measure);
-    };
-  }, [data]);
-
-  function scroll(direction: -1 | 1) {
-    const element = track.current;
-    if (!element) return;
-    const card = element.querySelector<HTMLElement>('.unlock-card');
-    const step = (card?.getBoundingClientRect().width || element.clientWidth) + (parseFloat(getComputedStyle(element).columnGap) || 0);
-    const columns = Math.max(1, Math.floor(element.clientWidth / step));
-    element.scrollBy({ left: direction * columns * step,
-      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-    element.focus({ preventScroll: true });
-  }
-
-  function navigate(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.target !== event.currentTarget || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-    event.preventDefault();
-    scroll(event.key === 'ArrowLeft' ? -1 : 1);
-  }
-
   return <main className="unlocks-page">
     <header className="roster-header">
       <button type="button" className="back-arrow" onClick={onBack} aria-label="Voltar ao menu principal">
@@ -80,21 +40,14 @@ export function CharacterUnlocks({ onBack, onOpenCharacters, onSessionExpired }:
       </button>
       <h1>Missões</h1>
     </header>
-    <div className="unlocks-intro">
-      <p>Derrote os personagens na campanha para habilitar suas missões. Complete os requisitos para liberá-los na Lista de personagens.</p>
-      <button className="text-button" onClick={onOpenCharacters}>Abrir Lista de personagens</button>
-    </div>
     {error && <section className="unlocks-state"><p className="feedback" role="alert">{error}</p>
       <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button>
     </section>}
     {!data && !error && <p className="unlocks-state" role="status">Carregando desbloqueios…</p>}
     {data && (data.characters.length === 0
       ? <p className="unlocks-state" role="status">Nenhuma missão disponível no catálogo.</p>
-      : <div className="unlocks-carousel">
-        {canPrevious && <button type="button" className="unlocks-scroll unlocks-scroll--previous"
-          aria-label="Ver missões anteriores" aria-controls="mission-track" onClick={() => scroll(-1)}><ScrollArrow previous /></button>}
-        <div ref={track} id="mission-track" className="unlocks-grid" role="region" aria-label="Lista de missões"
-          tabIndex={0} onKeyDown={navigate} style={{ gridTemplateColumns: `repeat(${Math.ceil(data.characters.length / 2)}, var(--mission-card-width))` }}>
+      : <div className="unlocks-container" role="region" aria-label="Lista de missões" tabIndex={0}>
+        <div className="unlocks-grid">
           {data.characters.map((unit) => {
             const locked = !unit.campaignAvailable;
             return <section key={unit.id} className={`unlock-card ${unit.unlocked ? 'unlock-card--available' : ''} ${locked ? 'unlock-card--locked' : ''}`}
@@ -124,8 +77,6 @@ export function CharacterUnlocks({ onBack, onOpenCharacters, onSessionExpired }:
             </section>;
           })}
         </div>
-        {canNext && <button type="button" className="unlocks-scroll unlocks-scroll--next"
-          aria-label="Ver próximas missões" aria-controls="mission-track" onClick={() => scroll(1)}><ScrollArrow /></button>}
       </div>)}
 
   </main>;
@@ -141,10 +92,4 @@ function RequirementProgress({ requirement, labelId }: {
     </div>
     <span>{requirement.current} / {requirement.target}</span>
   </div>;
-}
-
-function ScrollArrow({ previous = false }: { previous?: boolean }) {
-  return <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-    <path d={previous ? 'M20 6 10 16l10 10' : 'm12 6 10 10-10 10'} />
-  </svg>;
 }

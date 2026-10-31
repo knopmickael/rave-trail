@@ -21,7 +21,7 @@ const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default
 export function App() {
   const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
   const [campaignId, setCampaignId] = useState('path-1');
-  const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map' | 'unlocks'>('menu');
+  const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map'>('menu');
   const [battle, setBattle] = useState<BattleRecord | null>(null);
   const [battleTitle, setBattleTitle] = useState('Batalha');
   const [battleReady, setBattleReady] = useState(false);
@@ -120,7 +120,7 @@ export function App() {
 
   if (screen === 'characters' && user) {
     return <CharacterList onBack={() => setScreen(charactersReturn)} onSessionExpired={handleSessionExpired}
-      backLabel={charactersReturn === 'map' ? 'Voltar ao mapa' : charactersReturn === 'unlocks' ? 'Voltar às missões' : 'Voltar ao menu principal'} />;
+      backLabel={charactersReturn === 'map' ? 'Voltar ao mapa' : 'Voltar ao menu principal'} />;
   }
 
   if (screen === 'campaigns' && user) {
@@ -139,8 +139,7 @@ export function App() {
   }
 
   if (screen === 'unlocks' && user) {
-    return <CharacterUnlocks onBack={() => setScreen('menu')} onSessionExpired={handleSessionExpired}
-      onOpenCharacters={() => { setCharactersReturn('unlocks'); setScreen('characters'); }} />;
+    return <CharacterUnlocks onBack={() => setScreen('menu')} onSessionExpired={handleSessionExpired} />;
   }
 
   if (screen === 'battle' && user && battle) {

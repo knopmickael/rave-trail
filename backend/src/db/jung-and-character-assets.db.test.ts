@@ -70,7 +70,8 @@ it('coloca Jung II somente no encontro 6 e o disponibiliza no sorteio rápido de
   const catalog = await game.getCatalog();
   const original = catalog.units.find((unit) => unit.id === 'rival-a-base')!;
   const second = catalog.units.find((unit) => unit.id === 'jung-de-grimoria-ii')!;
-  expect(second.abilityIds).toEqual(original.abilityIds);
+  expect(second.abilityIds).toEqual(definition('jung-de-grimoria-ii').abilityIds);
+  expect(second.abilityIds).not.toEqual(original.abilityIds);
   expect(second.characterId).toBe(original.characterId);
   expect(second.maxHp).toBe(original.maxHp);
   expect(second.portrait).toBe('/media/characters/jung-de-grimoria-ii-face.png');
@@ -117,7 +118,7 @@ it('a 25ª vitória rápida contra Jung II usando Ravi base libera a unidade sem
   await seedDatabase(pool);
   const next = await battles.startQuickBattle(user.id);
   expect(next.state.teams.player.units[1]).toMatchObject({ unitId: 'jung-de-grimoria-ii', name: 'Jung de Grimória II',
-    hp: 100, portrait: '/media/characters/jung-de-grimoria-ii-face.png', abilityIds: definition('rival-a-base').abilityIds });
+    hp: 100, portrait: '/media/characters/jung-de-grimoria-ii-face.png', abilityIds: definition('jung-de-grimoria-ii').abilityIds });
 });
 
 it('migra a formação antiga e copia as habilidades do Jung original sem alterar equipe ou progresso', async () => {

@@ -19,14 +19,14 @@ const mist = 'exp(-pow((Y/H-0.49)/0.08,2))';
 
 const scenes = {
   forest: {
-    image: 'Clareira Florestal Sob o Céu Azul.png', output: 'battle-clearing.webm',
+    image: 'fight-background.png', output: 'battle-clearing.webm',
     horizontal: `128+(${sky})*8*sin(${phase})+(${foliage})*2.8*sin(2*${phase}+Y/H*7+X/W*3)+(${grass})*0.9*sin(3*${phase}+X/W*12)`,
     vertical: `128+(${sky})*0.7*cos(${phase})+(${foliage})*1.2*sin(2*${phase}+X/W*6)+(${grass})*0.4*cos(3*${phase}+X/W*9)`,
     color: [255, 238, 178],
     motes: [[0.12,0.40],[0.23,0.62],[0.31,0.48],[0.42,0.76],[0.55,0.34],[0.63,0.57],[0.73,0.72],[0.84,0.42],[0.90,0.67],[0.40,0.24]],
   },
   final: {
-    image: 'evil-fight-background.png', output: 'battle-darkness.webm',
+    image: 'fight-exal-background.png', output: 'battle-darkness.webm',
     horizontal: `128+(${storm})*7*sin(${phase}+Y/H*8)+(${mist})*2*sin(2*${phase}+X/W*7)`,
     vertical: `128+(${storm})*2*cos(${phase}+X/W*8)+(${mist})*1.3*sin(2*${phase}+X/W*9)`,
     color: [222, 119, 255],

@@ -1,19 +1,20 @@
-.unlocks-page { display: flex; flex-direction: column; height: 100svh; min-height: 0; padding: var(--page-content-inset); overflow: hidden; color: #233b38; }
+.unlocks-page { --mission-card-height: 320px; display: flex; flex-direction: column; height: 100svh; min-height: 0; padding: var(--page-content-inset); overflow: hidden; color: #233b38; }
 .unlocks-page .roster-header { margin-bottom: 20px; }
-.unlocks-intro { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-bottom: 20px; padding: 12px 16px; border: 1px solid #d4a64d; border-radius: 8px; background: #fff9ef; }
-.unlocks-intro p { flex: 1 1 300px; margin: 0; font-size: 14px; line-height: 1.7; }
-.unlocks-intro .text-button { flex-shrink: 0; margin: 0; }
-.unlocks-carousel { --mission-card-width: min(300px, calc(100vw - 2 * var(--page-content-inset) - 104px)); position: relative; flex: 1; min-width: 0; min-height: 0; padding: 0 48px; }
-.unlocks-grid { display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); grid-auto-flow: row; gap: 16px; height: 100%; min-height: 0; padding: 4px; overflow: hidden; overscroll-behavior: contain; scrollbar-width: none; }
-.unlocks-grid::-webkit-scrollbar { display: none; }
-.unlocks-grid:focus-visible, .unlocks-scroll:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-.unlocks-scroll { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 40px; height: 56px; padding: 6px; border: 1px solid var(--button-border); border-radius: 8px; background: var(--button-background); color: var(--button-ink); cursor: pointer; }
-.unlocks-scroll--previous { left: 0; }
-.unlocks-scroll--next { right: 0; }
-.unlocks-scroll svg { width: 100%; height: 100%; }
-.unlocks-scroll:hover { background: var(--button-hover); }
-.unlock-card { position: relative; min-width: 0; min-height: 0; overflow: hidden; border: 2px solid #d4a64d; border-radius: 10px; background: #fff9ef; box-shadow: 0 3px 8px #173d7b18; }
-.unlock-card-content { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; padding: 16px; background: #fff9ef; }
+.unlocks-container { flex: 1; min-width: 0; min-height: 0; padding: 16px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; border: 1px solid #d4a64d; border-radius: 12px; background: #fff9efcc; box-shadow: 0 3px 12px #173d7b18; }
+.unlocks-container, .unlock-requirements { scrollbar-width: thin; }
+.unlocks-container { scrollbar-color: var(--accent-strong) var(--accent-soft); }
+.unlocks-container::-webkit-scrollbar, .unlock-requirements::-webkit-scrollbar { width: 10px; }
+.unlocks-container::-webkit-scrollbar-track { border-radius: 8px; background: var(--accent-soft); }
+.unlocks-container::-webkit-scrollbar-thumb { border: 2px solid var(--accent-soft); border-radius: 8px; background: var(--button-background); }
+.unlocks-container::-webkit-scrollbar-thumb:hover { background: var(--button-hover); }
+.unlock-requirements { scrollbar-color: #d8c9af #fff9ef; }
+.unlock-requirements::-webkit-scrollbar-track { border-radius: 8px; background: #fff9ef; }
+.unlock-requirements::-webkit-scrollbar-thumb { border: 2px solid #fff9ef; border-radius: 8px; background: #d8c9af; }
+.unlock-requirements::-webkit-scrollbar-thumb:hover { background: #c9b798; }
+.unlocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); grid-auto-rows: var(--mission-card-height); gap: 16px; min-width: 0; }
+.unlocks-container:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.unlock-card { position: relative; min-width: 0; min-height: 0; height: var(--mission-card-height); max-height: var(--mission-card-height); overflow: hidden; border: 2px solid #d4a64d; border-radius: 10px; background: #fff9ef; box-shadow: 0 3px 8px #173d7b18; }
+.unlock-card-content { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; padding: 16px; overflow: hidden; background: #fff9ef; }
 .unlock-card--locked { border-color: #555; background: #000; }
 .unlock-card--locked .unlock-card-content { opacity: .3; filter: grayscale(1); pointer-events: none; }
 .unlock-mission-lock { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 64px; height: 64px; transform: translate(-50%, -50%); color: #fffaf0; filter: drop-shadow(0 2px 4px #000); pointer-events: none; }
@@ -26,7 +27,7 @@
 .unlock-card-body { display: flex; flex: 1; flex-direction: column; justify-content: center; min-height: 0; overflow: hidden; }
 .unlock-status { color: #76634b; font-size: 12px; }
 .unlock-card--available .unlock-status { color: #3f6d33; font-weight: 700; }
-.unlock-requirements { display: flex; flex: 1; flex-direction: column; gap: 18px; min-height: 0; margin: 0; padding: 0 4px 0 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; list-style: none; }
+.unlock-requirements { display: flex; flex: 1; flex-direction: column; gap: 18px; min-height: 0; margin: 0; padding: 0 4px 0 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; list-style: none; }
 .unlock-requirements > li { flex-shrink: 0; }
 .unlock-requirements:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .unlock-requirements p { margin: 0 0 10px; font-size: 13px; line-height: 1.7; }
@@ -39,5 +40,5 @@
 .unlock-card-content > .fantasy-button.compact { flex-shrink: 0; min-width: 0; width: 100%; margin: 0; padding: 8px; font-size: 13px; line-height: 1.3; }
 .unlocks-state { max-width: 480px; margin: 24px 0; padding: 20px; border-radius: 8px; background: #fff9ef; }
 .unlocks-state .feedback { margin-bottom: 16px; }
-@media (max-width: 560px) { .unlock-card-content { gap: 10px; padding: 12px; } .unlocks-page .roster-header h1 { font-size: 23px; } .unlocks-intro p { font-size: 12px; line-height: 1.5; } .unlocks-intro .text-button { font-size: 12px; } .unlock-card-header h2 { font-size: 14px; } .unlock-card-header img { flex-basis: 40px; width: 40px; height: 40px; } }
-@media (max-height: 650px) { .unlocks-page { padding-top: 16px; padding-bottom: 16px; } .unlocks-page .roster-header { margin-bottom: 12px; } .unlocks-intro { margin-bottom: 12px; padding: 8px 12px; } .unlock-card-content { gap: 6px; padding: 10px; } .unlock-card-header { min-height: 36px; } .unlock-card-header img { flex-basis: 36px; width: 36px; height: 36px; } .unlock-card-header h2 { font-size: 13px; } .unlock-card-content > .fantasy-button.compact { padding: 6px; font-size: 12px; } }
+@media (max-width: 560px) { .unlocks-container { padding: 10px; } .unlock-card-content { gap: 10px; padding: 12px; } .unlocks-page .roster-header h1 { font-size: 23px; } .unlock-card-header h2 { font-size: 14px; } .unlock-card-header img { flex-basis: 40px; width: 40px; height: 40px; } }
+@media (max-height: 650px) { .unlocks-page { padding-top: 16px; padding-bottom: 16px; } .unlocks-page .roster-header { margin-bottom: 12px; } .unlock-card-content { gap: 6px; padding: 10px; } .unlock-card-header { min-height: 36px; } .unlock-card-header img { flex-basis: 36px; width: 36px; height: 36px; } .unlock-card-header h2 { font-size: 13px; } .unlock-card-content > .fantasy-button.compact { padding: 6px; font-size: 12px; } }

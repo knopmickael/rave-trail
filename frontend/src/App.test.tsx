@@ -45,7 +45,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-it('navega ao hub e a um personagem liberado sem exibir notificação de desbloqueio', async () => {
+it('abre as missões e acessa um personagem liberado pelo menu sem exibir notificação de desbloqueio', async () => {
   vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
   const progress = createInitialProgress(); progress.unlockedUnitIds.push('road-raider-1-base');
   vi.mocked(api.progress).mockResolvedValue(progress);
@@ -58,11 +58,14 @@ it('navega ao hub e a um personagem liberado sem exibir notificação de desbloq
   expect(screen.getByRole('heading', { name: 'Missões' })).toBeInTheDocument();
   const card = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
   expect(within(card).getByText('Disponível')).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Abrir Lista de personagens' }));
+  expect(screen.queryByRole('button', { name: 'Abrir Lista de personagens' })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
+  await user.click(screen.getByRole('button', { name: 'Lista de personagens' }));
   await user.click(await screen.findByRole('button', { name: 'Selecionar Saqueador da estrada I' }));
   expect(screen.getByRole('button', { name: 'Adicionar à equipe' })).toBeEnabled();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Voltar às missões' }));
+  await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
+  await user.click(screen.getByRole('button', { name: 'Missões' }));
   expect(screen.getByRole('heading', { name: 'Missões' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
   expect(screen.getByRole('heading', { name: 'Menu principal' })).toBeInTheDocument();

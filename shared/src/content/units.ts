@@ -121,41 +121,41 @@ export const units: readonly UnitDefinition[] = [
   defineUnit({
     id: 'jung-de-grimoria-ii', characterId: 'rival-a', version: 'Versão II',
     description: 'Segunda versão jogável de Jung de Grimória, enfrentada na fronteira das trevas. Utiliza as mesmas técnicas da versão original.',
-    abilityIds: [...common, 'main-special'], unlock: battleUnlock('jung-de-grimoria-ii'),
+    abilityIds: ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash'], unlock: battleUnlock('jung-de-grimoria-ii'),
   }),
   defineUnit({
     id: 'rival-female-base', characterId: 'rival-female', version: 'Primeiro encontro',
     description: 'Integrante do trio de mercenários rivais. Apoia seus companheiros recuperando a vida dos aliados durante os confrontos.',
-    abilityIds: [...common, 'heal'], unlock: battleUnlock('rival-female-base'),
+    abilityIds: ['simple-strike', 'female-special', 'retain-energy', 'heal'], unlock: battleUnlock('rival-female-base'),
   }),
   defineUnit({
     id: 'passage-guardian-base', characterId: 'passage-guardian', version: 'Guardião',
     description: 'Um combatente experiente que controla a passagem. Combina golpes fortes e uma técnica capaz de conceder turnos adicionais à própria equipe.',
-    abilityIds: ['main-special', 'female-special', 'retain-energy', 'extra-turn'],
+    abilityIds: ['main-special', 'fast-move', 'retain-energy', 'extra-turn'],
     unlock: battleUnlock('passage-guardian-base'),
   }),
   ...(['guardian-healer-male', 'guardian-healer-female'] as const).map((characterId) => defineUnit({
     id: `${characterId}-base`, characterId, version: 'Guardião da passagem',
     description: 'Integrante da equipe do guardião. Alterna defesa e recuperação de vida para sustentar os aliados na batalha pela passagem.',
-    abilityIds: [...common, 'heal'], unlock: battleUnlock(`${characterId}-base`),
+    abilityIds: ['simple-strike', 'female-special', 'retain-energy', 'heal'], unlock: battleUnlock(`${characterId}-base`),
   })),
   ...(['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'] as const).map((characterId) => defineUnit({
     id: characterId, characterId, version: 'Após a passagem',
     description: 'Integrante do trio de guerreiros habilidosos encontrado após o confronto com Drak de Pontes. Conjunto de habilidades temporário até a definição dos encontros.',
-    abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['main-special', 'guard', 'retain-energy', 'secondary-special']
-      : characterId === 'guerreiros-habilidosos-b' ? ['main-special', 'guard', 'retain-energy', 'female-special']
-        : ['main-special', 'guard', 'retain-energy-plus', 'secondary-special'], unlock: battleUnlock(characterId), provisional: true,
+    abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['main-special', 'fast-move', 'retain-energy', 'secondary-special']
+      : characterId === 'guerreiros-habilidosos-b' ? ['main-special', 'fast-move', 'retain-energy', 'female-special']
+        : ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'secondary-special'], unlock: battleUnlock(characterId), provisional: true,
   })),
   defineUnit({
     id: 'rival-b-final-mode', characterId: 'rival-b', version: 'Verdadeiro poder',
     description: 'O verdadeiro poder de Exal de Grimória, o vilão do confronto final da história. As habilidades atuais são temporárias e reutilizam técnicas existentes até a definição dos poderes finais.',
-    abilityIds: ['main-special', 'female-special', 'retain-energy-plus', 'soul-drain-plus'],
+    abilityIds: ['dark-vortex', 'fast-move', 'retain-energy-plus', 'soul-drain-plus'],
     unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' }, provisional: true,
   }),
   defineUnit({
     id: 'protagonist-main-transformed', characterId: 'protagonist-main', version: 'Despertar',
     description: 'O despertar de Ravi durante a jornada revela uma força que ele ainda precisa compreender e aprender a controlar.',
-    abilityIds: ['main-special', 'guard', 'retain-energy-plus', 'fury-scream'], provisional: true,
+    abilityIds: ['simple-strike-ii', 'female-special', 'retain-energy-plus', 'fury-scream'], provisional: true,
     unlock: battleUnlock('protagonist-main-transformed'),
   }),
   defineUnit({

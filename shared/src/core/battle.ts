@@ -1,5 +1,8 @@
 import type { AbilityDefinition } from '../content/abilities.js';
 import type { UnitDefinition } from '../content/units.js';
+import { planEnemyTurn } from './battle-ai.js';
+
+export { planEnemyTurn };
 
 export type BattleSide = 'player' | 'enemy';
 export const TURN_DURATION_MS = 45_000;
@@ -14,6 +17,11 @@ export interface Fighter {
   abilityIds: readonly string[];
   guardExpiresAt: number | null;
   guardAbilityId?: string | null;
+  guardReduction?: number | null;
+  bleedTurns?: number;
+  bleedAmount?: number;
+  invulnerableExpiresAt?: number | null;
+  attackBlockedExpiresAt?: number | null;
 }
 export interface BattleTeam { units: Fighter[]; energy: number; turns: number; extraTurns: number }
 export interface BattleState {
@@ -46,6 +54,27 @@ export class BattleRuleError extends Error {}
 const other = (side: BattleSide): BattleSide => side === 'player' ? 'enemy' : 'player';
 const clamp = (value: number, maximum: number) => Math.max(0, Math.min(maximum, value));
 
+function isAttackAbility(ability: AbilityDefinition) {
+  return ability.effects.some((effect) => effect.kind === 'damage' || effect.kind === 'drain' || effect.kind === 'bleed');
+}
+
+function guardReduction(state: BattleState, unit: Fighter) {
+  if (typeof unit.guardReduction === 'number') return unit.guardReduction;
+  const ability = unit.guardAbilityId ? state.abilities[unit.guardAbilityId] : undefined;
+  const effect = ability?.effects.find((entry) => entry.kind === 'guard');
+  return effect?.kind === 'guard' ? effect.reduction : 10;
+}
+
+function clearEffects(unit: Fighter) {
+  unit.guardExpiresAt = null;
+  unit.guardAbilityId = null;
+  unit.guardReduction = null;
+  unit.bleedTurns = 0;
+  unit.bleedAmount = 0;
+  unit.invulnerableExpiresAt = null;
+  unit.attackBlockedExpiresAt = null;
+}
+
 function copyState(state: BattleState): BattleState {
   return { ...state, teams: {
     player: { ...state.teams.player, units: state.teams.player.units.map((unit) => ({ ...unit })) },
@@ -75,9 +104,40 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
     if (unit.guardExpiresAt !== null && unit.guardExpiresAt <= team.turns) {
       unit.guardExpiresAt = null;
       unit.guardAbilityId = null;
+      unit.guardReduction = null;
       events.push({ kind: 'guard', message: `A Guarda de ${unit.name} expirou.` });
     }
+    if (unit.attackBlockedExpiresAt != null && unit.attackBlockedExpiresAt <= team.turns) {
+      unit.attackBlockedExpiresAt = null;
+      events.push({ kind: 'guard', message: `${unit.name} pode voltar a atacar.` });
+    }
   }
+  // A invulnerabilidade protege contra o turno da equipe adversária; por isso,
+  // seu prazo é contado no relógio dessa equipe e expira no início do turno dela.
+  for (const unit of state.teams[other(side)].units) {
+    if (unit.invulnerableExpiresAt != null && unit.invulnerableExpiresAt <= team.turns) {
+      unit.invulnerableExpiresAt = null;
+      events.push({ kind: 'guard', message: `A invulnerabilidade de ${unit.name} expirou.` });
+    }
+  }
+  const bleeding = team.units.some((unit) => unit.hp > 0 && (unit.bleedTurns ?? 0) > 0);
+  for (const unit of team.units) {
+    if (unit.hp <= 0 || (unit.bleedTurns ?? 0) <= 0) continue;
+    if (unit.invulnerableExpiresAt == null) {
+      const damage = Math.min(unit.bleedAmount ?? 0, unit.hp);
+      unit.hp -= damage;
+      events.push({ kind: 'damage', message: `${unit.name} sofre ${damage} de dano de sangramento.`, targetIds: [unit.id] });
+      if (unit.hp === 0) events.push({ kind: 'defeated', message: `${unit.name} foi derrotado.`, targetIds: [unit.id] });
+    } else {
+      events.push({ kind: 'guard', message: `${unit.name} está invulnerável: o sangramento não causa dano.`, targetIds: [unit.id] });
+    }
+    unit.bleedTurns = (unit.bleedTurns ?? 0) - 1;
+    if (unit.bleedTurns <= 0) {
+      unit.bleedTurns = 0;
+      unit.bleedAmount = 0;
+    }
+  }
+  if (bleeding) result(state, events);
   // O duelo começa com Ravi base; após a primeira rodada adversária, a transformação
   // substitui a unidade no mesmo slot, preservando HP proporcional e efeitos ativos.
   if (side === 'player' && state.teams.enemy.turns > 0 && state.pendingTransformation) {
@@ -105,7 +165,8 @@ export function createBattle(player: readonly UnitDefinition[], enemy: readonly 
   const makeTeam = (units: readonly UnitDefinition[], side: BattleSide): BattleTeam => ({
     energy: 0, turns: 0, extraTurns: 0,
     units: units.map((unit, index) => ({ id: `${side}-${index}`, unitId: unit.id, name: unit.name, portrait: unit.portrait,
-      hp: unit.maxHp, maxHp: unit.maxHp, abilityIds: [...unit.abilityIds], guardExpiresAt: null })),
+      hp: unit.maxHp, maxHp: unit.maxHp, abilityIds: [...unit.abilityIds], guardExpiresAt: null, guardReduction: null,
+      bleedTurns: 0, bleedAmount: 0, invulnerableExpiresAt: null, attackBlockedExpiresAt: null })),
   });
   const state: BattleState = { teams: { player: makeTeam(player, 'player'), enemy: makeTeam(enemy, 'enemy') },
     abilities: Object.fromEntries(abilities.map((ability) => [ability.id, { ...ability, effects: ability.effects.map((effect) => ({ ...effect })) }])),
@@ -132,6 +193,9 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
     if (!actor || actor.hp <= 0 || !actor.abilityIds.includes(action.abilityId) || !ability) throw new BattleRuleError('Personagem ou habilidade inválidos.');
     if (acted.has(actor.id)) throw new BattleRuleError('Cada personagem pode usar somente uma habilidade por turno.');
     acted.add(actor.id);
+    if (actor.attackBlockedExpiresAt != null && isAttackAbility(ability)) {
+      throw new BattleRuleError(`${actor.name} está impedido de atacar neste turno.`);
+    }
     if (ability.target === 'enemy' || ability.target === 'ally') {
       const targets = initial.teams[ability.target === 'enemy' ? other(side) : side].units;
       if (!targets.some((unit) => unit.id === action.targetId && unit.hp > 0)) throw new BattleRuleError('Escolha um alvo vivo e válido.');
@@ -173,18 +237,22 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
           if (effect.kind === 'revive') {
             if (target.hp === 0) {
               target.hp = Math.max(1, Math.floor(target.maxHp * effect.hpRatio));
-              target.guardExpiresAt = null;
-              target.guardAbilityId = null;
+              clearEffects(target);
               events.push({ kind: 'heal', message: `${target.name} retorna dos mortos com ${target.hp} HP.`, ...targetMetadata });
             }
             continue;
           }
           if (target.hp <= 0) continue;
           if (effect.kind === 'damage' || effect.kind === 'drain') {
-            const damage = Math.max(0, effect.amount - (target.guardExpiresAt === null ? 0 : 10));
-            target.hp = clamp(target.hp - damage, target.maxHp);
-            events.push({ kind: 'damage', message: `${target.name} recebe ${damage} de dano.`, ...targetMetadata });
-            if (target.hp === 0) events.push({ kind: 'defeated', message: `${target.name} foi derrotado.`, ...targetMetadata });
+            if (target.invulnerableExpiresAt != null) {
+              events.push({ kind: 'guard', message: `${target.name} está invulnerável e não recebe dano.`, ...targetMetadata });
+            } else {
+              const reduction = target.guardExpiresAt === null ? 0 : guardReduction(state, target);
+              const damage = Math.max(0, effect.amount - reduction);
+              target.hp = clamp(target.hp - damage, target.maxHp);
+              events.push({ kind: 'damage', message: `${target.name} recebe ${damage} de dano.`, ...targetMetadata });
+              if (target.hp === 0) events.push({ kind: 'defeated', message: `${target.name} foi derrotado.`, ...targetMetadata });
+            }
             if (effect.kind === 'drain') heal(actor, effect.amount, events, metadata);
           } else if (effect.kind === 'heal') {
             heal(target, effect.amount, events, targetMetadata);
@@ -192,7 +260,20 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
             const targetTeam = team.units.includes(target) ? team : enemy;
             target.guardExpiresAt = targetTeam.turns + effect.teamTurns;
             target.guardAbilityId = ability.id;
+            target.guardReduction = effect.reduction;
             events.push({ kind: 'guard', message: `Guarda aplicada em ${target.name}: −${effect.reduction} por golpe, por ${effect.teamTurns} turnos.`, ...targetMetadata });
+          } else if (effect.kind === 'bleed') {
+            target.bleedTurns = effect.turns;
+            target.bleedAmount = effect.amount;
+            events.push({ kind: 'damage', message: `${target.name} está sangrando: ${effect.amount} de dano por ${effect.turns} turnos.`, ...targetMetadata });
+          } else if (effect.kind === 'invulnerable') {
+            const opposingTeam = state.teams[other(side)];
+            target.invulnerableExpiresAt = opposingTeam.turns + 1 + effect.teamTurns;
+            events.push({ kind: 'guard', message: `${target.name} ficará invulnerável no próximo turno inimigo.`, ...targetMetadata });
+          } else if (effect.kind === 'attack-block') {
+            const targetTeam = team.units.includes(target) ? team : enemy;
+            target.attackBlockedExpiresAt = targetTeam.turns + 1 + effect.teamTurns;
+            events.push({ kind: 'guard', message: `${target.name} não poderá atacar durante ${effect.teamTurns} turno(s).`, ...targetMetadata });
           }
         }
       }
@@ -212,81 +293,6 @@ export function executeTurn(initial: BattleState, actions: readonly BattleAction
     beginTurn(outcome.state, extra ? side : other(side), outcome.events);
   }
   return outcome;
-}
-
-/** Busca exata dos combos do turno: maior dano efetivo primeiro, suporte só em empate. */
-export function planEnemyTurn(initial: BattleState): BattleAction[] {
-  if (initial.status !== 'active') return [];
-  const side = initial.activeSide;
-  const opponent = other(side);
-  const initialTeam = initial.teams[side];
-  const initialEnemies = initial.teams[opponent].units;
-  const actions: BattleAction[] = [];
-  const visited = new Set<string>();
-  let bestActions: BattleAction[] = [];
-
-  function rank(state: BattleState): number[] {
-    const team = state.teams[side];
-    const enemies = state.teams[opponent].units;
-    const damage = initialEnemies.reduce((total, unit, index) => total + unit.hp - enemies[index].hp, 0);
-    const defeated = enemies.filter((unit, index) => initialEnemies[index].hp > 0 && unit.hp === 0).length;
-    const revived = team.units.filter((unit, index) => initialTeam.units[index].hp === 0 && unit.hp > 0).length;
-    const healing = team.units.reduce((total, unit, index) => total + Math.max(0, unit.hp - initialTeam.units[index].hp), 0);
-    const protection = team.units.reduce((total, unit, index) => {
-      const before = initialTeam.units[index];
-      const oldTurns = before.hp > 0 ? Math.max(0, (before.guardExpiresAt ?? initialTeam.turns) - initialTeam.turns) : 0;
-      const newTurns = unit.hp > 0 ? Math.max(0, (unit.guardExpiresAt ?? team.turns) - team.turns) : 0;
-      return total + Math.max(0, newTurns - oldTurns);
-    }, 0);
-    // A comparação é lexicográfica: nenhum benefício de suporte compensa menos dano.
-    // Se já pode encerrar a batalha, evita gastar ações antes do golpe final sem necessidade.
-    return [damage, defeated, enemies.every((unit) => unit.hp === 0) ? -actions.length : 0,
-      revived, team.extraTurns - initialTeam.extraTurns, healing, protection, team.energy, -actions.length];
-  }
-
-  let bestRank = rank(initial);
-  function better(candidate: readonly number[]) {
-    for (let index = 0; index < candidate.length; index++) {
-      if (candidate[index] !== bestRank[index]) return candidate[index] > bestRank[index];
-    }
-    return false;
-  }
-
-  function search(simulated: BattleState, used: number) {
-    const team = simulated.teams[side];
-    // Atores/habilidades e contadores de turno não mudam durante uma prévia.
-    // Prefixos com os mesmos atores usados e estado têm exatamente as mesmas continuações.
-    const key = JSON.stringify([used, team.energy, team.extraTurns, simulated.status,
-      ...(['player', 'enemy'] as const).map((teamSide) => simulated.teams[teamSide].units.map((unit) =>
-        [unit.hp, unit.guardExpiresAt, unit.guardAbilityId]))]);
-    if (visited.has(key)) return;
-    visited.add(key);
-    const candidate = rank(simulated);
-    if (better(candidate)) { bestRank = candidate; bestActions = actions.slice(); }
-    if (simulated.status !== 'active') return;
-
-    for (const [index, actor] of team.units.entries()) {
-      if (used & (1 << index) || initialTeam.units[index].hp <= 0 || actor.hp <= 0) continue;
-      for (const id of actor.abilityIds) {
-        const ability = simulated.abilities[id];
-        if (!ability || ability.energyCost > team.energy) continue;
-        const targets = ability.target === 'enemy' ? simulated.teams[opponent].units.filter((unit) => unit.hp > 0)
-          : ability.target === 'ally' ? team.units.filter((unit, targetIndex) => unit.hp > 0 && initialTeam.units[targetIndex].hp > 0)
-            : ability.target === 'defeated-ally' ? team.units.filter((unit, targetIndex) => unit.hp === 0 && initialTeam.units[targetIndex].hp === 0)
-              : [undefined];
-        for (const target of targets) {
-          actions.push({ actorId: actor.id, abilityId: id, ...(target ? { targetId: target.id } : {}) });
-          // Revalida o prefixo inteiro contra o estado original, pelas mesmas regras do jogador.
-          const outcome = previewActions(initial, actions);
-          search(outcome.state, used | (1 << index));
-          actions.pop();
-        }
-      }
-    }
-  }
-
-  search(initial, 0);
-  return bestActions;
 }
 
 export function resolvePlayerTurn(initial: BattleState, actions: readonly BattleAction[]) {

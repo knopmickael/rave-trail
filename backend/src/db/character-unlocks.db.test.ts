@@ -213,7 +213,7 @@ it('migra a habilidade de Drak e recalcula o histórico de Grimorianos com as no
   await migrate(pool);
   await seedDatabase(pool);
   expect((await game.getCatalog()).units.find((unit) => unit.id === 'passage-guardian-base')?.abilityIds)
-    .toEqual(['main-special', 'female-special', 'retain-energy', 'extra-turn']);
+    .toEqual(['main-special', 'fast-move', 'retain-energy', 'extra-turn']);
   const hub = await game.getCharacterUnlocks(user.id);
   for (const id of ['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c']) {
     expect(entry(hub, id).unlocked).toBe(true);
