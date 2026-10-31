@@ -1,0 +1,148 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
+import { createInitialProgress } from '@game/contracts';
+import { campaigns } from '@game/content/campaigns';
+import { encounters } from '@game/content/encounters';
+import { FINAL_BATTLE_REQUIREMENT } from '@game/content/campaign-rules';
+import { abilities } from '@game/content/abilities';
+import { narrativeCharacters, STARTER_UNIT_IDS, units } from '@game/content/units';
+import { createBattle } from '@game/core/battle';
+import { api, ApiError } from '../../api';
+import { CampaignMap } from './CampaignMap';
+
+vi.mock('../../api', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../api')>();
+  return { ...original, api: { ...original.api, campaignMap: vi.fn(), catalog: vi.fn(), progress: vi.fn(), startBattle: vi.fn() } };
+});
+const mapData = () => ({ campaign: { ...campaigns[0], available: true }, encounters: encounters.map((entry) => ({ ...entry, available: entry.position === 1, completed: false, activeBattleId: null })) });
+const battle = { id: '00000000-0000-4000-8000-000000000001', encounterId: encounters[0].id, revision: 0,
+  state: createBattle(STARTER_UNIT_IDS.map((id) => units.find((unit) => unit.id === id)!), encounters[0].enemyUnitIds.map((id) => units.find((unit) => unit.id === id)!), Object.values(abilities)) };
+
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+  HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+  HTMLMediaElement.prototype.pause = vi.fn();
+});
+beforeEach(() => {
+  vi.clearAllMocks();
+  const progress = createInitialProgress(); progress.selectedTeam = [...STARTER_UNIT_IDS];
+  vi.mocked(api.campaignMap).mockResolvedValue(mapData());
+  vi.mocked(api.catalog).mockResolvedValue({ units, characters: Object.values(narrativeCharacters), abilities: Object.values(abilities) });
+  vi.mocked(api.progress).mockResolvedValue(progress);
+  vi.mocked(api.startBattle).mockResolvedValue(battle);
+});
+afterEach(cleanup);
+const props = () => ({ campaignId: 'path-1', onBack: vi.fn(), onSessionExpired: vi.fn(), onBattleStarted: vi.fn() });
+
+it('mostra sete pontos e abre título, três rostos e história somente no encontro liberado', async () => {
+  const user = userEvent.setup();
+  const handlers = props();
+  render(<CampaignMap {...handlers} />);
+  const first = await screen.findByRole('button', { name: 'Batalha 1: Saqueadores da estrada' });
+  expect(screen.getAllByRole('button', { name: /^Batalha \d:/ })).toHaveLength(7);
+  expect(document.querySelector('.map-world video')).toHaveAttribute('src', expect.stringContaining('mapa-campanha-animado-v2.webm'));
+  expect(screen.queryByRole('navigation', { name: 'Mover o mapa' })).not.toBeInTheDocument();
+  const team = screen.getByRole('region', { name: 'Minha equipe' });
+  expect(team.querySelector('.team-panel')).toBeInTheDocument();
+  STARTER_UNIT_IDS.forEach((id, index) => {
+    const member = units.find((unit) => unit.id === id)!;
+    const slot = within(team).getByRole('group', { name: `Slot ${index + 1}: ${member.name}` });
+    expect(slot.querySelector('img')).toHaveAttribute('src', member.portrait);
+  });
+  const blocked = screen.getByRole('button', { name: /Batalha 3:.*Drak.*bloqueada/ });
+  expect(blocked).toBeDisabled();
+  await user.click(blocked);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  await user.click(first);
+  const drawer = screen.getByRole('dialog', { name: 'Saqueadores da estrada' });
+  expect(within(drawer).getAllByRole('img')).toHaveLength(3);
+  expect(within(drawer).getByText(/primeiro desafio real de sua jornada/)).toBeInTheDocument();
+  expect(within(drawer).getByRole('button', { name: 'Iniciar batalha' })).toBeEnabled();
+  expect(within(drawer).queryByRole('button', { name: 'Montar equipe' })).not.toBeInTheDocument();
+  await user.click(within(drawer).getByRole('button', { name: 'Fechar detalhes da batalha' }));
+  await user.click(screen.getByRole('button', { name: 'Voltar às campanhas' }));
+  expect(handlers.onBack).toHaveBeenCalledTimes(1);
+});
+
+it('inicia a batalha no servidor e entrega o estado retornado para a navegação', async () => {
+  const handlers = props(); const user = userEvent.setup();
+  render(<CampaignMap {...handlers} />);
+  await user.click(await screen.findByRole('button', { name: 'Batalha 1: Saqueadores da estrada' }));
+  await user.click(screen.getByRole('button', { name: 'Iniciar batalha' }));
+  expect(api.startBattle).toHaveBeenCalledWith('path-1-encounter-1');
+  await vi.waitFor(() => expect(handlers.onBattleStarted).toHaveBeenCalledWith(battle, 'Saqueadores da estrada'));
+});
+
+it('exibe os slots vazios e orienta escolher personagens sem oferecer montagem no modal', async () => {
+  vi.mocked(api.progress).mockResolvedValue(createInitialProgress());
+  const handlers = props(); const user = userEvent.setup();
+  render(<CampaignMap {...handlers} />);
+  await user.click(await screen.findByRole('button', { name: 'Batalha 1: Saqueadores da estrada' }));
+  expect(screen.getByRole('button', { name: 'Iniciar batalha' })).toBeDisabled();
+  expect(screen.getByText('Escolha pelo menos um personagem para sua equipe antes de iniciar.')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Montar equipe' })).not.toBeInTheDocument();
+  const team = screen.getByRole('region', { name: 'Minha equipe' });
+  expect(within(team).getAllByRole('img', { name: /^Slot \d vazio$/ })).toHaveLength(3);
+  expect(api.startBattle).not.toHaveBeenCalled();
+});
+
+it('reflete Drak liberado após as duas primeiras vitórias', async () => {
+  const data = mapData();
+  data.encounters = data.encounters.map((entry) => ({ ...entry, completed: entry.position <= 2, available: entry.position <= 3 }));
+  vi.mocked(api.campaignMap).mockResolvedValue(data);
+  render(<CampaignMap {...props()} />);
+  expect(await screen.findByRole('button', { name: /Batalha 3:.*Drak/ })).toBeEnabled();
+  expect(screen.getByRole('button', { name: /Batalha 4:.*bloqueada/ })).toBeDisabled();
+});
+
+it.each([true, false])('mostra o requisito final abaixo da história e exige Ravi base para iniciar (Ravi: %s)', async (withRavi) => {
+  const data = mapData();
+  data.encounters = data.encounters.map((entry) => ({ ...entry, available: true }));
+  vi.mocked(api.campaignMap).mockResolvedValue(data);
+  const progress = createInitialProgress();
+  progress.selectedTeam = withRavi ? ['protagonist-secondary-base', 'protagonist-main-base', 'protagonist-female-base']
+    : ['protagonist-secondary-base', null, 'protagonist-female-base'];
+  vi.mocked(api.progress).mockResolvedValue(progress);
+  const user = userEvent.setup();
+  render(<CampaignMap {...props()} />);
+  await user.click(await screen.findByRole('button', { name: /Batalha 7:/ }));
+  const dialog = screen.getByRole('dialog', { name: 'Exal — Verdadeiro poder' });
+  expect(within(dialog).getAllByRole('img')).toHaveLength(1);
+  const requirement = within(dialog).getByText(FINAL_BATTLE_REQUIREMENT);
+  expect(requirement.previousElementSibling).toHaveTextContent(encounters[6].story);
+  const start = within(dialog).getByRole('button', { name: 'Iniciar batalha' });
+  if (withRavi) {
+    expect(start).toBeEnabled();
+    await user.click(start);
+    expect(api.startBattle).toHaveBeenCalledWith(encounters[6].id);
+  } else {
+    expect(start).toBeDisabled();
+    await user.click(start);
+    expect(api.startBattle).not.toHaveBeenCalled();
+  }
+});
+
+it('exibe Jung e Exal na ordem aprovada no painel da sexta batalha', async () => {
+  const data = mapData();
+  data.encounters = data.encounters.map((entry) => ({ ...entry, available: true }));
+  vi.mocked(api.campaignMap).mockResolvedValue(data);
+  const user = userEvent.setup();
+  render(<CampaignMap {...props()} />);
+  await user.click(await screen.findByRole('button', { name: /Batalha 6:/ }));
+  expect(within(screen.getByRole('dialog')).getAllByRole('img').map((image) => image.getAttribute('alt')))
+    .toEqual(['Retrato de Jung de Grimória II', 'Retrato de Exal de Grimória']);
+});
+
+it('trata erro de carregamento e sessão expirada sem inventar progresso', async () => {
+  const handlers = props(); const user = userEvent.setup();
+  vi.mocked(api.campaignMap).mockRejectedValueOnce(new Error('Falha ao carregar.')).mockRejectedValueOnce(new ApiError('Sessão expirada.', 401));
+  render(<CampaignMap {...handlers} />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Falha ao carregar.');
+  expect(screen.queryByRole('button', { name: /^Batalha 1:/ })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+  await vi.waitFor(() => expect(handlers.onSessionExpired).toHaveBeenCalledTimes(1));
+});

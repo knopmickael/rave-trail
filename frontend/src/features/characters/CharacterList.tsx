@@ -1,0 +1,209 @@
+import { useEffect, useRef, useState } from 'react';
+import type { GameCatalog, PlayerProgress } from '@game/contracts';
+import type { UnitDefinition } from '@game/content/units';
+import { api, ApiError } from '../../api';
+import { CharacterArt } from './CharacterArt';
+import { AbilityIcon } from './AbilityIcon';
+import './characters.css';
+
+interface CharacterListProps {
+  onBack: () => void;
+  onSessionExpired: () => void;
+  backLabel?: string;
+}
+
+export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao menu principal' }: CharacterListProps) {
+  const [progress, setProgress] = useState<PlayerProgress | null>(null);
+  const [catalog, setCatalog] = useState<GameCatalog | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [teamError, setTeamError] = useState('');
+  const [pendingUnit, setPendingUnit] = useState<UnitDefinition | null>(null);
+  const slotDialog = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    setError('');
+    setProgress(null);
+    setCatalog(null);
+    Promise.all([api.progress(), api.catalog()]).then(([saved, content]) => {
+      if (active) { setProgress(saved); setCatalog(content); }
+    })
+      .catch((cause: unknown) => {
+        if (!active) return;
+        if (cause instanceof ApiError && cause.status === 401) { onSessionExpired(); return; }
+        setError(cause instanceof Error ? cause.message : 'Não foi possível carregar os personagens.');
+      });
+    return () => { active = false; };
+  }, [attempt, onSessionExpired]);
+
+  const unlocked = new Set(progress?.unlockedUnitIds ?? []);
+  const units = catalog?.units ?? [];
+  const rosterUnits = units;
+  const selected = rosterUnits.find((unit) => unit.id === selectedId);
+
+  function chooseSlot() {
+    if (!selected || !unlocked.has(selected.id)) return;
+    setTeamError('');
+    setPendingUnit(selected);
+    slotDialog.current?.showModal();
+  }
+
+  function closeSlotDialog() {
+    if (busy) return;
+    slotDialog.current?.close();
+    setPendingUnit(null);
+    setTeamError('');
+  }
+
+  async function saveSlot(slot: number, unitId: string | null) {
+    if (busy) return;
+    setBusy(true);
+    setTeamError('');
+    try {
+      const team = await api.setTeamSlot(slot, unitId);
+      setProgress((previous) => previous ? { ...previous, selectedTeam: team } : previous);
+      slotDialog.current?.close();
+      setPendingUnit(null);
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.status === 401) onSessionExpired();
+      else setTeamError(cause instanceof Error ? cause.message : 'Não foi possível salvar a equipe.');
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <main className="roster-page">
+      <header className="roster-header">
+        <button type="button" className="back-arrow" onClick={onBack} aria-label={backLabel}>
+          <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+            <path d="M14 6 4 16l10 10M5 16h23" />
+          </svg>
+        </button>
+        <h1>Lista de personagens</h1>
+      </header>
+
+      {error ? (
+        <section className="roster-state">
+          <p role="alert">{error}</p>
+          <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button>
+        </section>
+      ) : !progress || !catalog ? <p className="roster-state" role="status">Carregando personagens…</p> : (
+        <div className="roster-layout">
+          <section className="roster-library" aria-label="Catálogo de personagens">
+            <div>
+              <div className="face-grid">
+                {rosterUnits.map((unit) => {
+                  const available = unlocked.has(unit.id);
+                  const name = unit.name;
+                  return (
+                    <div className={`face-wrap ${!available ? 'face-wrap--locked' : ''} ${selectedId === unit.id ? 'face-wrap--selected' : ''}`} key={unit.id}>
+                      <button type="button" className="face-thumb"
+                        aria-label={`Selecionar ${name}${available ? '' : ' — bloqueado'}`}
+                        aria-pressed={selectedId === unit.id}
+                        onClick={() => setSelectedId(unit.id)}>
+                        <CharacterArt unit={unit} face />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section className="roster-team" aria-labelledby="team-title">
+            <div className="team-panel">
+              <h2 id="team-title">Minha equipe</h2>
+              <div className="team-slots">
+                {Array.from({ length: 3 }, (_, index) => {
+                  const member = units.find((unit) => unit.id === progress.selectedTeam[index] && unlocked.has(unit.id));
+                  return <div className={`team-slot ${!member ? 'team-slot--empty' : ''}`} key={index}
+                    role={member ? 'group' : 'img'} aria-label={member ? `Slot ${index + 1}: ${member.name}` : `Slot ${index + 1} vazio`}>
+                    {member ? <><CharacterArt unit={member} face /><button type="button" className="team-remove" disabled={busy}
+                      aria-label={`Remover ${member.name} do slot ${index + 1}`} onClick={() => saveSlot(index, null)}>×</button></>
+                      : <span className="empty-slot-cross" aria-hidden="true">×</span>}
+                  </div>;
+                })}
+              </div>
+              {teamError && !pendingUnit && <p className="feedback" role="alert">{teamError}</p>}
+            </div>
+          </section>
+
+          {selected && <CharacterDetails unit={selected} catalog={catalog} unlocked={unlocked.has(selected.id)} busy={busy} onAdd={chooseSlot} />}
+
+          <dialog ref={slotDialog} className="team-dialog" aria-labelledby="team-dialog-title"
+            onCancel={(event) => { if (busy) event.preventDefault(); else { setPendingUnit(null); setTeamError(''); } }}
+            onClick={(event) => { if (event.target === event.currentTarget) closeSlotDialog(); }}>
+            <div className="team-dialog-content">
+              <h2 id="team-dialog-title">Escolher posição na equipe</h2>
+              <p>Escolha o slot para <strong>{pendingUnit?.name}</strong>. Se estiver ocupado, o personagem será substituído.</p>
+              <div className="team-slot-choices">
+                {progress.selectedTeam.map((id, slot) => {
+                  const occupant = units.find((unit) => unit.id === id);
+                  return <button key={slot} type="button" className="team-slot-choice" disabled={busy}
+                    aria-label={`Usar slot ${slot + 1}${occupant ? ` — substituir ${occupant.name}` : ' — vazio'}`}
+                    onClick={() => pendingUnit && saveSlot(slot, pendingUnit.id)}>
+                    <span className="slot-choice-picture">{occupant ? <CharacterArt unit={occupant} face /> : <span aria-hidden="true">×</span>}</span>
+                    <strong>Slot {slot + 1}</strong><small>{occupant?.name ?? 'Vazio'}</small>
+                  </button>;
+                })}
+              </div>
+              {teamError && pendingUnit && <p className="feedback" role="alert">{teamError}</p>}
+              <button className="text-button" disabled={busy} onClick={closeSlotDialog}>Cancelar</button>
+              {busy && <p role="status">Salvando equipe…</p>}
+            </div>
+          </dialog>
+        </div>
+      )}
+    </main>
+  );
+}
+
+function CharacterDetails({ unit, catalog, unlocked, busy, onAdd }: {
+  unit: UnitDefinition; catalog: GameCatalog; unlocked: boolean; busy: boolean; onAdd: () => void;
+}) {
+  const name = unit.name;
+  return (
+    <section className="character-details" aria-label={`Detalhes de ${name}`}>
+      <div className="character-display">
+        <div className={`character-illustration ${!unlocked ? 'character-illustration--locked' : ''}`} role="img" aria-label={`Ilustração de corpo inteiro de ${name}${!unlocked ? ' — bloqueada' : ''}`}>
+          <CharacterArt unit={unit} />
+          {!unlocked && <span className="character-lock" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3"><rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" /></svg></span>}
+        </div>
+        <div className="character-nameplate">
+          <h2>{name}</h2>
+        </div>
+      </div>
+
+      <div className="character-information">
+        <div className="character-skills">
+          <ul className="ability-list" aria-label={`Habilidades de ${name}`}>
+            {unit.abilityIds.map((id) => {
+              const ability = catalog.abilities.find((entry) => entry.id === id);
+              if (!ability) return null;
+              return (
+                <li className="ability-row" key={id}>
+                  <AbilityIcon ability={ability} />
+                  <div>
+                    <h3>{ability.name}</h3>
+                    <p>{ability.description}</p>
+                    <span className="ability-cost">Custo: {ability.energyCost} de energia</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <section className="character-description" aria-labelledby="description-title">
+          <h3 id="description-title">Descrição</h3>
+          <div className="description-copy"><p>{unit.description}</p></div>
+          {unit.unlock.kind === 'premium' && !unlocked
+            ? <button type="button" className="fantasy-button compact team-add" disabled>Adquirir personagem</button>
+            : <button type="button" className="fantasy-button compact team-add" disabled={!unlocked || busy}
+              title={!unlocked ? unit.unlock.description : undefined} onClick={onAdd}>Adicionar à equipe</button>}
+        </section>
+      </div>
+    </section>
+  );
+}

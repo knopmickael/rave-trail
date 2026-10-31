@@ -1,0 +1,27 @@
+:root { color: #233b38; --page-inset: clamp(20px, 4vw, 48px); --menu-focus-padding: 4px; --page-content-inset: calc(var(--page-inset) + var(--menu-focus-padding)); }
+body { background-attachment: fixed; }
+.app-version { position: fixed; right: 1px; bottom: 1px; z-index: 1000; color: #444; font: 11px / 1 var(--font-ui); pointer-events: none; }
+.with-panel { gap: 20px; }
+.with-panel .game-logo { width: min(55vw, 340px); }
+.panel { width: min(100%, 460px); padding: clamp(20px, 4vw, 32px); border: 2px solid #d4a64d; border-radius: 12px; background: #f4e7cdee; box-shadow: 0 12px 40px #173d7b44; }
+.panel h1 { margin: 0 0 12px; font-size: clamp(24px, 4vw, 30px); }
+.panel p { line-height: 1.5; }
+fieldset { display: flex; flex-direction: column; gap: 10px; border: 0; padding: 0; margin: 24px 0 12px; min-width: 0; }
+label { font-weight: bold; }
+input { width: 100%; margin-bottom: 8px; padding: 12px; border: 1px solid #9a7651; border-radius: 5px; background: #fffaf0; color: #233b38; font: 16px var(--font-ui); }
+input:focus-visible, .text-button:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+.fantasy-button.compact { width: 100%; min-width: 0; padding: 16px 22px; margin-top: 12px; font-size: 18px; }
+.fantasy-button:disabled, .text-button:disabled { cursor: not-allowed; opacity: .6; transform: none; }
+.fantasy-button:disabled { filter: grayscale(.5); }
+.text-button { display: block; margin: 16px auto 0; padding: 8px; border: 0; border-radius: 3px; background: transparent; color: var(--accent-strong); font: inherit; text-decoration: underline; cursor: pointer; }
+.feedback { max-width: 460px; margin: 0; padding: 14px 18px; border: 1px solid #b64431; border-radius: 6px; background: #fff4ea; color: #8c291b; line-height: 1.5; }
+.account-email { overflow-wrap: anywhere; font-family: var(--font-ui); }
+.development-label { font-size: 14px; font-style: italic; }
+.menu-options { display: grid; gap: 10px; margin: 24px 0; }
+.menu-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 15px 16px; border: 1px solid var(--button-border); border-radius: 9px; background: var(--button-background); color: var(--button-ink); text-align: left; font: 650 16px / 1.4 var(--font-ui); cursor: pointer; transition: background .15s, border-color .15s; }
+.menu-option:hover:not(:disabled) { background: var(--button-hover); border-color: var(--accent-strong); }
+.menu-option:active:not(:disabled) { background: var(--button-pressed); }
+.menu-option:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+.menu-option:disabled { opacity: .5; cursor: not-allowed; }
+.menu-option small { font: 11px var(--font-ui); text-align: right; }
+@media (prefers-reduced-motion: reduce) { .menu-option { transition: none; } }

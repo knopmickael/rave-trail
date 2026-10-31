@@ -1,0 +1,15 @@
+.quick-battle-page { display: flex; flex-direction: column; min-height: 100svh; height: 100svh; padding: var(--page-content-inset); color: #233b38; }
+.quick-battle-content { display: grid; place-items: center; flex: 1; min-height: 0; padding-bottom: 120px; }
+.quick-battle-panel { width: min(100%, 560px); max-height: 100%; padding: 28px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 2px solid #d4a64d; border-radius: 12px; background: #fff9ef; box-shadow: 0 12px 40px #173d7b44; }
+.quick-battle-panel h2 { margin: 0 0 16px; font-size: 23px; }
+.quick-battle-panel h3 { margin: 24px 0 16px; font-size: 16px; }
+.quick-battle-panel p { font-size: 14px; line-height: 1.7; }
+.quick-battle-opponents { --opponent-size: 48px; display: flex; flex-flow: row wrap; align-items: flex-start; align-content: flex-start; justify-content: flex-start; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; }
+.quick-battle-opponents li { display: flex; flex: 0 0 auto; }
+.quick-battle-opponents img { width: var(--opponent-size); height: var(--opponent-size); object-fit: cover; border: 2px solid #d8955c; border-radius: 5px; background: #e2d4b7; }
+.quick-battle-panel .fantasy-button { min-width: 0; }
+.quick-battle-panel .feedback { margin: 12px 0; }
+.quick-battle-team { position: fixed; bottom: var(--page-content-inset); left: var(--page-content-inset); }
+@media (min-width: 1500px) { .quick-battle-opponents { --opponent-size: 54px; } }
+@media (max-width: 900px) { .quick-battle-opponents { --opponent-size: 42px; } }
+@media (max-width: 560px) { .quick-battle-panel { padding: 20px; } .quick-battle-panel h2 { font-size: 20px; } .quick-battle-content { padding-bottom: 110px; } }

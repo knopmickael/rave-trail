@@ -1,0 +1,9 @@
+{
+  "extends": "./config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client", "vitest/globals", "@testing-library/jest-dom"]
+  },
+  "include": ["frontend/src", "frontend/vite.config.ts", "backend/src", "shared/src", "config/*.ts", "tools/**/*.ts"]
+}

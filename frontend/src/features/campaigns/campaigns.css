@@ -1,0 +1,31 @@
+.campaign-page { position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100svh; height: 100svh; padding: var(--page-content-inset); color: #fff9ef; }
+.campaign-header { display: flex; flex-shrink: 0; align-items: center; gap: 18px; margin-bottom: 32px; }
+.campaign-header h1 { margin: 0; color: transparent; background: linear-gradient(180deg, #ffe9bd, #ffc477 45%, #ff983b); background-clip: text; -webkit-background-clip: text; font-size: clamp(24px, 3vw, 36px); -webkit-text-stroke: 1px #000; paint-order: stroke fill; }
+.campaign-back, .campaign-scroll { display: grid; place-items: center; width: 48px; height: 48px; padding: 8px; border: 1px solid var(--button-border); border-radius: 8px; background: var(--button-background); color: var(--button-ink); cursor: pointer; }
+.campaign-back { flex: 0 0 48px; }
+.campaign-back svg, .campaign-scroll svg { width: 100%; height: 100%; }
+.campaign-back:hover, .campaign-scroll:hover:not(:disabled) { background: var(--button-hover); }
+.campaign-back:active, .campaign-scroll:active:not(:disabled) { background: var(--button-pressed); }
+.campaign-back:focus-visible, .campaign-scroll:focus-visible, .campaign-track:focus-visible { outline: 3px solid #ffbc67; outline-offset: 4px; }
+.campaign-carousel { position: relative; flex: 1; min-width: 0; min-height: 0; }
+.campaign-track { display: flex; align-items: stretch; gap: clamp(28px, 3vw, 48px); width: 100%; height: 100%; padding: clamp(24px, 7.5svh, 64px) 32px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; scroll-snap-type: x proximity; scroll-padding-inline: 32px; overscroll-behavior-x: contain; border-radius: 10px; }
+.campaign-track::-webkit-scrollbar { display: none; }
+.campaign-card { position: relative; isolation: isolate; flex: 0 0 clamp(230px, 23vw, 320px); min-width: 0; min-height: 220px; padding: 0; overflow: hidden; border: 2px solid #e8d6ad80; border-radius: 9px; background: #080c0d; color: #fff; text-align: left; scroll-snap-align: start; cursor: pointer; transform-origin: center; transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+.campaign-card-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .6; transition: opacity .25s ease, filter .25s ease; }
+.campaign-card-shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, #0003 70%, #000b); pointer-events: none; }
+.campaign-card-caption { position: absolute; left: 22px; right: 22px; bottom: 24px; display: flex; flex-direction: column; gap: 9px; }
+.campaign-chapter-number { color: #ffab4f; font-size: 18px; font-weight: 800; -webkit-text-stroke: 1.5px #000; paint-order: stroke fill; }
+.campaign-chapter-title { color: #fff; font-size: clamp(23px, 2vw, 30px); font-weight: 800; line-height: 1.15; -webkit-text-stroke: 2px #000; paint-order: stroke fill; }
+.campaign-card--available:hover, .campaign-card--available:focus-visible { z-index: 2; transform: scale(1.15); border-color: #ffb454; outline: none; box-shadow: 0 12px 36px #0005; }
+.campaign-card--available:hover .campaign-card-image, .campaign-card--available:focus-visible .campaign-card-image { opacity: 1; filter: saturate(1.1); }
+.campaign-card--available[aria-pressed='true'] { border-color: var(--accent); box-shadow: 0 0 0 2px #ffb454; }
+.campaign-card--locked { border-color: #454a49; cursor: not-allowed; transition: none; }
+.campaign-card--locked .campaign-card-image { opacity: .35; filter: grayscale(1) brightness(.65); transition: none; }
+.campaign-scroll { position: absolute; z-index: 3; top: 50%; transform: translateY(-50%); box-shadow: 0 3px 16px #0004; }
+.campaign-scroll--next { right: 0; }
+.campaign-scroll:disabled { opacity: .35; cursor: default; filter: grayscale(.5); }
+.campaign-state { max-width: 460px; padding: 20px; border-radius: 8px; background: #fff9ef; color: #233b38; }
+.campaign-selection-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 560px) { .campaign-header { gap: 12px; margin-bottom: 24px; } .campaign-back { flex-basis: 40px; width: 40px; height: 40px; } .campaign-scroll { width: 40px; height: 40px; } .campaign-card-caption { left: 18px; right: 18px; bottom: 20px; } }
+@media (max-height: 500px) { .campaign-page { min-height: 500px; height: 500px; } }
+@media (prefers-reduced-motion: reduce) { .campaign-card, .campaign-card-image { transition: none; } .campaign-card--available:hover, .campaign-card--available:focus-visible { transform: none; } }
