@@ -244,7 +244,7 @@ it('Guarda entra diretamente na fila e não permite proteger outro aliado', asyn
   await vi.waitFor(() => expect(api.turn).toHaveBeenCalledWith(initial().id, 0, expect.any(String), [{ actorId: 'player-0', abilityId: 'guard' }]));
 });
 
-it('ressurreição reserva 60 de energia e permite selecionar somente um aliado derrotado', async () => {
+it('ressurreição reserva 50 de energia e permite selecionar somente um aliado derrotado', async () => {
   const record = initial();
   record.state = createBattle(['legendary-beast-premium', ...STARTER_UNIT_IDS.slice(0, 2)].map((id) => units.find((unit) => unit.id === id)!), [units.find((unit) => unit.id === 'road-raider-1-base')!], Object.values(abilities));
   record.state.teams.player.energy = 100;
@@ -256,7 +256,7 @@ it('ressurreição reserva 60 de energia e permite selecionar somente um aliado 
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
   await user.click(skill('Trazer dos mortos', 'Fera Lendária'));
-  expect(energy()).toHaveAttribute('aria-valuenow', '40');
+  expect(energy()).toHaveAttribute('aria-valuenow', '50');
   expect(screen.getByRole('status')).toHaveTextContent('Escolha um aliado derrotado');
   expect(screen.getByRole('button', { name: 'Personagem: Fera Lendária' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Adversário: Saqueador da estrada I' })).toBeDisabled();

@@ -54,9 +54,13 @@ describe('catálogo compartilhado', () => {
     expect(abilities['retain-energy']).toMatchObject({ energyCost: 0, effects: [{ kind: 'restore-energy', amount: 20 }] });
     expect(abilities['retain-energy-plus']).toMatchObject({ energyCost: 0, effects: [{ kind: 'restore-energy', amount: 35 }] });
     expect(abilities.guard).toMatchObject({ effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }] });
+    expect(abilities['female-special']).toMatchObject({ target: 'all-allies', effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }] });
     expect(abilities['secondary-special']).toMatchObject({ energyCost: 25, effects: [{ kind: 'damage', amount: 20 }] });
     expect(abilities['strong-strike']).toMatchObject({ energyCost: 30 });
-    expect(abilities['soul-drain']).toMatchObject({ energyCost: 25 });
+    expect(abilities['soul-drain']).toMatchObject({ energyCost: 30 });
+    expect(abilities.heal).toMatchObject({ energyCost: 35 });
+    expect(abilities['heal-plus']).toMatchObject({ energyCost: 45 });
+    expect(abilities.resurrection).toMatchObject({ energyCost: 50 });
     expect(abilities['extra-turn']).toMatchObject({ energyCost: 40 });
     expect(abilities['fury-scream']).toMatchObject({ energyCost: 30 });
     expect(abilities['simple-strike-ii']).toMatchObject({ name: 'Golpe simples II', energyCost: 20, target: 'enemy',

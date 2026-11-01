@@ -18,6 +18,7 @@ function damage(initial: BattleState, actions: readonly BattleAction[]) {
 
 it('retém energia antes do ataque em área para causar 60 em vez de gastar tudo no primeiro golpe de 20', () => {
   const initial = battle();
+  initial.teams.player.units.forEach((unit) => { unit.abilityIds = []; });
   const planned = planEnemyTurn(initial);
   expect(damage(initial, planned)).toBe(60);
   const areaIndex = planned.findIndex((action) => action.abilityId === 'secondary-special');

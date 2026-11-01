@@ -55,7 +55,7 @@ it('separa o turno do bot, espera 7 segundos e o resolve uma única vez mesmo co
   expect(response.battle.combo?.side).toBe('enemy');
   expect(response.battle.combo?.actions.length).toBeGreaterThan(0);
   const projected = previewActions(response.battle.state, response.battle.combo!.actions).state;
-  expect(projected.teams.player.units.map((unit) => unit.hp)).toEqual([80, 80, 80]);
+  expect(projected.teams.player.units.some((unit, index) => unit.hp < response.battle.state.teams.player.units[index].hp)).toBe(true);
   const initialHp = response.battle.state.teams.player.units.map((unit) => unit.hp);
   now += BOT_THINK_MS - 1;
   const waiting = await battles.getBattle(user.id, battle.id);

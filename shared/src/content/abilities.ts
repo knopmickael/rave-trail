@@ -62,11 +62,11 @@ export const abilities = {
     effects: [{ kind: 'invulnerable', teamTurns: 1 }],
   },
   heal: {
-    id: 'heal', name: 'Recuperar vida', energyCost: 25, target: 'ally', icon: '/media/abilities/heal.jpg',
+    id: 'heal', name: 'Recuperar vida', energyCost: 35, target: 'ally', icon: '/media/abilities/heal.jpg',
     description: 'Restaura 30 HP de um aliado vivo, sem ultrapassar o HP máximo.', effects: [{ kind: 'heal', amount: 30 }],
   },
   'soul-drain': {
-    id: 'soul-drain', name: 'Drenar alma', energyCost: 25, target: 'enemy', icon: '/media/abilities/soul-drain.jpg',
+    id: 'soul-drain', name: 'Drenar alma', energyCost: 30, target: 'enemy', icon: '/media/abilities/soul-drain.jpg',
     description: 'Causa 25 de dano a um inimigo e recupera 25 HP do usuário, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 25 }],
   },
   'soul-drain-plus': {
@@ -78,11 +78,11 @@ export const abilities = {
     description: 'Causa 25 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 25 }],
   },
   'heal-plus': {
-    id: 'heal-plus', name: 'Recuperar muita vida', energyCost: 40, target: 'all-allies', icon: '/media/abilities/heal-plus.jpg',
+    id: 'heal-plus', name: 'Recuperar muita vida', energyCost: 45, target: 'all-allies', icon: '/media/abilities/heal-plus.jpg',
     description: 'Restaura 30 HP de cada aliado vivo, sem ultrapassar o HP máximo.', effects: [{ kind: 'heal', amount: 30 }],
   },
   resurrection: {
-    id: 'resurrection', name: 'Trazer dos mortos', energyCost: 60, target: 'defeated-ally', icon: '/media/abilities/resurrection.jpg',
+    id: 'resurrection', name: 'Trazer dos mortos', energyCost: 50, target: 'defeated-ally', icon: '/media/abilities/resurrection.jpg',
     description: 'Ressuscita um aliado derrotado com metade do HP máximo.', effects: [{ kind: 'revive', hpRatio: 0.5 }],
   },
   'main-special': {
@@ -95,8 +95,8 @@ export const abilities = {
   },
   'female-special': {
     id: 'female-special', name: 'Proteção coletiva', energyCost: 20, target: 'all-allies', icon: '/media/abilities/female-special.jpg',
-    description: 'Aplica Guarda a todos os aliados vivos: reduz 10 de dano por golpe durante dois turnos da equipe. Não acumula redução.',
-    effects: [{ kind: 'guard', reduction: 10, teamTurns: 2 }],
+    description: 'Aplica Guarda a todos os aliados vivos: reduz 15 de dano por golpe durante dois turnos da equipe. Não acumula redução.',
+    effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }],
   },
   'extra-turn': {
     id: 'extra-turn', name: 'Turno extra', energyCost: 40, target: 'team', icon: '/media/abilities/extra-turn.jpg',

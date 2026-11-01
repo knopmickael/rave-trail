@@ -121,14 +121,14 @@ it('a 25ª vitória rápida contra Jung II usando Ravi base libera a unidade sem
     hp: 100, portrait: '/media/characters/jung-de-grimoria-ii-face.png', abilityIds: definition('jung-de-grimoria-ii').abilityIds });
 });
 
-it('migra a formação antiga e copia as habilidades do Jung original sem alterar equipe ou progresso', async () => {
+it('migra a formação antiga e reaplica o balanceamento de Jung II sem alterar equipe ou progresso', async () => {
   const user = await player(5);
   const before = await auth.getProgress(user.id);
   const original = (await game.getCatalog()).units.find((unit) => unit.id === 'rival-a-base');
   await pool.query("UPDATE encounter_enemies SET unit_id = 'rival-a-base' WHERE encounter_id = 'path-1-encounter-6' AND slot_index = 0");
   await pool.query("DELETE FROM unit_abilities WHERE unit_id = 'jung-de-grimoria-ii'");
   await pool.query("DELETE FROM units WHERE id = 'jung-de-grimoria-ii'");
-  await pool.query("DELETE FROM schema_migrations WHERE name = '020_jung_de_grimoria_ii.sql'");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('020_jung_de_grimoria_ii.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
@@ -136,7 +136,7 @@ it('migra a formação antiga e copia as habilidades do Jung original sem altera
   const catalog = await game.getCatalog();
   expect(catalog.units).toHaveLength(19);
   expect(catalog.units.find((unit) => unit.id === 'rival-a-base')).toEqual(original);
-  expect(catalog.units.find((unit) => unit.id === 'jung-de-grimoria-ii')?.abilityIds).toEqual(original?.abilityIds);
+  expect(catalog.units.find((unit) => unit.id === 'jung-de-grimoria-ii')?.abilityIds).toEqual(definition('jung-de-grimoria-ii').abilityIds);
   expect((await battles.getMap(user.id, 'path-1')).encounters[5].enemyUnitIds).toEqual(['jung-de-grimoria-ii', 'rival-b-base']);
   expect(await auth.getProgress(user.id)).toEqual(before);
 });

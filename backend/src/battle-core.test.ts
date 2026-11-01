@@ -64,7 +64,7 @@ describe('motor determinístico de combate', () => {
     initial.teams.player.units[0].hp = 85;
     const outcome = previewActions(initial, [action(0, 'heal', 'player-0')]);
     expect(outcome.state.teams.player.units[0].hp).toBe(100);
-    expect(outcome.state.teams.player.energy).toBe(75);
+    expect(outcome.state.teams.player.energy).toBe(65);
     initial.teams.player.units[0].hp = 0;
     expect(() => previewActions(initial, [action(0, 'heal', 'player-0')])).toThrow();
   });
@@ -98,7 +98,7 @@ describe('motor determinístico de combate', () => {
   });
 
   it.each([
-    ['rival-b-base', 'soul-drain', 25, 25],
+    ['rival-b-base', 'soul-drain', 25, 30],
     ['rival-b-final-mode', 'soul-drain-plus', 40, 35],
   ] as const)('%s drena vida, debita energia, respeita Guarda e limita a cura', (unitId, abilityId, amount, cost) => {
     const initial = state([unitId]); initial.teams.player.energy = 100;
@@ -124,7 +124,7 @@ describe('motor determinístico de combate', () => {
     initial.teams.player.units[1].hp = 50; initial.teams.enemy.units[0].hp = 20;
     const outcome = previewActions(initial, [action(0, 'simple-strike', 'enemy-0'), action(1, 'soul-drain', 'enemy-0')]);
     expect(outcome.state.teams.player.units[1].hp).toBe(50);
-    expect(outcome.state.teams.player.energy).toBe(60);
+    expect(outcome.state.teams.player.energy).toBe(55);
     expect(outcome.events.some((event) => event.kind === 'miss')).toBe(true);
   });
 
@@ -137,7 +137,7 @@ describe('motor determinístico de combate', () => {
   });
 
   it('cura coletiva recupera 30 por aliado vivo sem exceder o máximo nem ressuscitar', () => {
-    const initial = state(['legendary-beast-premium', ...STARTER_UNIT_IDS.slice(0, 2)]); initial.teams.player.energy = 40;
+    const initial = state(['legendary-beast-premium', ...STARTER_UNIT_IDS.slice(0, 2)]); initial.teams.player.energy = 45;
     initial.teams.player.units.forEach((unit, index) => { unit.hp = [40, 90, 0][index]; });
     const outcome = previewActions(initial, [action(0, 'heal-plus')]);
     expect(outcome.state.teams.player.units.map((unit) => unit.hp)).toEqual([70, 100, 0]);
@@ -145,7 +145,7 @@ describe('motor determinístico de combate', () => {
   });
 
   it('ressuscita somente aliado derrotado com metade do HP e sem Guarda antiga', () => {
-    const initial = state(['legendary-beast-premium', STARTER_UNIT_IDS[0]]); initial.teams.player.energy = 60;
+    const initial = state(['legendary-beast-premium', STARTER_UNIT_IDS[0]]); initial.teams.player.energy = 50;
     initial.teams.player.units[1].hp = 0; initial.teams.player.units[1].guardExpiresAt = 3;
     const outcome = previewActions(initial, [action(0, 'resurrection', 'player-1')]);
     expect(outcome.state.teams.player.units[1].hp).toBe(50);
@@ -156,7 +156,7 @@ describe('motor determinístico de combate', () => {
     expect(() => previewActions(initial, [action(0, 'resurrection', 'player-0')])).toThrow(/aliado derrotado/);
     expect(() => previewActions(initial, [action(0, 'resurrection', 'enemy-0')])).toThrow(/aliado derrotado/);
     expect(() => previewActions(initial, [action(0, 'resurrection')])).toThrow(/aliado derrotado/);
-    initial.teams.player.energy = 59;
+    initial.teams.player.energy = 49;
     expect(() => previewActions(initial, [action(0, 'resurrection', 'player-1')])).toThrow(/Energia insuficiente/);
   });
 
@@ -225,6 +225,10 @@ describe('motor determinístico de combate', () => {
     expect(result.teams.player.units.map((unit) => unit.guardExpiresAt)).toEqual([3, 3, 3]);
     expect(result.teams.player.units.map((unit) => unit.guardAbilityId)).toEqual(['female-special', 'female-special', 'female-special']);
     expect(result.teams.enemy.units.map((unit) => unit.hp)).toEqual([80, 80, 0]);
+    result.activeSide = 'enemy'; result.teams.enemy.energy = 100;
+    result.teams.enemy.units[0].abilityIds = ['secondary-special'];
+    const protectedTeam = previewActions(result, [{ actorId: 'enemy-0', abilityId: 'secondary-special' }]).state;
+    expect(protectedTeam.teams.player.units.map((unit) => unit.hp)).toEqual([95, 95, 95]);
   });
 
   it('gera MISS com custo integral ao atacar alvo derrotado anteriormente no combo', () => {
