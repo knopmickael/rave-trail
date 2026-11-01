@@ -3,7 +3,7 @@ import { previewActions, type BattleAction, type BattleEvent, type BattleRecord,
 import type { AbilityDefinition } from '@game/content/abilities';
 import { api, ApiError } from '../../api';
 import { assets } from '../../assets';
-import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
+import { isFinalEncounter } from '@game/content/campaign-rules';
 import { playSoundEffect } from '../../audio/soundEffects';
 import { AbilityTooltip } from './AbilityTooltip';
 import './battle.css';
@@ -34,7 +34,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
   const playerTurn = active && state.activeSide === 'player' && remaining > 0;
   const turnLabel = state.activeSide === 'enemy' ? 'Aguardando inimigo' : 'Encerrar turno';
   const quickBattle = battle.encounterId === null;
-  const finalBattle = battle.encounterId === FINAL_ENCOUNTER_ID;
+  const finalBattle = isFinalEncounter(battle.encounterId);
   const targetAbility = pending ? state.abilities[pending.abilityId] : null;
   const targetingEnemy = !!playerTurn && !!pending && targetAbility?.target === 'enemy';
   const tooltipReset = `${battle.revision}:${busy}:${pending?.abilityId ?? ''}:${queue.map((entry) => entry.actorId + entry.abilityId).join(',')}`;
@@ -54,7 +54,6 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
     : visibleServerCombo;
   const logEntries = buildLogEntries(events, state);
   const finalComboEntries = active ? [] : logEntries.filter((entry) => entry.actionId.startsWith(`${state.activeSide}:${state.turn}:`));
-  const transformation = events.find((event) => event.kind === 'transform');
 
   function cancelAction(actorId: string) {
     setQueue((previous) => previous.filter((action) => action.actorId !== actorId));
@@ -294,6 +293,12 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
                       <img src={state.abilities['quick-slash'].icon} alt="Efeito ativo: sangramento" />
                     </AbilityTooltip>
                   </li>}
+                  {unit.damageBoostExpiresAt != null && state.abilities['internal-strength'] && <li>
+                    <AbilityTooltip ability={state.abilities['internal-strength']} resetKey={tooltipReset} focusable
+                      extra={`+${unit.damageBoostAmount ?? 0} de dano ${state.teams[side].turns < (unit.damageBoostStartsAt ?? 0) ? 'no próximo turno da equipe' : 'neste turno da equipe'}.`}>
+                      <img src={state.abilities['internal-strength'].icon} alt="Efeito ativo: Força interna" />
+                    </AbilityTooltip>
+                  </li>}
                 </ul>
                 <div className="fighter-primary-abilities" aria-label={`Habilidades de ${unit.name}`}>
               {unit.abilityIds.map((id) => {
@@ -334,7 +339,6 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
         </button>
       </div>}
     </header>
-    {transformation && <p className="battle-transformation" role="status">{transformation.message}</p>}
     <button type="button" className="battle-log-toggle" onClick={() => logDialog.current?.showModal()}>Registro do combate</button>
 
     <div className="battle-arena" aria-label="Campo de batalha">
@@ -468,7 +472,7 @@ function FighterCard({ unit, target, player, disabled, onClick }: { unit: Fighte
         <path d="M18 18 82 82M82 18 18 82" />
       </svg>}
     </span>
-    <span className="hp-track" role="progressbar" aria-label={`HP de ${unit.name}${player ? '' : ' (inimigo)'}`} aria-valuemin={0} aria-valuemax={unit.maxHp} aria-valuenow={unit.hp}>
+    <span className={`hp-track${unit.hp <= 30 ? ' hp-track--critical' : unit.hp <= 65 ? ' hp-track--warning' : ''}`} role="progressbar" aria-label={`HP de ${unit.name}${player ? '' : ' (inimigo)'}`} aria-valuemin={0} aria-valuemax={unit.maxHp} aria-valuenow={unit.hp}>
       <span style={{ width: `${100 * unit.hp / unit.maxHp}%` }} /><b>{unit.hp} / {unit.maxHp}</b>
     </span>
   </button>;

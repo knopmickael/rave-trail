@@ -265,8 +265,8 @@ it('expõe progresso somente para a sessão autenticada e a Lista de personagens
     const other = await player();
     await history(other.id, ['road-raider-1-base'], 5);
     const before = await app.inject({ url: `/api/character-unlocks?userId=${other.id}`, headers: { cookie } });
-    expect(before.json().unlocks.characters).toHaveLength(16);
-    expect(before.json().unlocks.characters.every((unit: { campaignAvailable: boolean }) => !unit.campaignAvailable)).toBe(true);
+    expect(before.json().unlocks.characters).toHaveLength(33);
+    expect(before.json().unlocks.characters.every((unit: { campaignAvailable: boolean; kind: string }) => unit.campaignAvailable === (unit.kind === 'premium'))).toBe(true);
     await complete(userId, 1);
     await history(userId, ['road-raider-1-base'], 4);
     const [last] = await history(userId, ['road-raider-1-base'], 1, undefined, 'quick', 'active');
@@ -288,28 +288,28 @@ it('expõe progresso somente para a sessão autenticada e a Lista de personagens
   } finally { await app.close(); }
 });
 
-it('mostra todas as missões mas habilita somente as dos adversários de encontros vencidos', async () => {
+it('habilita as metas pelos encontros vencidos e mantém os Premium visíveis', async () => {
   const user = await player();
   await complete(user.id, 0);
   await history(user.id, ['rival-a-base', 'rival-b-base', 'rival-female-base'], 50);
-  expect((await game.getCharacterUnlocks(user.id)).characters).toHaveLength(16);
-  expect((await game.getCharacterUnlocks(user.id)).characters.every((unit) => !unit.campaignAvailable)).toBe(true);
+  expect((await game.getCharacterUnlocks(user.id)).characters).toHaveLength(33);
+  expect((await game.getCharacterUnlocks(user.id)).characters.every((unit) => unit.campaignAvailable === (unit.kind === 'premium'))).toBe(true);
   await complete(user.id, 1);
-  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.campaignAvailable).map((unit) => unit.id)).toEqual([...encounters[0].enemyUnitIds]);
+  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable).map((unit) => unit.id)).toEqual([...encounters[0].enemyUnitIds]);
   await complete(user.id, 2);
-  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.campaignAvailable).map((unit) => unit.id)).toEqual([
+  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable).map((unit) => unit.id)).toEqual([
     ...encounters[0].enemyUnitIds, ...encounters[1].enemyUnitIds,
   ]);
   await complete(user.id, 3);
   const third = await game.getCharacterUnlocks(user.id);
-  expect(third.characters.filter((unit) => unit.campaignAvailable)).toHaveLength(9);
+  expect(third.characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable)).toHaveLength(9);
   expect(third.characters.some((unit) => unit.id === 'passage-guardian-base')).toBe(true);
   expect(entry(third, 'guerreiros-habilidosos-a').campaignAvailable).toBe(false);
   await complete(user.id, 7);
   const final = await game.getCharacterUnlocks(user.id);
-  expect(final.characters.filter((unit) => unit.campaignAvailable)).toHaveLength(14);
+  expect(final.characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable)).toHaveLength(13);
   expect(entry(final, 'rival-b-final-mode').kind).toBe('premium');
-  expect(entry(final, 'legendary-beast-premium').campaignAvailable).toBe(false);
+  expect(entry(final, 'legendary-beast-premium').campaignAvailable).toBe(true);
   expect(entry(final, 'protagonist-main-transformed').campaignAvailable).toBe(false);
 });
 
@@ -321,12 +321,12 @@ it('não concede missões ocultas por vitória ou seed e sincroniza a liberaçã
   const [last] = await history(user.id, trio, 1, undefined, 'quick', 'active');
   await finish(user.id, last);
   await seedDatabase(pool);
-  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.campaignAvailable)).toHaveLength(6);
+  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable)).toHaveLength(6);
   expect((await auth.getProgress(user.id))!.unlockedUnitIds).not.toContain('guerreiros-habilidosos-a');
   expect((await auth.getProgress(user.id))!.unlockedUnitIds).not.toContain('guerreiros-habilidosos-b');
   const drak = await battles.startBattle(user.id, encounters[2].id);
   await finish(user.id, drak);
-  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.campaignAvailable)).toHaveLength(9);
+  expect((await game.getCharacterUnlocks(user.id)).characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable)).toHaveLength(9);
   const espinea = await battles.startBattle(user.id, encounters[3].id);
   await finish(user.id, espinea);
   const visible = await game.getCharacterUnlocks(user.id);
@@ -363,7 +363,7 @@ it('a correção da conta solicitada zera somente missões não reveladas, prese
   await migrate(pool);
   const { missionProgressResets, ...preserved } = (await auth.getProgress(user.id))!;
   expect(preserved).toEqual(before);
-  expect(Object.keys(missionProgressResets!)).toHaveLength(8);
+  expect(Object.keys(missionProgressResets!)).toHaveLength(24);
   const countersAfter = await rawProgress();
   for (const unit of countersAfter.characters) {
     if (unit.kind !== 'battle-wins') continue;

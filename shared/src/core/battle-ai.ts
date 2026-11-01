@@ -1,4 +1,4 @@
-import { executeTurn, previewActions, type BattleAction, type BattleSide, type BattleState, type Fighter } from './battle.js';
+import { damageBonus, executeTurn, previewActions, type BattleAction, type BattleSide, type BattleState, type Fighter } from './battle.js';
 
 // Três combos: a jogada atual, a melhor resposta adversária e a continuação.
 // A enumeração de cada combo é completa; apenas a árvore entre turnos é podada.
@@ -23,7 +23,8 @@ function positionKey(state: BattleState) {
       const team = state.teams[side];
       return [team.energy, team.turns, team.extraTurns, team.units.map((unit) =>
         [unit.unitId, unit.hp, unit.guardExpiresAt, unit.guardAbilityId, unit.guardReduction,
-          unit.bleedTurns, unit.bleedAmount, unit.invulnerableExpiresAt, unit.attackBlockedExpiresAt])];
+          unit.bleedTurns, unit.bleedAmount, unit.invulnerableExpiresAt, unit.attackBlockedExpiresAt,
+          unit.damageBoostAmount, unit.damageBoostStartsAt, unit.damageBoostExpiresAt])];
     })]);
 }
 
@@ -33,7 +34,8 @@ function attackPower(state: BattleState, side: BattleSide, unit: Fighter, energy
     const ability = state.abilities[id];
     if (!ability || ability.energyCost > energy) return 0;
     return ability.effects.reduce((total, effect) => total + (effect.kind === 'damage' || effect.kind === 'drain'
-      ? effect.amount : effect.kind === 'bleed' ? effect.amount : 0), 0);
+      ? effect.amount + damageBonus(unit, nextTurn(state, side))
+      : effect.kind === 'bleed' ? effect.amount + damageBonus(unit, nextTurn(state, side)) : 0), 0);
   }));
 }
 
@@ -53,6 +55,13 @@ function teamValue(state: BattleState, side: BattleSide) {
     if (unit.hp <= 0) continue;
     // Uma unidade viva também representa mais uma ação em cada turno futuro.
     value += 100 + unit.hp + 20 * Math.sqrt(unit.hp / unit.maxHp);
+    const bonus = damageBonus(unit, nextTurn(state, side));
+    if (bonus > 0 && attackPower(state, side, unit, 100) > 0) {
+      const area = unit.abilityIds.some((id) => state.abilities[id]?.target === 'all-enemies'
+        && state.abilities[id].effects.some((effect) => effect.kind === 'damage' || effect.kind === 'drain' || effect.kind === 'bleed'));
+      const targets = area ? enemies.units.filter((enemy) => enemy.hp > 0).length : 1;
+      value += bonus * targets * .6;
+    }
     if (unit.guardExpiresAt != null && unit.guardExpiresAt > team.turns) {
       const guard = unit.guardAbilityId ? state.abilities[unit.guardAbilityId]?.effects.find((effect) => effect.kind === 'guard') : undefined;
       const reduction = unit.guardReduction ?? (guard?.kind === 'guard' ? guard.reduction : 10);

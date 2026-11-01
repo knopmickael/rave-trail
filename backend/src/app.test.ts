@@ -215,6 +215,14 @@ describe('autenticação HTTP', () => {
 });
 
 describe('catálogo e equipe HTTP', () => {
+  it('rejeita slots inválidos e campos de equipe forjados no pedido de batalha', async () => {
+    const account = await register();
+    const headers = { origin, cookie: cookie(account) };
+    for (const payload of [{ osirisSlot: -1 }, { osirisSlot: 3 }, { osirisSlot: '1' }, { osirisSlot: null }, { team: ['grande-rei-osiris'] }]) {
+      const response = await app.inject({ method: 'POST', url: '/api/encounters/path-2-encounter-6/battles', headers, payload });
+      expect(response.statusCode).toBe(400);
+    }
+  });
   it('protege o hub de desbloqueios e usa apenas os dados da conta autenticada', async () => {
     expect((await app.inject({ url: '/api/character-unlocks' })).statusCode).toBe(401);
     const first = await register();
@@ -222,8 +230,8 @@ describe('catálogo e equipe HTTP', () => {
     repository.progresses.get(first.json().user.id)!.unlockedUnitIds.push('road-raider-1-base');
     const response = await app.inject({ url: `/api/character-unlocks?userId=${first.json().user.id}`, headers: { cookie: cookie(second) } });
     expect(response.statusCode).toBe(200);
-    expect(response.json().unlocks.characters).toHaveLength(16);
-    expect(response.json().unlocks.characters.every((unit: { campaignAvailable: boolean }) => !unit.campaignAvailable)).toBe(true);
+    expect(response.json().unlocks.characters).toHaveLength(33);
+    expect(response.json().unlocks.characters.every((unit: { campaignAvailable: boolean; kind: string }) => unit.campaignAvailable === (unit.kind === 'premium'))).toBe(true);
     expect((await app.inject({ method: 'POST', url: '/api/character-unlocks', headers: { origin, cookie: cookie(second) }, payload: { unlockedUnitIds: ['rival-b-final-mode'] } })).statusCode).toBe(404);
   });
   it('lista duas campanhas autenticadas com apenas a primeira disponível', async () => {
@@ -234,12 +242,12 @@ describe('catálogo e equipe HTTP', () => {
     expect(response.json().campaigns.map((campaign: { id: string; available: boolean }) => [campaign.id, campaign.available])).toEqual([['path-1', true], ['path-2', false]]);
   });
 
-  it('usa a disponibilidade da conta da sessão e não libera capítulo ainda não lançado', async () => {
+  it('usa a disponibilidade da conta da sessão para os capítulos lançados', async () => {
     const first = await register();
     const second = await register('campanha-outra@example.com');
     repository.progresses.get(second.json().user.id)!.availablePathIds = ['path-2'];
     const response = await app.inject({ url: `/api/campaigns?userId=${first.json().user.id}`, headers: { cookie: cookie(second) } });
-    expect(response.json().campaigns.map((campaign: { available: boolean }) => campaign.available)).toEqual([false, false]);
+    expect(response.json().campaigns.map((campaign: { available: boolean }) => campaign.available)).toEqual([false, true]);
   });
 
   it('exige sessão para ler o catálogo e modificar equipe', async () => {

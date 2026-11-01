@@ -81,7 +81,7 @@ it('abre mão do dano imediato para ressuscitar um aliado que pode sobreviver e 
 });
 
 it('aproveita suporte quando o mesmo combo continua causando o dano máximo', () => {
-  const initial = battle(['legendary-beast-premium', 'road-raider-1-base', 'protagonist-main-base'], 100);
+  const initial = battle(['legendary-beast-premium', 'road-raider-3-base', 'protagonist-main-base'], 100);
   initial.teams.player.units.forEach((unit) => { unit.abilityIds = []; });
   initial.teams.enemy.units[2].hp = 0;
   const planned = planEnemyTurn(initial);
@@ -90,6 +90,17 @@ it('aproveita suporte quando o mesmo combo continua causando o dano máximo', ()
   expect(planned.some((action) => action.abilityId === 'resurrection')).toBe(true);
   expect(outcome.teams.enemy.units[2].hp).toBe(50);
   expect(planned.some((action) => action.actorId === 'enemy-2')).toBe(false);
+});
+
+it('prepara Força interna no aliado de ataque em área para vencer na próxima jogada', () => {
+  const initial = battle(['road-raider-1-base', 'protagonist-secondary-base'], 100);
+  initial.teams.enemy.units[1].abilityIds = ['secondary-special'];
+  initial.teams.player.units.forEach((unit) => { unit.hp = 50; unit.abilityIds = []; });
+  const planned = planEnemyTurn(initial);
+  expect(planned).toContainEqual({ actorId: 'enemy-0', abilityId: 'internal-strength', targetId: 'enemy-1' });
+  let state = executeTurn(initial, planned).state;
+  state = executeTurn(state, []).state;
+  expect(executeTurn(state, planEnemyTurn(state)).state.status).toBe('defeat');
 });
 
 it('encerra a batalha com uma única ação se já pode vencer, sem preparar suporte desnecessário', () => {

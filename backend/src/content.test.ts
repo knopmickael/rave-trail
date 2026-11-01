@@ -3,11 +3,25 @@ import { createInitialProgress } from '@game/contracts.js';
 import { abilities } from '@game/content/abilities.js';
 import { narrativeCharacters, rosterUnits, units } from '@game/content/units.js';
 import { encounters } from '@game/content/encounters.js';
+import { SECOND_CAMPAIGN_CHARACTERS } from '@game/content/second-campaign.js';
 
 describe('catálogo compartilhado', () => {
+  it('define os seis confrontos provisórios da segunda campanha na ordem solicitada', () => {
+    const second = encounters.filter((entry) => entry.campaignId === 'path-2');
+    expect(second.map((entry) => entry.position)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(second.map((entry) => entry.enemyUnitIds)).toEqual([
+      ['general-abel', 'guardia-da-fronteira', 'samurai-erlang'],
+      ['sabio-do-castelo', 'emissario-do-castelo', 'grande-rei-osiris'],
+      ['espadachim-lupus', 'feiticeira-ravina', 'monge-omero'],
+      ['besta-lendaria-ravok', 'besta-lendaria-fenrir', 'besta-lendaria-enkei'],
+      ['lorde-demonio-rakin', 'mago-demonio', 'combatente-demonio'],
+      ['verdadeiro-rei-demonio'],
+    ]);
+    expect(second.every((entry) => entry.provisional && entry.story.length > 100)).toBe(true);
+  });
   it('define as sete equipes aprovadas em ordem, incluindo dois inimigos na sexta e o duelo final', () => {
-    expect(encounters.map((entry) => entry.position)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(encounters.map((entry) => entry.enemyUnitIds)).toEqual([
+    expect(encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => entry.position)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => entry.enemyUnitIds)).toEqual([
       ['road-raider-1-base', 'road-raider-2-base', 'road-raider-3-base'],
       ['rival-a-base', 'rival-b-base', 'rival-female-base'],
       ['passage-guardian-base', 'guardian-healer-male-base', 'guardian-healer-female-base'],
@@ -31,6 +45,7 @@ describe('catálogo compartilhado', () => {
     for (const unit of units) {
       expect(narrativeCharacters[unit.characterId]).toBeDefined();
       expect(unit.maxHp).toBe(100);
+      expect(unit.description).not.toMatch(/provisóri|temporári/i);
       expect(unit.abilityIds).toHaveLength(4);
       expect(new Set(unit.abilityIds).size).toBe(4);
       for (const id of unit.abilityIds) expect(abilities[id]).toBeDefined();
@@ -57,6 +72,8 @@ describe('catálogo compartilhado', () => {
     expect(abilities['female-special']).toMatchObject({ target: 'all-allies', effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }] });
     expect(abilities['secondary-special']).toMatchObject({ energyCost: 25, effects: [{ kind: 'damage', amount: 20 }] });
     expect(abilities['strong-strike']).toMatchObject({ energyCost: 30 });
+    expect(abilities['internal-strength']).toMatchObject({ energyCost: 35, target: 'ally',
+      icon: '/media/abilities/internal-strength.png', effects: [{ kind: 'damage-boost', amount: 15, teamTurns: 1 }] });
     expect(abilities['soul-drain']).toMatchObject({ energyCost: 30 });
     expect(abilities.heal).toMatchObject({ energyCost: 35 });
     expect(abilities['heal-plus']).toMatchObject({ energyCost: 45 });
@@ -101,6 +118,7 @@ describe('catálogo compartilhado', () => {
   });
 
   it.each([
+    ['road-raider-1-base', ['simple-strike', 'guard', 'retain-energy', 'internal-strength']],
     ['road-raider-2-base', ['simple-strike', 'guard', 'retain-energy', 'secondary-special']],
     ['rival-a-base', ['simple-strike', 'guard', 'retain-energy', 'main-special']],
     ['jung-de-grimoria-ii', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash']],
@@ -124,8 +142,11 @@ describe('catálogo compartilhado', () => {
       'Curandeiro de Pontes', 'Curandeira de Pontes', 'Drak de Pontes',
       'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
       'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Fera Lendária',
+      ...SECOND_CAMPAIGN_CHARACTERS.map((character) => character.name),
     ]);
-    expect(rosterUnits.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: 19 }, (_, index) => index));
+    expect(rosterUnits.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));
+    expect(rosterUnits[31].id).toBe('combatente-demonio');
+    expect(rosterUnits[33].id).toBe('lorde-demonio-rakin');
   });
 
   it('cadastra Jung II como uma unidade independente com o mesmo personagem e conjunto próprio de habilidades', () => {
@@ -141,6 +162,11 @@ describe('catálogo compartilhado', () => {
     expect(original.portrait).toBe('/media/characters/jung-de-grimoria-face.png');
     expect(units.find((unit) => unit.id === 'rival-b-base')?.illustration).toBe('/media/characters/exal-de-grimoria-body.png');
     for (const unit of units) {
+      if (unit.version === 'Além das Fronteiras') {
+        expect(unit.portrait).toBe(`/media/characters/02/${unit.id}-face.png`);
+        expect(unit.illustration).toBe(`/media/characters/02/${unit.id}.png`);
+        continue;
+      }
       expect(unit.portrait).toMatch(/^\/media\/characters\/[a-z0-9-]+-face\.png$/);
       expect(unit.illustration).toMatch(/^\/media\/characters\/[a-z0-9-]+-body\.png$/);
     }

@@ -47,7 +47,6 @@
 .encounter-enemies figcaption { margin-top: 8px; font-size: 12px; line-height: 1.4; text-align: center; overflow-wrap: anywhere; }
 .encounter-story { margin: 0 0 20px; font-size: 14px; line-height: 1.8; }
 .encounter-requirement { margin: 0 0 20px; padding: 12px; border: 1px solid #be8742; border-radius: 6px; background: #f5e4c5; font-size: 14px; line-height: 1.7; font-weight: 600; }
-.encounter-provisional { color: #796d5e; font-size: 11px; font-style: italic; }
 .encounter-drawer-footer { padding-top: 18px; }
 .encounter-drawer-footer > p { margin: 0 0 10px; font-size: 13px; line-height: 1.5; }
 .encounter-drawer-footer .fantasy-button { min-width: 0; }

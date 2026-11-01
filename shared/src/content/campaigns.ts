@@ -20,8 +20,8 @@ export const campaigns: readonly CampaignDefinition[] = [
     background: '/media/campaigns/path-1.webp', sortOrder: 0, released: true,
   },
   {
-    id: 'path-2', chapterNumber: 2, title: 'Nada era o que parecia',
-    description: 'Novas pistas apontam para os interesses por trás dos ataques às rotas comerciais.',
-    background: '/media/campaigns/path-2.webp', sortOrder: 1, released: false,
+    id: 'path-2', chapterNumber: 2, title: 'Além das Fronteiras',
+    description: 'Os heróis procuram a corte de Osiris e enfrentam a ameaça que desperta além das fronteiras.',
+    background: '/media/campaigns/path-2.webp', sortOrder: 1, released: true,
   },
 ];

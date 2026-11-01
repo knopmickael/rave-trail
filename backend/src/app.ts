@@ -170,7 +170,9 @@ export async function createApp({ repository, gameRepository, battleRepository, 
   });
   app.post<{ Params: { id: string } }>('/api/encounters/:id/battles', async (request, reply) => {
     const user = await authenticatedUser(request.cookies[sessionCookie]);
-    return reply.code(201).send({ battle: await requireBattles().startBattle(user.id, request.params.id) });
+    const body = z.object({ osirisSlot: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional() }).strict().safeParse(request.body ?? {});
+    if (!body.success) throw new GameError(400, 'Escolha um slot válido de 0 a 2 para Osiris.');
+    return reply.code(201).send({ battle: await requireBattles().startBattle(user.id, request.params.id, body.data) });
   });
   app.get('/api/quick-battle', async (request) => {
     const user = await authenticatedUser(request.cookies[sessionCookie]);

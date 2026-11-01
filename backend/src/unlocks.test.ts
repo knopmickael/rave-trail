@@ -89,14 +89,23 @@ it('conta uma batalha uma única vez para cada oponente mesmo com unidades repet
   expect(progress('road-raider-2-base', history)[0].current).toBe(1);
 });
 
-it('lista somente as metas e os dois Premium a US$ 9,90, refletindo os desbloqueios persistidos', () => {
+it('lista as metas e os três Premium a US$ 9,90, refletindo os desbloqueios persistidos', () => {
   const data = characterUnlockProgress(units, ['road-raider-1-base'], []);
-  expect(data.characters).toHaveLength(16);
+  expect(data.characters).toHaveLength(33);
   expect(data.characters.find((unit) => unit.id === 'road-raider-1-base')?.unlocked).toBe(true);
   expect(data.characters.filter((unit) => unit.kind === 'premium')).toEqual([
     expect.objectContaining({ id: 'rival-b-final-mode', priceUsd: 9.9, unlocked: false }),
     expect.objectContaining({ id: 'legendary-beast-premium', priceUsd: 9.9, unlocked: false }),
+    expect.objectContaining({ id: 'maga-artemis', priceUsd: 9.9, unlocked: false }),
   ]);
+});
+
+it('mantém missões de personagens já liberados acessíveis mesmo sem um encontro próprio na campanha', () => {
+  const unlocked = ['protagonist-main-transformed', 'legendary-beast-premium'];
+  const data = characterUnlockProgress(units, unlocked, [], {}, []);
+  for (const id of unlocked) expect(data.characters.find((unit) => unit.id === id)).toMatchObject({ unlocked: true, campaignAvailable: true });
+  expect(data.characters.find((unit) => unit.id === 'road-raider-1-base')).toMatchObject({ unlocked: false, campaignAvailable: false });
+  expect(data.characters.find((unit) => unit.id === 'maga-artemis')).toMatchObject({ kind: 'premium', priceUsd: 9.9, campaignAvailable: true });
 });
 
 it('Jung II exige 25 vitórias rápidas usando Ravi base e não compartilha o contador do Jung original', () => {

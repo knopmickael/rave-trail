@@ -36,7 +36,9 @@
 .fighter-row--defeated .fighter-abilities { border-color: #69645b; }
 .fighter-row--defeated .fighter-skill-area { opacity: .3; filter: grayscale(1); }
 .hp-track { position: relative; display: block; width: 100%; height: 18px; overflow: hidden; border: 1px solid #21351f; border-radius: 3px; background: #d0cec4; }
-.hp-track > span { display: block; height: 100%; background: #72c653; transition: width .2s; }
+.hp-track > span { display: block; height: 100%; background: #72c653; transition: width .2s, background-color .2s; }
+.hp-track--warning > span { background: #e5bf3a; }
+.hp-track--critical > span { background: #d94a42; }
 .hp-track b { position: absolute; inset: 0; color: #162813; font-size: 11px; line-height: 16px; font-weight: 700; text-shadow: 0 0 2px #fff; }
 .fighter-skill-area { min-width: 0; }
 .fighter-primary-abilities { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: center; gap: 4px; width: 100%; }

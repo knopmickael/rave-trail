@@ -1,13 +1,9 @@
 .unlocks-page { --mission-card-height: 320px; display: flex; flex-direction: column; height: 100svh; min-height: 0; padding: var(--page-content-inset); overflow: hidden; color: #233b38; }
 .unlocks-page .roster-header { margin-bottom: 20px; }
-.unlocks-container { flex: 1; min-width: 0; min-height: 0; padding: 16px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; border: 1px solid #d4a64d; border-radius: 12px; background: #fff9efcc; box-shadow: 0 3px 12px #173d7b18; }
-.unlocks-container, .unlock-requirements { scrollbar-width: thin; }
-.unlocks-container { scrollbar-color: var(--accent-strong) var(--accent-soft); }
-.unlocks-container::-webkit-scrollbar, .unlock-requirements::-webkit-scrollbar { width: 10px; }
-.unlocks-container::-webkit-scrollbar-track { border-radius: 8px; background: var(--accent-soft); }
-.unlocks-container::-webkit-scrollbar-thumb { border: 2px solid var(--accent-soft); border-radius: 8px; background: var(--button-background); }
-.unlocks-container::-webkit-scrollbar-thumb:hover { background: var(--button-hover); }
-.unlock-requirements { scrollbar-color: #d8c9af #fff9ef; }
+.unlocks-container { flex: 1; min-width: 0; min-height: 0; padding: 16px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; border: 1px solid #d4a64d; border-radius: 12px; background: #fff9efcc; box-shadow: 0 3px 12px #173d7b18; }
+.unlocks-container::-webkit-scrollbar { display: none; }
+.unlock-requirements { scrollbar-width: thin; scrollbar-color: #d8c9af #fff9ef; }
+.unlock-requirements::-webkit-scrollbar { width: 10px; }
 .unlock-requirements::-webkit-scrollbar-track { border-radius: 8px; background: #fff9ef; }
 .unlock-requirements::-webkit-scrollbar-thumb { border: 2px solid #fff9ef; border-radius: 8px; background: #d8c9af; }
 .unlock-requirements::-webkit-scrollbar-thumb:hover { background: #c9b798; }
@@ -27,7 +23,7 @@
 .unlock-card-body { display: flex; flex: 1; flex-direction: column; justify-content: center; min-height: 0; overflow: hidden; }
 .unlock-status { color: #76634b; font-size: 12px; }
 .unlock-card--available .unlock-status { color: #3f6d33; font-weight: 700; }
-.unlock-requirements { display: flex; flex: 1; flex-direction: column; gap: 18px; min-height: 0; margin: 0; padding: 0 4px 0 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; list-style: none; }
+.unlock-requirements { display: flex; flex: 1; flex-direction: column; gap: 18px; min-height: 0; margin: 0; padding: 0 4px 0 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: auto; scrollbar-gutter: stable; list-style: none; }
 .unlock-requirements > li { flex-shrink: 0; }
 .unlock-requirements:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .unlock-requirements p { margin: 0 0 10px; font-size: 13px; line-height: 1.7; }

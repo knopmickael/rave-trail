@@ -25,7 +25,8 @@
   width: 100%;
   min-height: 0;
 }
-.roster-library { grid-area: library; align-self: start; min-width: 0; max-height: 100%; padding: 14px 4px 4px; overflow-y: auto; scrollbar-width: thin; overscroll-behavior: contain; }
+.roster-library { grid-area: library; align-self: start; min-width: 0; max-height: 100%; padding: 14px 4px 4px; overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain; }
+.roster-library::-webkit-scrollbar { display: none; }
 .face-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 70px)); gap: 6px; }
 .face-wrap { position: relative; display: block; min-width: 0; }
 .face-thumb { display: block; width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden; border: 2px solid #d8955c; border-radius: 7px; background: linear-gradient(145deg, #fff0df, #e8bc8e); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
@@ -88,8 +89,8 @@
 .character-description .team-add { flex-shrink: 0; min-width: 0; margin-top: 12px; padding: 12px; font-size: 15px; }
 .character-description h3 { margin: 0 0 10px; font-size: 16px; }
 .character-description p { margin: 0 0 10px; font: 13px/1.6 var(--font-ui); }
-.team-dialog { width: min(560px, calc(100vw - 32px)); max-height: calc(100svh - 32px); padding: 0; overflow-y: auto; border: 0; border-radius: 12px; background: #fff9ef; color: #233b38; }
-.team-dialog::backdrop { background: #14272899; }
+.team-dialog { position: fixed; inset: 0; width: min(560px, calc(100vw - 32px)); height: fit-content; max-height: calc(100svh - 32px); margin: auto; padding: 0; overflow-y: auto; border: 0; border-radius: 12px; background: #fff9ef; color: #233b38; }
+.team-dialog::backdrop { background: #081923cc; }
 .team-dialog-content { padding: 28px; }
 .team-dialog h2 { margin: 0 0 12px; font-size: 22px; }
 .team-dialog p { font-size: 14px; line-height: 1.6; }

@@ -46,7 +46,7 @@ it('mostra todos os requisitos dentro dos cartões e os preços com compra desab
   const passago = screen.getByRole('region', { name: 'Passago de Espinea' });
   expect(within(passago).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['20', '10']);
   expect(within(passago).getByText(/Derrote Grimorianos no Multiplayer 10 vezes/)).toBeInTheDocument();
-  for (const name of ['Exal - Verdadeiro poder', 'Fera Lendária']) {
+  for (const name of ['Exal - Verdadeiro poder', 'Fera Lendária', 'Maga Ártemis']) {
     const premium = screen.getByRole('region', { name });
     expect(within(premium).getByRole('button', { name: 'Adquirir personagem' })).toBeDisabled();
     expect(within(premium).getByText(/9,90/)).toBeInTheDocument();
@@ -54,6 +54,20 @@ it('mostra todos os requisitos dentro dos cartões e os preços com compra desab
   }
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Resgatar|Liberar/ })).not.toBeInTheDocument();
+});
+
+it('exibe Ravi Berserk e Fera Lendária liberados na conta GM sem cadeado ou conteúdo inerte', async () => {
+  const ids = units.map((unit) => unit.id);
+  vi.mocked(api.characterUnlocks).mockResolvedValue(characterUnlockProgress(units, ids, [], {}, []));
+  render(<CharacterUnlocks {...props()} />);
+  for (const name of ['Ravi Berserk', 'Fera Lendária']) {
+    const card = await screen.findByRole('region', { name });
+    expect(card).toHaveAttribute('aria-disabled', 'false');
+    expect(card).not.toHaveClass('unlock-card--locked');
+    expect(card.querySelector('.unlock-card-content')).not.toHaveAttribute('inert');
+    expect(within(card).getByText('Disponível')).toBeInTheDocument();
+    expect(card.querySelector('.unlock-mission-lock')).toBeNull();
+  }
 });
 
 it('mostra um estado vazio se o catálogo não possuir missões', async () => {
@@ -74,7 +88,7 @@ it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado'
   expect(locked).toHaveAttribute('aria-disabled', 'true');
   expect(locked.querySelector('.unlock-card-content')).toHaveAttribute('inert');
   expect(within(locked).getByRole('img', { name: /Missão de Ravi Berserk bloqueada/ })).toBeInTheDocument();
-  expect(document.querySelectorAll('.unlock-card')).toHaveLength(16);
+  expect(document.querySelectorAll('.unlock-card')).toHaveLength(33);
 });
 
 it('atualiza o progresso ao retornar à janela e reflete a disponibilidade sem notificações', async () => {

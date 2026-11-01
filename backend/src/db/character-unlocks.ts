@@ -2,15 +2,18 @@ import type { Pool, PoolClient } from 'pg';
 import type { PlayerProgress } from '@game/contracts.js';
 import type { UnitDefinition } from '@game/content/units.js';
 import { characterUnlockProgress, type BattleVictory } from '@game/core/unlocks.js';
+import { battleUnlockRules } from '@game/content/unlocks.js';
 
 type MissionProgress = Pick<PlayerProgress, 'unlockedUnitIds' | 'completedEncounters' | 'missionProgressResets'>;
 
 export async function readCharacterUnlocks(client: Pool | PoolClient, userId: string, progress: MissionProgress) {
+  const allies = battleUnlockRules.filter((rule) => rule.availableAfterEncounterId
+    && progress.completedEncounters.includes(rule.availableAfterEncounterId)).map((rule) => rule.unitId);
   const units = await client.query<Pick<UnitDefinition, 'id' | 'name' | 'portrait'> & { campaignAvailable: boolean }>(
     `SELECT u.id, u.name, u.portrait_path AS portrait,
-      EXISTS (SELECT 1 FROM encounter_enemies e WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[])) AS "campaignAvailable"
+      (u.id = ANY($2::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[]))) AS "campaignAvailable"
       FROM units u
-      ORDER BY u.roster_order NULLS LAST, u.id`, [progress.completedEncounters]);
+      ORDER BY u.roster_order NULLS LAST, u.id`, [progress.completedEncounters, allies]);
   if (!units.rows.length) return { characters: [] };
   const victories = await client.query<BattleVictory>(`SELECT mode,
     to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt",

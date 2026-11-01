@@ -21,7 +21,7 @@ it('permite selecionar o primeiro capítulo e impede selecionar o bloqueado', as
   const user = userEvent.setup();
   render(<CampaignSelection onBack={vi.fn()} onSessionExpired={vi.fn()} onSelectCampaign={vi.fn()} />);
   const first = await screen.findByRole('button', { name: 'Capítulo 1: Pondo o pé na estrada' });
-  const second = screen.getByRole('button', { name: 'Capítulo 2: Nada era o que parecia — bloqueado' });
+  const second = screen.getByRole('button', { name: 'Capítulo 2: Além das Fronteiras — bloqueado' });
   expect(first).toBeEnabled();
   expect(first).toHaveAttribute('aria-pressed', 'false');
   expect(second).toBeDisabled();

@@ -12,7 +12,7 @@ import { BattleLoading } from './features/battle/BattleLoading';
 import { useAudioSettings } from './audio/useAudioSettings';
 import { useGameAudio } from './audio/useGameAudio';
 import type { BattleRecord } from '@game/core/battle';
-import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
+import { isFinalEncounter } from '@game/content/campaign-rules';
 
 const BATTLE_LOADING_MS = 700;
 const battleScreenImport = () => import('./features/battle/BattleScreen');
@@ -33,7 +33,7 @@ export function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const audio = useAudioSettings();
-  useGameAudio({ inBattle: screen === 'battle', finalBattle: battle?.encounterId === FINAL_ENCOUNTER_ID,
+  useGameAudio({ inBattle: screen === 'battle', finalBattle: isFinalEncounter(battle?.encounterId),
     volume: audio.volume, muted: audio.muted });
 
   const handleSessionExpired = useCallback(() => {

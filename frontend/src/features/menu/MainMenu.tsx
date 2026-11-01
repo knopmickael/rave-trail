@@ -132,7 +132,7 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenCampaigns,
 
 function ProfilePicture({ large = false }: { large?: boolean }) {
   return (
-    <span className={`profile-picture ${large ? 'profile-picture--large' : ''}`} role="img" aria-label="Foto de perfil provisória">
+    <span className={`profile-picture ${large ? 'profile-picture--large' : ''}`} role="img" aria-label="Foto de perfil">
       <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" focusable="false">
         <circle cx="32" cy="23" r="11" fill="currentColor" />
         <path d="M12 55c0-12 8-19 20-19s20 7 20 19" fill="currentColor" />

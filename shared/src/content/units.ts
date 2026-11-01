@@ -1,5 +1,6 @@
 import type { AbilityId } from './abilities.js';
 import { battleUnlock } from './unlocks.js';
+import { SECOND_CAMPAIGN_CHARACTERS, SECOND_CAMPAIGN_UNIT_IDS, type SecondCampaignCharacterId } from './second-campaign.js';
 
 export const STARTER_UNIT_IDS = ['protagonist-main-base', 'protagonist-secondary-base', 'protagonist-female-base'] as const;
 
@@ -21,6 +22,7 @@ export const ROSTER_UNIT_IDS = [
   'protagonist-main-transformed',
   'rival-b-final-mode',
   'legendary-beast-premium',
+  ...SECOND_CAMPAIGN_UNIT_IDS,
 ] as const;
 
 export interface NarrativeCharacter {
@@ -30,6 +32,7 @@ export interface NarrativeCharacter {
 
 // Nomes de exibição aprovados. IDs de unidades e progresso permanecem estáveis.
 export const narrativeCharacters = {
+  ...Object.fromEntries(SECOND_CAMPAIGN_CHARACTERS.map(({ id, name }) => [id, { id, name }])) as Record<SecondCampaignCharacterId, NarrativeCharacter>,
   'protagonist-main': { id: 'protagonist-main', name: 'Ravi de Berdal' },
   'protagonist-secondary': { id: 'protagonist-secondary', name: 'Doko de Berdal' },
   'protagonist-female': { id: 'protagonist-female', name: 'Anna de Berdal' },
@@ -111,7 +114,7 @@ export const units: readonly UnitDefinition[] = [
   ...(['road-raider-1', 'road-raider-2', 'road-raider-3'] as const).map((characterId) => defineUnit({
     id: `${characterId}-base`, characterId, version: 'Saqueadores da estrada',
     description: 'Combatente encontrado na primeira estrada fora do vilarejo. Explora a insegurança das rotas comerciais para atacar viajantes.',
-    abilityIds: [...common, characterId === 'road-raider-2' ? 'secondary-special' : 'strong-strike'], unlock: battleUnlock(`${characterId}-base`),
+    abilityIds: [...common, characterId === 'road-raider-1' ? 'internal-strength' : characterId === 'road-raider-2' ? 'secondary-special' : 'strong-strike'], unlock: battleUnlock(`${characterId}-base`),
   })),
   ...(['rival-a', 'rival-b'] as const).map((characterId) => defineUnit({
     id: `${characterId}-base`, characterId, version: 'Primeiro encontro',
@@ -141,14 +144,14 @@ export const units: readonly UnitDefinition[] = [
   })),
   ...(['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'] as const).map((characterId) => defineUnit({
     id: characterId, characterId, version: 'Após a passagem',
-    description: 'Integrante do trio de guerreiros habilidosos encontrado após o confronto com Drak de Pontes. Conjunto de habilidades temporário até a definição dos encontros.',
+    description: 'Integrante do trio de guerreiros habilidosos encontrado após o confronto com Drak de Pontes.',
     abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['main-special', 'fast-move', 'retain-energy', 'secondary-special']
       : characterId === 'guerreiros-habilidosos-b' ? ['main-special', 'fast-move', 'retain-energy', 'female-special']
         : ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'secondary-special'], unlock: battleUnlock(characterId), provisional: true,
   })),
   defineUnit({
     id: 'rival-b-final-mode', characterId: 'rival-b', version: 'Verdadeiro poder',
-    description: 'O verdadeiro poder de Exal de Grimória, o vilão do confronto final da história. As habilidades atuais são temporárias e reutilizam técnicas existentes até a definição dos poderes finais.',
+    description: 'O verdadeiro poder de Exal de Grimória, o vilão do confronto final da primeira jornada.',
     abilityIds: ['dark-vortex', 'fast-move', 'retain-energy-plus', 'soul-drain-plus'],
     unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' }, provisional: true,
   }),
@@ -160,10 +163,21 @@ export const units: readonly UnitDefinition[] = [
   }),
   defineUnit({
     id: 'legendary-beast-premium', characterId: 'legendary-beast', version: 'Lendária',
-    description: 'Uma presença rara que sugere forças muito além das conhecidas no vilarejo. Unidade premium disponível futuramente; habilidades atuais são temporárias.',
+    description: 'Uma presença rara que sugere forças muito além das conhecidas no vilarejo.',
     abilityIds: ['heal-plus', 'female-special', 'retain-energy-plus', 'resurrection'], provisional: true,
     unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' },
   }),
+  ...SECOND_CAMPAIGN_CHARACTERS.map((character) => ({
+    ...defineUnit({
+      id: character.id, characterId: character.id, version: 'Além das Fronteiras',
+      description: character.description,
+      abilityIds: [...common, 'strong-strike'],
+      unlock: character.id === 'maga-artemis' ? { kind: 'premium', description: 'Personagem premium: US$ 9,90.' } : battleUnlock(character.id),
+      provisional: true,
+    }),
+    portrait: `/media/characters/02/${character.id}-face.png`,
+    illustration: `/media/characters/02/${character.id}.png`,
+  })),
 ];
 
 // Ordem inicial do catálogo completo; a interface também aceita registros adicionais do banco.

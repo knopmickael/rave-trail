@@ -8,7 +8,8 @@ export type AbilityEffect =
   | { readonly kind: 'extra-turn'; readonly count: number }
   | { readonly kind: 'bleed'; readonly amount: number; readonly turns: number }
   | { readonly kind: 'invulnerable'; readonly teamTurns: number }
-  | { readonly kind: 'attack-block'; readonly teamTurns: number };
+  | { readonly kind: 'attack-block'; readonly teamTurns: number }
+  | { readonly kind: 'damage-boost'; readonly amount: number; readonly teamTurns: number };
 
 export interface AbilityDefinition {
   readonly id: string;
@@ -45,6 +46,11 @@ export const abilities = {
   'strong-strike': {
     id: 'strong-strike', name: 'Golpe forte', energyCost: 30, target: 'enemy', icon: '/media/abilities/strong-strike.jpg',
     description: 'Causa 30 de dano a um inimigo.', effects: [{ kind: 'damage', amount: 30 }],
+  },
+  'internal-strength': {
+    id: 'internal-strength', name: 'Força interna', energyCost: 35, target: 'ally', icon: '/media/abilities/internal-strength.png',
+    description: 'Aumenta em 15 o dano das habilidades usadas por um aliado ou por si mesmo no próximo turno da equipe. Não acumula bônus.',
+    effects: [{ kind: 'damage-boost', amount: 15, teamTurns: 1 }],
   },
   'quick-slash': {
     id: 'quick-slash', name: 'Corte rápido', energyCost: 35, target: 'enemy', icon: '/media/abilities/quick-slash.png',

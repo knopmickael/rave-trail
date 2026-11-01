@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { abilities } from '@game/content/abilities';
 import { STARTER_UNIT_IDS, units } from '@game/content/units';
-import { createBattle, previewActions, resolvePlayerTurn, type BattleRecord } from '@game/core/battle';
+import { createBattle, executeTurn, previewActions, resolvePlayerTurn, type BattleRecord } from '@game/core/battle';
 import { api, ApiError } from '../../api';
 import { BattleScreen } from './BattleScreen';
 import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
@@ -51,12 +51,22 @@ it('apresenta todos os personagens com suas quatro habilidades e a energia de ca
     expect(within(row).getAllByRole('button', { name: new RegExp(` — ${name}$`) })).toHaveLength(4);
     expect(within(row).getByRole('progressbar', { name: `HP de ${name}` })).toHaveAttribute('aria-valuenow', '100');
   }
-  expect(screen.getByRole('button', { name: 'Golpe forte — Saqueador da estrada I (inimigo)' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Força interna — Saqueador da estrada I (inimigo)' })).toBeDisabled();
   expect(screen.queryByRole('button', { name: /Voltar ao mapa|Voltar à Batalha rápida|Retomar/ })).not.toBeInTheDocument();
   expect(endTurn()).toBeEnabled();
   expect(screen.queryByText('VS')).not.toBeInTheDocument();
   expect(screen.queryByRole('region', { name: 'Detalhes da habilidade' })).not.toBeInTheDocument();
 });
+
+it.each([[100, ''], [66, ''], [65, 'hp-track--warning'], [31, 'hp-track--warning'], [30, 'hp-track--critical'], [0, 'hp-track--critical']])(
+  'colore a barra de vida em %i HP conforme o limite', (hp, modifier) => {
+    const record = initial();
+    record.state.teams.player.units[0].hp = hp;
+    render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
+    const track = screen.getByRole('progressbar', { name: 'HP de Ravi de Berdal' });
+    expect(track).toHaveClass('hp-track', ...(modifier ? [modifier] : []));
+    expect(track).not.toHaveClass(...(modifier === 'hp-track--critical' ? ['hp-track--warning'] : modifier === 'hp-track--warning' ? ['hp-track--critical'] : ['hp-track--warning', 'hp-track--critical']));
+  });
 
 it('marca personagens derrotados com X vermelho e desativa suas habilidades', () => {
   const record = initial();
@@ -99,7 +109,7 @@ it('substitui o único Ravi por Berserk com novas habilidades e registra a trans
   expect(ravi.querySelector('.fighter-portrait img')).toHaveAttribute('src', '/media/characters/ravi-berserk-face.png');
   expect(skill('Reter muita energia', 'Ravi Berserk')).toBeEnabled();
   expect(screen.queryByRole('button', { name: 'Reter energia — Ravi de Berdal' })).not.toBeInTheDocument();
-  expect(screen.getByRole('status')).toHaveTextContent('Ravi de Berdal despertou como Ravi Berserk!');
+  expect(screen.queryByRole('status')).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Registro do combate' }));
   expect(within(screen.getByRole('dialog', { name: 'Registro do combate' })).getByText('Ravi de Berdal despertou como Ravi Berserk!')).toBeInTheDocument();
 });
@@ -242,6 +252,26 @@ it('Guarda entra diretamente na fila e não permite proteger outro aliado', asyn
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
   await user.click(endTurn());
   await vi.waitFor(() => expect(api.turn).toHaveBeenCalledWith(initial().id, 0, expect.any(String), [{ actorId: 'player-0', abilityId: 'guard' }]));
+});
+
+it('permite direcionar Força interna a um aliado e exibe seu efeito após a confirmação', async () => {
+  const record = initial();
+  record.state = createBattle(['road-raider-1-base', 'protagonist-secondary-base'].map((id) => units.find((unit) => unit.id === id)!),
+    [units.find((unit) => unit.id === 'road-raider-3-base')!], Object.values(abilities));
+  record.state.teams.player.energy = 100;
+  vi.mocked(api.turn).mockImplementation(async (_id, _revision, _requestId, actions) => {
+    const outcome = executeTurn(record.state, actions);
+    return { battle: { ...record, revision: 1, state: outcome.state, log: outcome.events }, events: outcome.events };
+  });
+  const user = userEvent.setup();
+  render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
+  await user.click(skill('Força interna', 'Saqueador da estrada I'));
+  expect(energy()).toHaveAttribute('aria-valuenow', '65');
+  expect(screen.getByRole('status')).toHaveTextContent('Escolha um aliado');
+  await user.click(screen.getByRole('button', { name: 'Alvo: Doko de Berdal' }));
+  await user.click(endTurn());
+  expect(await screen.findByRole('img', { name: 'Efeito ativo: Força interna' })).toHaveAttribute('src', '/media/abilities/internal-strength.png');
+  expect(api.turn).toHaveBeenCalledWith(record.id, 0, expect.any(String), [{ actorId: 'player-0', abilityId: 'internal-strength', targetId: 'player-1' }]);
 });
 
 it('ressurreição reserva 50 de energia e permite selecionar somente um aliado derrotado', async () => {

@@ -50,7 +50,7 @@ describe('motor determinístico de combate', () => {
   });
 
   it('aplica dano forte', () => {
-    const initial = state(['road-raider-1-base']); initial.teams.player.energy = 30;
+    const initial = state(['road-raider-3-base']); initial.teams.player.energy = 30;
     expect(previewActions(initial, [action(0, 'strong-strike', 'enemy-0')]).state.teams.enemy.units[0].hp).toBe(70);
   });
 

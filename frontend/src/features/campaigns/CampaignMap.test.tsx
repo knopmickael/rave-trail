@@ -6,7 +6,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createInitialProgress } from '@game/contracts';
 import { campaigns } from '@game/content/campaigns';
 import { encounters } from '@game/content/encounters';
-import { FINAL_BATTLE_REQUIREMENT } from '@game/content/campaign-rules';
+import { FINAL_BATTLE_REQUIREMENT, SECOND_FINAL_ENCOUNTER_ID, OSIRIS_BATTLE_REQUIREMENT } from '@game/content/campaign-rules';
 import { abilities } from '@game/content/abilities';
 import { narrativeCharacters, STARTER_UNIT_IDS, units } from '@game/content/units';
 import { createBattle } from '@game/core/battle';
@@ -17,7 +17,7 @@ vi.mock('../../api', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../api')>();
   return { ...original, api: { ...original.api, campaignMap: vi.fn(), catalog: vi.fn(), progress: vi.fn(), startBattle: vi.fn() } };
 });
-const mapData = () => ({ campaign: { ...campaigns[0], available: true }, encounters: encounters.map((entry) => ({ ...entry, available: entry.position === 1, completed: false, activeBattleId: null })) });
+const mapData = () => ({ campaign: { ...campaigns[0], available: true }, encounters: encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => ({ ...entry, available: entry.position === 1, completed: false, activeBattleId: null })) });
 const battle = { id: '00000000-0000-4000-8000-000000000001', encounterId: encounters[0].id, revision: 0,
   state: createBattle(STARTER_UNIT_IDS.map((id) => units.find((unit) => unit.id === id)!), encounters[0].enemyUnitIds.map((id) => units.find((unit) => unit.id === id)!), Object.values(abilities)) };
 
@@ -101,11 +101,17 @@ it('abre o prólogo pelo pergaminho ao lado do título e fecha a história sem i
   expect(screen.getByRole('button', { name: 'Batalha 1: Saqueadores da estrada' })).toBeEnabled();
 });
 
-it('mostra o pergaminho de introdução somente na primeira campanha', async () => {
+it('mostra o pergaminho com a história anterior à batalha 01 da segunda campanha', async () => {
   vi.mocked(api.campaignMap).mockResolvedValue({ campaign: { ...campaigns[1], available: true }, encounters: [] });
+  const user = userEvent.setup();
   render(<CampaignMap {...props()} campaignId="path-2" />);
-  await screen.findByRole('heading', { name: 'Nada era o que parecia' });
-  expect(screen.queryByRole('button', { name: 'Ler história de Rave Trail' })).not.toBeInTheDocument();
+  await screen.findByRole('heading', { name: 'Além das Fronteiras' });
+  await user.click(screen.getByRole('button', { name: 'Ler história de Além das Fronteiras' }));
+  const dialog = screen.getByRole('dialog', { name: 'História de Além das Fronteiras' });
+  expect(within(dialog).getByText(/O confronto com Exal deixou marcas em Ravi, Doko e Anna/)).toBeInTheDocument();
+  expect(within(dialog).getByText(/o grupo precisa atravessar uma fronteira sob vigilância/)).toBeInTheDocument();
+  await user.click(within(dialog).getByRole('button', { name: 'Fechar história' }));
+  expect(dialog).not.toHaveAttribute('open');
 });
 
 it('exibe os slots vazios e orienta escolher personagens sem oferecer montagem no modal', async () => {
@@ -176,4 +182,38 @@ it('trata erro de carregamento e sessão expirada sem inventar progresso', async
   expect(screen.queryByRole('button', { name: /^Batalha 1:/ })).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
   await vi.waitFor(() => expect(handlers.onSessionExpired).toHaveBeenCalledTimes(1));
+});
+
+it.each([true, false])('abre o mesmo modal de slots da lista de personagens somente ao iniciar a final da campanha 02 (equipe salva: %s)', async (hasTeam) => {
+  const data = { campaign: { ...campaigns[1], available: true }, encounters: encounters.filter((entry) => entry.campaignId === 'path-2')
+    .map((entry) => ({ ...entry, available: true, completed: false, activeBattleId: null })) };
+  vi.mocked(api.campaignMap).mockResolvedValue(data);
+  const progress = createInitialProgress();
+  if (hasTeam) progress.selectedTeam = [...STARTER_UNIT_IDS];
+  vi.mocked(api.progress).mockResolvedValue(progress);
+  const user = userEvent.setup();
+  render(<CampaignMap {...props()} campaignId="path-2" />);
+  await user.click(await screen.findByRole('button', { name: 'Batalha 6: O verdadeiro rei demônio' }));
+  expect(screen.getAllByRole('button', { name: /^Batalha \d:/ })).toHaveLength(6);
+  expect(screen.getByRole('img', { name: 'Mapa da campanha' })).toHaveAttribute('src', '/media/images/mapa-campanha-01.png');
+  const dialog = screen.getByRole('dialog', { name: 'O verdadeiro rei demônio' });
+  expect(within(dialog).queryByText(OSIRIS_BATTLE_REQUIREMENT)).not.toBeInTheDocument();
+  expect(within(dialog).queryByRole('radio')).not.toBeInTheDocument();
+  expect(screen.queryByText(/provisóri|temporári/i)).not.toBeInTheDocument();
+  const start = within(dialog).getByRole('button', { name: 'Iniciar batalha' });
+  expect(start).toBeEnabled();
+  await user.click(start);
+  expect(api.startBattle).not.toHaveBeenCalled();
+  const slots = screen.getByRole('dialog', { name: 'Escolher posição na equipe' });
+  expect(slots).toHaveClass('team-dialog');
+  expect(dialog).not.toHaveAttribute('open');
+  expect(within(slots).getByText(OSIRIS_BATTLE_REQUIREMENT)).toBeInTheDocument();
+  expect(within(slots).getAllByRole('button', { name: /^Usar slot/ })).toHaveLength(3);
+  await user.click(within(slots).getByRole('button', { name: 'Cancelar' }));
+  expect(slots).not.toHaveAttribute('open');
+  expect(dialog).toHaveAttribute('open');
+  await user.click(start);
+  await user.click(within(slots).getByRole('button', { name: /^Usar slot 2/ }));
+  await vi.waitFor(() => expect(api.startBattle).toHaveBeenCalledWith(SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 1 }));
+  expect(progress.selectedTeam).toEqual(hasTeam ? [...STARTER_UNIT_IDS] : [null, null, null]);
 });

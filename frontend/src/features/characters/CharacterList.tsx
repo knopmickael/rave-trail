@@ -4,6 +4,7 @@ import type { UnitDefinition } from '@game/content/units';
 import { api, ApiError } from '../../api';
 import { CharacterArt } from './CharacterArt';
 import { AbilityIcon } from './AbilityIcon';
+import { TeamSlotDialog } from './TeamSlotDialog';
 import './characters.css';
 
 interface CharacterListProps {
@@ -132,28 +133,9 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
 
           {selected && <CharacterDetails unit={selected} catalog={catalog} unlocked={unlocked.has(selected.id)} busy={busy} onAdd={chooseSlot} />}
 
-          <dialog ref={slotDialog} className="team-dialog" aria-labelledby="team-dialog-title"
-            onCancel={(event) => { if (busy) event.preventDefault(); else { setPendingUnit(null); setTeamError(''); } }}
-            onClick={(event) => { if (event.target === event.currentTarget) closeSlotDialog(); }}>
-            <div className="team-dialog-content">
-              <h2 id="team-dialog-title">Escolher posição na equipe</h2>
-              <p>Escolha o slot para <strong>{pendingUnit?.name}</strong>. Se estiver ocupado, o personagem será substituído.</p>
-              <div className="team-slot-choices">
-                {progress.selectedTeam.map((id, slot) => {
-                  const occupant = units.find((unit) => unit.id === id);
-                  return <button key={slot} type="button" className="team-slot-choice" disabled={busy}
-                    aria-label={`Usar slot ${slot + 1}${occupant ? ` — substituir ${occupant.name}` : ' — vazio'}`}
-                    onClick={() => pendingUnit && saveSlot(slot, pendingUnit.id)}>
-                    <span className="slot-choice-picture">{occupant ? <CharacterArt unit={occupant} face /> : <span aria-hidden="true">×</span>}</span>
-                    <strong>Slot {slot + 1}</strong><small>{occupant?.name ?? 'Vazio'}</small>
-                  </button>;
-                })}
-              </div>
-              {teamError && pendingUnit && <p className="feedback" role="alert">{teamError}</p>}
-              <button className="text-button" disabled={busy} onClick={closeSlotDialog}>Cancelar</button>
-              {busy && <p role="status">Salvando equipe…</p>}
-            </div>
-          </dialog>
+          <TeamSlotDialog dialogRef={slotDialog} team={progress.selectedTeam} units={units}
+            characterName={pendingUnit?.name ?? ''} busy={busy} error={pendingUnit ? teamError : ''}
+            onChoose={(slot) => { if (pendingUnit) void saveSlot(slot, pendingUnit.id); }} onClose={closeSlotDialog} />
         </div>
       )}
     </main>

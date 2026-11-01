@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CampaignMapData, GameCatalog, PlayerProgress } from '@game/contracts';
 import type { BattleRecord } from '@game/core/battle';
-import { FINAL_BATTLE_REQUIREMENT, FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
+import { FINAL_BATTLE_REQUIREMENT, FINAL_ENCOUNTER_ID, SECOND_FINAL_ENCOUNTER_ID,
+  OSIRIS_BATTLE_REQUIREMENT } from '@game/content/campaign-rules';
 import { api, ApiError } from '../../api';
 import { assets } from '../../assets';
 import { CharacterArt } from '../characters/CharacterArt';
+import { TeamSlotDialog } from '../characters/TeamSlotDialog';
 import { CampaignMapBackground } from './CampaignMapBackground';
 import { CampaignStory } from './CampaignStory';
 import '../characters/characters.css';
@@ -28,6 +30,7 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
   const [busy, setBusy] = useState(false);
   const canvas = useRef<HTMLDivElement>(null);
   const drawer = useRef<HTMLDialogElement>(null);
+  const slotDialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -56,13 +59,28 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
   const next = map?.encounters.find((entry) => entry.available && !entry.completed)?.id;
   const teamSize = progress?.selectedTeam.filter(Boolean).length ?? 0;
   const missingRavi = selected?.id === FINAL_ENCOUNTER_ID && !progress?.selectedTeam.includes('protagonist-main-base');
+  const osirisBattle = selected?.id === SECOND_FINAL_ENCOUNTER_ID;
   function closeDrawer() { if (!busy) { drawer.current?.close(); setStartError(''); } }
+  function closeSlotDialog() {
+    if (busy) return;
+    slotDialog.current?.close(); setStartError(''); drawer.current?.showModal();
+  }
 
-  async function startBattle() {
+  function requestStart() {
     if (!selected || busy || !selected.available || missingRavi) return;
+    if (osirisBattle) { drawer.current?.close(); setStartError(''); slotDialog.current?.showModal(); }
+    else void startBattle();
+  }
+
+  async function startBattle(osirisSlot?: 0 | 1 | 2) {
+    if (!selected || busy || !selected.available || missingRavi || osirisBattle && osirisSlot === undefined) return;
     setBusy(true);
     setStartError('');
-    try { onBattleStarted(await api.startBattle(selected.id), selected.title); }
+    try {
+      const battle = await (osirisBattle ? api.startBattle(selected.id, { osirisSlot: osirisSlot! }) : api.startBattle(selected.id));
+      slotDialog.current?.close();
+      onBattleStarted(battle, selected.title);
+    }
     catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) onSessionExpired();
       else setStartError(cause instanceof Error ? cause.message : 'Não foi possível iniciar a batalha.');
@@ -71,7 +89,7 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
 
   return (
     <main className="campaign-map-page">
-      <div className="map-canvas" ref={canvas} role="region" aria-label="Mapa da primeira campanha" tabIndex={0}>
+      <div className="map-canvas" ref={canvas} role="region" aria-label={campaignId === 'path-1' ? 'Mapa da primeira campanha' : 'Mapa da segunda campanha'} tabIndex={0}>
         <div className="map-world">
           {campaignId === 'path-1' ? <CampaignMapBackground />
             : <img className="campaign-map-image" src={assets.campaignMap} alt="Mapa da campanha" draggable={false} />}
@@ -81,7 +99,7 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
               style={{ left: `${entry.mapX}%`, top: `${entry.mapY}%` }} disabled={!entry.available}
               data-next={entry.id === next} aria-label={`Batalha ${entry.position}: ${entry.title}${entry.available ? '' : ' — bloqueada'}`}
               title={entry.available ? entry.title : `Vença a batalha ${entry.position - 1} para continuar.`}
-              onClick={() => { setSelectedId(entry.id); setStartError(''); drawer.current?.showModal(); }}>
+               onClick={() => { setSelectedId(entry.id); setStartError(''); drawer.current?.showModal(); }}>
               <span>{entry.position}</span>{entry.completed && <span className="map-completed-check" aria-hidden="true">✓</span>}
             </button>
           ))}
@@ -91,8 +109,8 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
       <header className="map-header">
         <button className="campaign-back" onClick={onBack} aria-label="Voltar às campanhas"><span aria-hidden="true">←</span></button>
         <div className="map-heading"><div className="map-title-row">
-          <h1>{map?.campaign.title ?? 'Primeira campanha'}</h1>
-          {campaignId === 'path-1' && <CampaignStory />}
+          <h1>{map?.campaign.title ?? (campaignId === 'path-1' ? 'Primeira campanha' : 'Segunda campanha')}</h1>
+          {(campaignId === 'path-1' || campaignId === 'path-2') && <CampaignStory campaignId={campaignId} />}
         </div>
           {map && <p>{map.encounters.filter((entry) => entry.completed).length} de {map.encounters.length} batalhas vencidas</p>}
         </div>
@@ -131,18 +149,20 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
               })}
             </div>
              <h3>História</h3><p className="encounter-story">{selected.story}</p>
-             {selected.id === FINAL_ENCOUNTER_ID && <p className="encounter-requirement">{FINAL_BATTLE_REQUIREMENT}</p>}
-            {selected.provisional && <p className="encounter-provisional">Configuração provisória de encontro.</p>}
+              {selected.id === FINAL_ENCOUNTER_ID && <p className="encounter-requirement">{FINAL_BATTLE_REQUIREMENT}</p>}
           </div>}
           <footer className="encounter-drawer-footer">
             {startError && <p className="feedback" role="alert">{startError}</p>}
-            {!teamSize && <p>Escolha pelo menos um personagem para sua equipe antes de iniciar.</p>}
-            <button className="fantasy-button compact" disabled={busy || !teamSize || missingRavi} onClick={startBattle}>
+            {!teamSize && !osirisBattle && <p>Escolha pelo menos um personagem para sua equipe antes de iniciar.</p>}
+            <button className="fantasy-button compact" disabled={busy || missingRavi || (!osirisBattle && !teamSize)} onClick={requestStart}>
               {busy ? 'Preparando batalha…' : 'Iniciar batalha'}
             </button>
           </footer>
         </div>
       </dialog>
+      {progress && catalog && <TeamSlotDialog dialogRef={slotDialog} team={progress.selectedTeam} units={catalog.units}
+        characterName="Grande rei Osiris" description={OSIRIS_BATTLE_REQUIREMENT} busy={busy} error={startError}
+        busyText="Preparando batalha…" onChoose={(slot) => { void startBattle(slot); }} onClose={closeSlotDialog} />}
     </main>
   );
 }

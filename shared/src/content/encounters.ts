@@ -56,8 +56,44 @@ export const encounters: readonly EncounterDefinition[] = [
   },
   {
     id: 'path-1-encounter-7', campaignId: 'path-1', position: 7, title: 'Exal — Verdadeiro poder',
-    story: 'No coração do território das trevas, Exal revela seu verdadeiro poder. Ravi de Berdal avança sozinho para enfrentá-lo e desperta como Ravi Berserk durante o duelo. As respostas encontradas na estrada apontam para interesses maiores do que os ataques a um único vilarejo.',
+    story: 'No coração do território das trevas, Exal revela seu verdadeiro poder. Ravi de Berdal desperta como Ravi Berserk e avança ao lado de seus companheiros para enfrentar o inimigo. As respostas encontradas na estrada apontam para interesses maiores do que os ataques a um único vilarejo.',
     enemyUnitIds: ['rival-b-final-mode'], rewardUnitIds: [],
     mapX: 85.4, mapY: 25.2, provisional: false,
+  },
+  {
+    id: 'path-2-encounter-1', campaignId: 'path-2', position: 1, title: 'Os guardiões da fronteira',
+    story: 'Após a queda de Exal, pistas sobre os ataques levam Ravi, Doko e Anna para além de Berdal. Na fronteira do reino de Osiris, o General Abel, a Guardiã da fronteira e o Samurai Erlang exigem uma prova de suas intenções antes de permitir que alcancem a corte.',
+    enemyUnitIds: ['general-abel', 'guardia-da-fronteira', 'samurai-erlang'], rewardUnitIds: [],
+    mapX: 46.3, mapY: 67.5, provisional: true,
+  },
+  {
+    id: 'path-2-encounter-2', campaignId: 'path-2', position: 2, title: 'A prova da corte',
+    story: 'O Sábio e o Emissário do castelo recebem os viajantes diante do Grande rei Osiris. A corte suspeita que as mesmas forças que arruinaram as rotas de Berdal estejam enfraquecendo os selos do reino. Um confronto de avaliação decide se os heróis estão preparados para investigar. Após a prova, Maga Ártemis compartilha os registros dos santuários esquecidos.',
+    enemyUnitIds: ['sabio-do-castelo', 'emissario-do-castelo', 'grande-rei-osiris'], rewardUnitIds: [],
+    mapX: 35.8, mapY: 50.2, provisional: true,
+  },
+  {
+    id: 'path-2-encounter-3', campaignId: 'path-2', position: 3, title: 'O caminho dos santuários',
+    story: 'Guiados pelos registros da corte, os heróis encontram Espadachim Lupus, Feiticeira Ravina e Monge Omero. Os três protegem a trilha dos santuários e recusam entregar seus segredos a desconhecidos. Superar a prova permitirá descobrir quem está corrompendo os selos antigos.',
+    enemyUnitIds: ['espadachim-lupus', 'feiticeira-ravina', 'monge-omero'], rewardUnitIds: [],
+    mapX: 43.5, mapY: 41.8, provisional: true,
+  },
+  {
+    id: 'path-2-encounter-4', campaignId: 'path-2', position: 4, title: 'As três bestas ancestrais',
+    story: 'Ravok, Fenrir e Enkei despertam diante do último santuário. A corrupção transformou seus instintos de proteção em fúria. Os heróis precisam enfrentar as três bestas lendárias para alcançar o selo e revelar a passagem usada pelas forças demoníacas.',
+    enemyUnitIds: ['besta-lendaria-ravok', 'besta-lendaria-fenrir', 'besta-lendaria-enkei'], rewardUnitIds: [],
+    mapX: 67.8, mapY: 70.2, provisional: true,
+  },
+  {
+    id: 'path-2-encounter-5', campaignId: 'path-2', position: 5, title: 'A vanguarda de Rakin',
+    story: 'Além do selo rompido, Lorde demônio Rakin reúne um Mago demônio e um Combatente Demônio para abrir caminho até o reino. Derrotar a vanguarda interromperá a invasão, mas a energia por trás de Rakin revela um inimigo ainda maior. Osiris decide acompanhar pessoalmente o confronto final.',
+    enemyUnitIds: ['lorde-demonio-rakin', 'mago-demonio', 'combatente-demonio'], rewardUnitIds: [],
+    mapX: 74.5, mapY: 33, provisional: true,
+  },
+  {
+    id: 'path-2-encounter-6', campaignId: 'path-2', position: 6, title: 'O verdadeiro rei demônio',
+    story: 'No trono além da fenda, o Verdadeiro Rei demônio revela que os ataques às rotas comerciais eram parte de um plano para isolar os reinos. Grande rei Osiris ocupa um dos três slots da equipe para ajudar os heróis a enfrentar a entidade e fechar a passagem. A vitória encerra esta etapa da investigação e prepara a próxima jornada.',
+    enemyUnitIds: ['verdadeiro-rei-demonio'], rewardUnitIds: [],
+    mapX: 85.4, mapY: 25.2, provisional: true,
   },
 ];

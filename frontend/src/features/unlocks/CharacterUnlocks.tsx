@@ -49,7 +49,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
       : <div className="unlocks-container" role="region" aria-label="Lista de missões" tabIndex={0}>
         <div className="unlocks-grid">
           {data.characters.map((unit) => {
-            const locked = !unit.campaignAvailable;
+            const locked = !unit.unlocked && !unit.campaignAvailable;
             return <section key={unit.id} className={`unlock-card ${unit.unlocked ? 'unlock-card--available' : ''} ${locked ? 'unlock-card--locked' : ''}`}
               aria-labelledby={`unlock-${unit.id}`} aria-disabled={locked}>
               <div className="unlock-card-content" inert={locked}>
@@ -61,7 +61,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
               </header>
               {unit.kind === 'premium' ? <>
                 <div className="unlock-card-body unlock-premium"><p className="unlock-price">{price.format(unit.priceUsd)}</p></div>
-                <button type="button" className="fantasy-button compact" disabled>Adquirir personagem</button>
+                <button type="button" className="fantasy-button compact" disabled>{unit.unlocked ? 'Personagem adquirido' : 'Adquirir personagem'}</button>
               </> : <ul className="unlock-requirements" tabIndex={locked ? -1 : 0} aria-label={`Requisitos de ${unit.name}`}>
                 {unit.requirements.map((requirement, index) => <li key={index}>
                   <p id={`unlock-${unit.id}-${index}`}>{requirement.description}</p>

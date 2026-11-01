@@ -27,6 +27,7 @@ export function createInitialProgress(): PlayerProgress {
   };
 }
 export type TeamSlots = [string | null, string | null, string | null];
+export interface CampaignBattleOptions { osirisSlot?: 0 | 1 | 2 }
 
 export interface GameCatalog {
   characters: readonly NarrativeCharacter[];

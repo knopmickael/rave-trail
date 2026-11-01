@@ -1,7 +1,7 @@
 import type { CharacterId, UnitDefinition } from '@game/content/units';
 
 type Palette = { skin: string; hair: string; coat: string; accent: string; longHair?: boolean };
-const palettes: Record<CharacterId, Palette> = {
+const palettes: Partial<Record<CharacterId, Palette>> = {
   'protagonist-main': { skin: '#e8b48d', hair: '#693c2b', coat: '#a45532', accent: '#e7c578' },
   'protagonist-secondary': { skin: '#d8ac8a', hair: '#263b42', coat: '#3d6371', accent: '#b5d2ce' },
   'protagonist-female': { skin: '#bc8769', hair: '#352b36', coat: '#477769', accent: '#e8c978', longHair: true },
@@ -22,9 +22,10 @@ const palettes: Record<CharacterId, Palette> = {
 
 /** Arte vetorial temporária original, substituível pelas ilustrações definitivas. */
 export function MockCharacterDrawing({ unit, face = false }: { unit: UnitDefinition; face?: boolean }) {
+  const base = palettes[unit.characterId] ?? { skin: '#d8ac8a', hair: '#263b42', coat: '#52694d', accent: '#dcc98a' };
   const palette = unit.id === 'rival-b-final-mode'
-    ? { ...palettes[unit.characterId], coat: '#49232c', accent: '#dc9b54' }
-    : palettes[unit.characterId];
+    ? { ...base, coat: '#49232c', accent: '#dc9b54' }
+    : base;
   const beast = unit.characterId === 'legendary-beast';
   return (
     <svg className="character-art" viewBox={face ? '42 8 116 116' : '0 0 200 340'} aria-hidden="true" focusable="false">

@@ -35,7 +35,7 @@ beforeEach(() => {
   vi.mocked(api.characterUnlocks).mockResolvedValue(characterUnlockProgress(units, [], []));
   vi.mocked(api.quickBattle).mockResolvedValue({ opponents: units.filter((unit) => encounters[0].enemyUnitIds.includes(unit.id)) });
   vi.mocked(api.campaigns).mockResolvedValue(campaigns.map((campaign) => ({ ...campaign, available: campaign.id === 'path-1' })));
-  vi.mocked(api.campaignMap).mockResolvedValue({ campaign: { ...campaigns[0], available: true }, encounters: encounters.map((entry) => ({ ...entry, available: entry.position === 1, completed: false, activeBattleId: null })) });
+  vi.mocked(api.campaignMap).mockResolvedValue({ campaign: { ...campaigns[0], available: true }, encounters: encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => ({ ...entry, available: entry.position === 1, completed: false, activeBattleId: null })) });
   vi.mocked(api.startBattle).mockResolvedValue({ id: '00000000-0000-4000-8000-000000000001', encounterId: encounters[0].id, revision: 0,
     state: createBattle(STARTER_UNIT_IDS.map((id) => units.find((unit) => unit.id === id)!), encounters[0].enemyUnitIds.map((id) => units.find((unit) => unit.id === id)!), Object.values(abilities)) });
   vi.mocked(api.startQuickBattle).mockResolvedValue({ id: '00000000-0000-4000-8000-000000000002', encounterId: null, revision: 0,

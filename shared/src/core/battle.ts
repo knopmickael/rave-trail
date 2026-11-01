@@ -22,6 +22,9 @@ export interface Fighter {
   bleedAmount?: number;
   invulnerableExpiresAt?: number | null;
   attackBlockedExpiresAt?: number | null;
+  damageBoostAmount?: number;
+  damageBoostStartsAt?: number | null;
+  damageBoostExpiresAt?: number | null;
 }
 export interface BattleTeam { units: Fighter[]; energy: number; turns: number; extraTurns: number }
 export interface BattleState {
@@ -65,6 +68,11 @@ function guardReduction(state: BattleState, unit: Fighter) {
   return effect?.kind === 'guard' ? effect.reduction : 10;
 }
 
+export function damageBonus(unit: Fighter, teamTurns: number) {
+  return unit.damageBoostStartsAt != null && unit.damageBoostExpiresAt != null
+    && unit.damageBoostStartsAt <= teamTurns && unit.damageBoostExpiresAt > teamTurns ? unit.damageBoostAmount ?? 0 : 0;
+}
+
 function clearEffects(unit: Fighter) {
   unit.guardExpiresAt = null;
   unit.guardAbilityId = null;
@@ -73,6 +81,9 @@ function clearEffects(unit: Fighter) {
   unit.bleedAmount = 0;
   unit.invulnerableExpiresAt = null;
   unit.attackBlockedExpiresAt = null;
+  unit.damageBoostAmount = 0;
+  unit.damageBoostStartsAt = null;
+  unit.damageBoostExpiresAt = null;
 }
 
 function copyState(state: BattleState): BattleState {
@@ -111,6 +122,12 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
       unit.attackBlockedExpiresAt = null;
       events.push({ kind: 'guard', message: `${unit.name} pode voltar a atacar.` });
     }
+    if (unit.damageBoostExpiresAt != null && unit.damageBoostExpiresAt <= team.turns) {
+      unit.damageBoostAmount = 0;
+      unit.damageBoostStartsAt = null;
+      unit.damageBoostExpiresAt = null;
+      events.push({ kind: 'guard', message: `A Força interna de ${unit.name} expirou.` });
+    }
   }
   // A invulnerabilidade protege contra o turno da equipe adversária; por isso,
   // seu prazo é contado no relógio dessa equipe e expira no início do turno dela.
@@ -138,8 +155,8 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
     }
   }
   if (bleeding) result(state, events);
-  // O duelo começa com Ravi base; após a primeira rodada adversária, a transformação
-  // substitui a unidade no mesmo slot, preservando HP proporcional e efeitos ativos.
+  // Compatibilidade com partidas antigas que ainda possuem uma transformação pendente.
+  // A substituição preserva o slot, o HP proporcional e os efeitos ativos.
   if (side === 'player' && state.teams.enemy.turns > 0 && state.pendingTransformation) {
     const { actorId, unit } = state.pendingTransformation;
     const actor = team.units.find((entry) => entry.id === actorId);
@@ -166,7 +183,8 @@ export function createBattle(player: readonly UnitDefinition[], enemy: readonly 
     energy: 0, turns: 0, extraTurns: 0,
     units: units.map((unit, index) => ({ id: `${side}-${index}`, unitId: unit.id, name: unit.name, portrait: unit.portrait,
       hp: unit.maxHp, maxHp: unit.maxHp, abilityIds: [...unit.abilityIds], guardExpiresAt: null, guardReduction: null,
-      bleedTurns: 0, bleedAmount: 0, invulnerableExpiresAt: null, attackBlockedExpiresAt: null })),
+      bleedTurns: 0, bleedAmount: 0, invulnerableExpiresAt: null, attackBlockedExpiresAt: null,
+      damageBoostAmount: 0, damageBoostStartsAt: null, damageBoostExpiresAt: null })),
   });
   const state: BattleState = { teams: { player: makeTeam(player, 'player'), enemy: makeTeam(enemy, 'enemy') },
     abilities: Object.fromEntries(abilities.map((ability) => [ability.id, { ...ability, effects: ability.effects.map((effect) => ({ ...effect })) }])),
@@ -248,7 +266,7 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
               events.push({ kind: 'guard', message: `${target.name} está invulnerável e não recebe dano.`, ...targetMetadata });
             } else {
               const reduction = target.guardExpiresAt === null ? 0 : guardReduction(state, target);
-              const damage = Math.max(0, effect.amount - reduction);
+              const damage = Math.max(0, effect.amount + damageBonus(actor, team.turns) - reduction);
               target.hp = clamp(target.hp - damage, target.maxHp);
               events.push({ kind: 'damage', message: `${target.name} recebe ${damage} de dano.`, ...targetMetadata });
               if (target.hp === 0) events.push({ kind: 'defeated', message: `${target.name} foi derrotado.`, ...targetMetadata });
@@ -264,8 +282,8 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
             events.push({ kind: 'guard', message: `Guarda aplicada em ${target.name}: −${effect.reduction} por golpe, por ${effect.teamTurns} turnos.`, ...targetMetadata });
           } else if (effect.kind === 'bleed') {
             target.bleedTurns = effect.turns;
-            target.bleedAmount = effect.amount;
-            events.push({ kind: 'damage', message: `${target.name} está sangrando: ${effect.amount} de dano por ${effect.turns} turnos.`, ...targetMetadata });
+            target.bleedAmount = effect.amount + damageBonus(actor, team.turns);
+            events.push({ kind: 'damage', message: `${target.name} está sangrando: ${target.bleedAmount} de dano por ${effect.turns} turnos.`, ...targetMetadata });
           } else if (effect.kind === 'invulnerable') {
             const opposingTeam = state.teams[other(side)];
             target.invulnerableExpiresAt = opposingTeam.turns + 1 + effect.teamTurns;
@@ -274,6 +292,14 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
             const targetTeam = team.units.includes(target) ? team : enemy;
             target.attackBlockedExpiresAt = targetTeam.turns + 1 + effect.teamTurns;
             events.push({ kind: 'guard', message: `${target.name} não poderá atacar durante ${effect.teamTurns} turno(s).`, ...targetMetadata });
+          } else if (effect.kind === 'damage-boost') {
+            const targetTeam = team.units.includes(target) ? team : enemy;
+            const alreadyActive = damageBonus(target, targetTeam.turns) > 0;
+            target.damageBoostAmount = effect.amount;
+            // Renovar o efeito não remove o bônus que já estiver ativo neste turno.
+            if (!alreadyActive) target.damageBoostStartsAt = targetTeam.turns + 1;
+            target.damageBoostExpiresAt = targetTeam.turns + 1 + effect.teamTurns;
+            events.push({ kind: 'guard', message: `${target.name} recebe Força interna: +${effect.amount} de dano no próximo turno da equipe.`, ...targetMetadata });
           }
         }
       }

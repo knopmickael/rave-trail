@@ -1,8 +1,9 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
-import type { CampaignMapData, PlayerProgress, QuickBattleData } from '@game/contracts.js';
+import type { CampaignBattleOptions, CampaignMapData, PlayerProgress, QuickBattleData } from '@game/contracts.js';
 import type { EncounterDefinition } from '@game/content/encounters.js';
-import { FINAL_ENCOUNTER_ID, FINAL_BATTLE_REQUIREMENT } from '@game/content/campaign-rules.js';
+import { FINAL_ENCOUNTER_ID, FINAL_BATTLE_REQUIREMENT, SECOND_FINAL_ENCOUNTER_ID, OSIRIS_UNIT_ID,
+  OSIRIS_BATTLE_REQUIREMENT, withOsiris } from '@game/content/campaign-rules.js';
 import { STARTER_UNIT_IDS, type UnitDefinition } from '@game/content/units.js';
 import { BOT_THINK_MS, TURN_DURATION_MS, createBattle, executeTurn, planEnemyTurn, type BattleAction, type BattleCombo, type BattleRecord, type BattleTurnResult, type BattleEvent } from '@game/core/battle.js';
 import type { BattleRepository } from '../game/battle-repository.js';
@@ -82,6 +83,8 @@ export class PostgresBattleRepository implements BattleRepository {
       const rewards = await client.query<{ unit_id: string }>('SELECT unit_id FROM encounter_rewards WHERE encounter_id = $1', [battle.encounterId]);
       const data = { ...progress,
         completedEncounters: [...new Set([...progress.completedEncounters, battle.encounterId])],
+        availablePathIds: battle.encounterId === FINAL_ENCOUNTER_ID
+          ? [...new Set([...progress.availablePathIds, 'path-2'])] : progress.availablePathIds,
         unlockedUnitIds: [...new Set([...progress.unlockedUnitIds, ...rewards.rows.map((reward) => reward.unit_id)])],
       };
       savedProgress = data;
@@ -198,7 +201,7 @@ export class PostgresBattleRepository implements BattleRepository {
     finally { client.release(); }
   }
 
-  async startBattle(userId: string, encounterId: string): Promise<BattleRecord> {
+  async startBattle(userId: string, encounterId: string, options: CampaignBattleOptions = {}): Promise<BattleRecord> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -210,10 +213,17 @@ export class PostgresBattleRepository implements BattleRepository {
       if (!campaign.rows[0]?.released || !progress.availablePathIds.includes(encounter.campaignId)) throw new GameError(403, 'Esta campanha está bloqueada.');
       const previous = await client.query<{ id: string }>('SELECT id FROM encounters WHERE campaign_id = $1 AND position < $2', [encounter.campaignId, encounter.position]);
       if (previous.rows.some((entry) => !progress.completedEncounters.includes(entry.id))) throw new GameError(403, 'Vença as batalhas anteriores para liberar este encontro.');
-      const selectedTeam = await this.playerTeam(client, userId, progress);
+      const osirisBattle = encounter.id === SECOND_FINAL_ENCOUNTER_ID;
+      if (osirisBattle && ![0, 1, 2].includes(options.osirisSlot as number)) throw new GameError(400, OSIRIS_BATTLE_REQUIREMENT);
+      if (!osirisBattle && options.osirisSlot !== undefined) throw new GameError(400, 'Osiris só é convidado para a batalha final da segunda campanha.');
+      const guestSlots = osirisBattle ? withOsiris(await readTeam(client, userId), options.osirisSlot!) : null;
+      const selectedTeam = guestSlots ? guestSlots.filter((id): id is string => id !== null) : await this.playerTeam(client, userId, progress);
+      if (guestSlots && selectedTeam.some((id) => id !== OSIRIS_UNIT_ID && !progress.unlockedUnitIds.includes(id))) {
+        throw new GameError(403, 'A equipe contém um personagem bloqueado.');
+      }
       const finalBattle = encounter.id === FINAL_ENCOUNTER_ID;
       if (finalBattle && !selectedTeam.includes('protagonist-main-base')) throw new GameError(400, FINAL_BATTLE_REQUIREMENT);
-      const team = finalBattle ? ['protagonist-main-base'] : selectedTeam;
+      const team = selectedTeam;
       const catalog = await new PostgresGameRepository(this.pool).getCatalog(client);
       const findUnit = (id: string): UnitDefinition => {
         const unit = catalog.units.find((entry) => entry.id === id);
@@ -223,9 +233,17 @@ export class PostgresBattleRepository implements BattleRepository {
       if (encounter.enemyUnitIds.length < 1 || encounter.enemyUnitIds.length > 3) throw new GameError(503, 'Este encontro precisa de um a três inimigos cadastrados.');
       const battle: BattleRecord = { id: randomUUID(), encounterId, revision: 0, log: initialLog(),
         combo: { side: 'player', actions: [] }, state: createBattle(team.map(findUnit), encounter.enemyUnitIds.map(findUnit), catalog.abilities) };
+      if (guestSlots) {
+        const occupied = guestSlots.flatMap((id, slot) => id ? [slot] : []);
+        battle.state.teams.player.units.forEach((unit, index) => { unit.id = `player-${occupied[index]}`; });
+        battle.log!.push({ kind: 'turn', message: `Grande rei Osiris ocupa o slot ${options.osirisSlot! + 1} como aliado convidado.` });
+      }
       if (finalBattle) {
         const { id, name, portrait, maxHp, abilityIds } = findUnit('protagonist-main-transformed');
-        battle.state.pendingTransformation = { actorId: 'player-0', unit: { id, name, portrait, maxHp, abilityIds: [...abilityIds] } };
+        const ravi = battle.state.teams.player.units.find((unit) => unit.unitId === 'protagonist-main-base')!;
+        const previousName = ravi.name;
+        Object.assign(ravi, { unitId: id, name, portrait, maxHp, hp: maxHp, abilityIds: [...abilityIds] });
+        battle.log!.push({ kind: 'transform', actorId: ravi.id, targetIds: [ravi.id], message: `${previousName} despertou como ${name}!` });
       }
       Object.assign(battle, this.clocks(battle.state, 'campaign'));
       await this.closeActiveBattles(client, userId);

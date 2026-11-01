@@ -47,16 +47,16 @@ it('persiste as equipes aprovadas em ordem e corrige a formação antiga ao reap
   await seedDatabase(pool);
   await seedDatabase(pool);
   const map = await battles.getMap(user.id, 'path-1');
-  expect(map.encounters.map((entry) => entry.enemyUnitIds)).toEqual(encounters.map((entry) => entry.enemyUnitIds));
+  expect(map.encounters.map((entry) => entry.enemyUnitIds)).toEqual(encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => entry.enemyUnitIds));
   expect(await auth.getProgress(user.id)).toEqual(before);
-  for (const encounter of encounters) {
+  for (const encounter of encounters.filter((entry) => entry.campaignId === 'path-1')) {
     const battle = await battles.startBattle(user.id, encounter.id);
     expect(battle.state.teams.enemy.units.map((unit) => unit.unitId)).toEqual(encounter.enemyUnitIds);
     expect(battle.state.teams.enemy.units.every((unit) => unit.hp === unit.maxHp)).toBe(true);
   }
 });
 
-it('exige Ravi base mesmo com Berserk desbloqueado e mantém a equipe de três slots fora do duelo', async () => {
+it('exige Ravi base e transforma seu próprio slot ao entrar, mantendo a equipe inteira contra Exal', async () => {
   const user = await player();
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || '[\"protagonist-main-transformed\"]'::jsonb) WHERE user_id = $1", [user.id]);
   await game.setTeamSlot(user.id, 0, 'protagonist-main-transformed');
@@ -64,36 +64,45 @@ it('exige Ravi base mesmo com Berserk desbloqueado e mantém a equipe de três s
   expect(sixth.state.teams.enemy.units).toHaveLength(2);
   await expect(battles.startBattle(user.id, FINAL_ENCOUNTER_ID)).rejects.toThrow(FINAL_BATTLE_REQUIREMENT);
   expect((await battles.getBattle(user.id, sixth.id)).state.status).toBe('active');
+  await game.setTeamSlot(user.id, 0, 'protagonist-female-base');
   await game.setTeamSlot(user.id, 2, 'protagonist-main-base');
   const selected = (await auth.getProgress(user.id))!.selectedTeam;
   const final = await battles.startBattle(user.id, FINAL_ENCOUNTER_ID);
-  expect(final.state.teams.player.units.map((unit) => unit.unitId)).toEqual(['protagonist-main-base']);
+  expect(final.state.teams.player.units.map((unit) => unit.unitId)).toEqual(['protagonist-female-base', 'protagonist-secondary-base', 'protagonist-main-transformed']);
+  expect(final.state.teams.player.units[2].id).toBe('player-2');
+  expect(final.state.pendingTransformation).toBeUndefined();
+  expect(final.state.teams.player.energy).toBe(15);
+  expect(final.log?.filter((event) => event.kind === 'transform')).toEqual([expect.objectContaining({ actorId: 'player-2' })]);
   expect(final.state.teams.enemy.units.map((unit) => unit.unitId)).toEqual(['rival-b-final-mode']);
   expect((await auth.getProgress(user.id))!.selectedTeam).toEqual(selected);
-  await expect(battles.submitTurn(user.id, final.id, 0, randomUUID(), [{ actorId: 'player-1', abilityId: 'retain-energy' }])).rejects.toThrow(/inválidos/);
+  await expect(battles.submitTurn(user.id, final.id, 0, randomUUID(), [{ actorId: 'player-3', abilityId: 'retain-energy' }])).rejects.toThrow(/inválidos/);
   await expect(battles.submitTurn(user.id, final.id, 0, randomUUID(), [{ actorId: 'player-0', abilityId: 'retain-energy-plus' }])).rejects.toThrow(/inválidos/);
 });
 
-it('transforma no servidor uma única vez, persiste após recarga e conclui o duelo sem conceder a unidade', async () => {
+it('persiste a transformação inicial uma única vez após recarga e conclui a batalha sem conceder a unidade', async () => {
   const user = await player();
   const progress = await auth.getProgress(user.id);
   const final = await battles.startBattle(user.id, FINAL_ENCOUNTER_ID);
   expect(progress!.unlockedUnitIds).not.toContain('protagonist-main-transformed');
   const requestId = randomUUID();
-  const actions = [{ actorId: 'player-0', abilityId: 'retain-energy' }];
+  expect(final.state.teams.player.units.map((unit) => unit.unitId)).toEqual(['protagonist-main-transformed', ...STARTER_UNIT_IDS.slice(1)]);
+  const actions = [{ actorId: 'player-0', abilityId: 'retain-energy-plus' }];
   const opening = await battles.submitTurn(user.id, final.id, 0, requestId, actions);
-  expect(opening.battle.state.teams.player.units[0].unitId).toBe('protagonist-main-base');
+  expect(opening.battle.state.teams.player.units[0].unitId).toBe('protagonist-main-transformed');
   now += BOT_THINK_MS;
   const [transformed, concurrent] = await Promise.all([battles.getBattle(user.id, final.id), battles.getBattle(user.id, final.id)]);
   expect(concurrent).toEqual(transformed);
   expect(transformed.revision).toBe(2);
-  expect(transformed.state.teams.player.units).toHaveLength(1);
+  expect(transformed.state.teams.player.units).toHaveLength(3);
   expect(transformed.state.teams.player.units[0]).toMatchObject({ id: 'player-0', unitId: 'protagonist-main-transformed',
     name: 'Ravi Berserk', abilityIds: units.find((unit) => unit.id === 'protagonist-main-transformed')!.abilityIds });
   expect(transformed.log?.filter((event) => event.kind === 'transform')).toHaveLength(1);
   expect(await battles.submitTurn(user.id, final.id, 0, requestId, actions)).toEqual(opening);
   expect(await new PostgresBattleRepository(pool, () => 0, () => now).getBattle(user.id, final.id)).toEqual(transformed);
   transformed.state.teams.enemy.units[0].hp = 1;
+  transformed.state.teams.enemy.units[0].guardExpiresAt = null;
+  transformed.state.teams.enemy.units[0].invulnerableExpiresAt = null;
+  transformed.state.teams.player.energy = 100;
   await pool.query('UPDATE battles SET state = $2 WHERE id = $1', [final.id, JSON.stringify(transformed.state)]);
   const victoryId = randomUUID();
   const finishing = [{ actorId: 'player-0', abilityId: 'simple-strike-ii', targetId: 'enemy-0' }];
@@ -101,7 +110,8 @@ it('transforma no servidor uma única vez, persiste após recarga e conclui o du
   expect(victory.battle.state.status).toBe('victory');
   expect(await battles.submitTurn(user.id, final.id, transformed.revision, victoryId, finishing)).toEqual(victory);
   const after = await auth.getProgress(user.id);
-  expect(after!.completedEncounters).toEqual(encounters.map((entry) => entry.id));
+  expect(after!.completedEncounters).toEqual(encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => entry.id));
+  expect(after!.availablePathIds).toContain('path-2');
   expect(after!.unlockedUnitIds).toEqual(progress!.unlockedUnitIds);
   expect(after!.selectedTeam).toEqual(progress!.selectedTeam);
   expect((await battles.getBattle(user.id, final.id)).log?.filter((event) => event.kind === 'transform')).toHaveLength(1);

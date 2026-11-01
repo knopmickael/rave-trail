@@ -1,3 +1,5 @@
+import { SECOND_CAMPAIGN_UNIT_IDS } from './second-campaign.js';
+
 export type UnlockBattleMode = 'quick' | 'multiplayer';
 export interface UnlockRequirement {
   readonly opponentUnitIds?: readonly string[];
@@ -10,6 +12,7 @@ export interface BattleUnlockRule {
   readonly unitId: string;
   readonly description: string;
   readonly requirements: readonly UnlockRequirement[];
+  readonly availableAfterEncounterId?: string;
 }
 
 const berdalUnits = ['protagonist-main-base', 'protagonist-secondary-base', 'protagonist-female-base', 'protagonist-main-transformed'];
@@ -22,6 +25,9 @@ const single = (unitId: string, requirement: UnlockRequirement): BattleUnlockRul
   ({ unitId, description: requirement.description, requirements: [requirement] });
 
 export const battleUnlockRules: readonly BattleUnlockRule[] = [
+  ...SECOND_CAMPAIGN_UNIT_IDS.filter((unitId) => unitId !== 'maga-artemis').map((unitId) => ({
+    ...single(unitId, wins(undefined, 100, 'Vença 100 batalhas na batalha rápida.')),
+  })),
   single('road-raider-1-base', wins('road-raider-1-base', 5, 'Derrote Saqueador da estrada I na Batalha rápida 5 vezes.')),
   single('road-raider-2-base', wins('road-raider-2-base', 5, 'Derrote Saqueador da estrada II na Batalha rápida 5 vezes.')),
   single('road-raider-3-base', wins('road-raider-3-base', 5, 'Derrote Saqueadora da estrada na Batalha rápida 5 vezes.')),
@@ -57,6 +63,7 @@ export const battleUnlockRules: readonly BattleUnlockRule[] = [
 export const premiumUnitPrices: Readonly<Record<string, number>> = {
   'rival-b-final-mode': 9.9,
   'legendary-beast-premium': 9.9,
+  'maga-artemis': 9.9,
 };
 
 export function battleUnlock(unitId: string): { readonly kind: 'battle-wins'; readonly description: string } {

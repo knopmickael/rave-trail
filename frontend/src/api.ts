@@ -1,6 +1,6 @@
 import type { CharacterUnlockData, GameCatalog, PlayerProgress, TeamSlots, User } from '@game/contracts';
 import type { CampaignOption } from '@game/content/campaigns';
-import type { CampaignMapData, QuickBattleData } from '@game/contracts';
+import type { CampaignBattleOptions, CampaignMapData, QuickBattleData } from '@game/contracts';
 import type { BattleAction, BattleRecord, BattleTurnResult } from '@game/core/battle';
 
 export class ApiError extends Error {
@@ -56,8 +56,8 @@ export const api = {
   async campaignMap(id: string): Promise<CampaignMapData> {
     return (await request<{ map: CampaignMapData }>(`/campaigns/${encodeURIComponent(id)}/map`)).map;
   },
-  async startBattle(encounterId: string): Promise<BattleRecord> {
-    return (await request<{ battle: BattleRecord }>(`/encounters/${encodeURIComponent(encounterId)}/battles`, {})).battle;
+  async startBattle(encounterId: string, options: CampaignBattleOptions = {}): Promise<BattleRecord> {
+    return (await request<{ battle: BattleRecord }>(`/encounters/${encodeURIComponent(encounterId)}/battles`, options)).battle;
   },
   async quickBattle(): Promise<QuickBattleData> {
     return (await request<{ quickBattle: QuickBattleData }>('/quick-battle')).quickBattle;

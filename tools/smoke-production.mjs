@@ -69,8 +69,8 @@ try {
   const cookie = rawCookie.split(';')[0];
   const headers = { Origin: origin, Cookie: cookie, 'Content-Type': 'application/json' };
   const missions = (await (await fetch(address + '/api/character-unlocks', { headers })).json()).unlocks.characters;
-  assert.equal(missions.length, 16);
-  assert(missions.every((mission) => !mission.campaignAvailable));
+  assert.equal(missions.length, 33);
+  assert(missions.every((mission) => mission.campaignAvailable === (mission.kind === 'premium')));
   assert.equal((await fetch(address + '/api/profile', { method: 'PATCH', headers, body: JSON.stringify({ name: 'Guardião do build' }) })).status, 200);
   const session = (await (await fetch(address + '/api/auth/me', { headers })).json()).user;
   assert.equal(session.name, 'Guardião do build');

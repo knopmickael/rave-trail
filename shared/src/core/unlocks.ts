@@ -17,7 +17,7 @@ export function characterUnlockProgress(units: readonly Pick<UnitDefinition, 'id
   const opponents = campaignOpponentUnitIds ? new Set(campaignOpponentUnitIds) : null;
   const characters: CharacterUnlockProgress[] = [];
   for (const unit of units) {
-    const campaignAvailable = opponents === null || opponents.has(unit.id);
+    const campaignAvailable = unlocked.has(unit.id) || premiumUnitPrices[unit.id] !== undefined || opponents === null || opponents.has(unit.id);
     const rule = battleUnlockRules.find((entry) => entry.unitId === unit.id);
     if (rule) {
       const resetAt = resetAtByUnitId[unit.id];
