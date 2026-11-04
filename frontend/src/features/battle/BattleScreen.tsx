@@ -53,6 +53,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
     ? [...serverCombo, ...queue.filter((entry) => !serverCombo.some((action) => action.actorId === entry.actorId))]
     : visibleServerCombo;
   const logEntries = buildLogEntries(events, state);
+  const logGroups = groupLogEntries(logEntries);
   const finalComboEntries = active ? [] : logEntries.filter((entry) => entry.actionId.startsWith(`${state.activeSide}:${state.turn}:`));
 
   function cancelAction(actorId: string) {
@@ -384,9 +385,12 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
       </header>
       <div className="battle-log-scroll" tabIndex={0} role="region" aria-label="Eventos da batalha">
         {events.filter((event) => event.kind === 'transform').map((event, index) => <p className="battle-transformation" key={index}>{event.message}</p>)}
-        {logEntries.length ? <ol>{logEntries.map((entry) => <ActionRow key={entry.actionId}
-          className={entry.side === 'enemy' ? 'battle-log-entry--enemy' : undefined}
-          actor={entry.actor} ability={entry.ability} targets={entry.targets} />)}</ol>
+        {logGroups.length ? logGroups.map((group) => <section className="battle-log-turn" key={group.turn ?? 'other'}>
+          <h3>{group.turn === null ? 'Ações anteriores' : `Turno ${group.turn}`}</h3>
+          <ol>{group.entries.map((entry) => <ActionRow key={entry.actionId}
+            className={entry.side === 'enemy' ? 'battle-log-entry--enemy' : undefined}
+            actor={entry.actor} ability={entry.ability} targets={entry.targets} />)}</ol>
+        </section>)
           : <p>A batalha começou. As ações resolvidas aparecerão aqui.</p>}
       </div>
     </dialog>
@@ -435,6 +439,22 @@ function buildLogEntries(events: BattleEvent[], state: BattleRecord['state']) {
     const side = state.teams.player.units.some((unit) => unit.id === actor.id) ? 'player' as const : 'enemy' as const;
     return [{ ...group, side, actor, ability, targets }];
   });
+}
+
+type LogEntry = ReturnType<typeof buildLogEntries>[number];
+
+function groupLogEntries(entries: LogEntry[]) {
+  const groups = new Map<number | null, LogEntry[]>();
+  for (const entry of entries) {
+    const parts = entry.actionId.split(':');
+    const turn = parts.length >= 3 && Number.isInteger(Number(parts[1])) ? Number(parts[1]) : null;
+    const group = groups.get(turn) ?? [];
+    group.push(entry);
+    groups.set(turn, group);
+  }
+  return [...groups.entries()]
+    .sort(([left], [right]) => left === right ? 0 : left === null ? 1 : right === null ? -1 : right - left)
+    .map(([turn, group]) => ({ turn, entries: [...group].reverse() }));
 }
 
 function ActionRow({ actor, ability, targets, remove, className }: {

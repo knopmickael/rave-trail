@@ -31,7 +31,7 @@ Os critérios são comparados **em ordem**, sem somar suporte ao dano:
 
 Essa comparação lexicográfica garante que um único ponto adicional de dano vence qualquer quantidade de cura ou proteção. Empates completos mantêm a primeira sequência encontrada na ordem estável dos slots, habilidades e alvos, sem sorteio.
 
-Por exemplo: com Ravi, Doko e Anna e 15 de energia, reter energia permite uma Varredura tática que remove 45 HP dos três alvos cheios, superando dois golpes simples que removem 40 HP. Com energia zerada, a busca encontra duas retenções antes da Varredura.
+Por exemplo: com Ravi, Doko e Anna e 15 de energia, reter energia permite uma Varredura tática de Anna que remove 45 HP dos três alvos cheios, superando dois golpes simples que removem 40 HP. Com energia zerada, a busca encontra duas retenções antes da Varredura.
 
 ## Reaproveitamento de estados
 

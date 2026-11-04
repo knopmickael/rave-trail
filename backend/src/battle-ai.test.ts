@@ -32,7 +32,7 @@ it('encontra duas retenções em sequência quando nenhuma habilidade ofensiva �
   const planned = planEnemyTurn(initial);
   expect(planned.map((action) => action.abilityId)).toEqual(['retain-energy', 'retain-energy', 'secondary-special']);
   expect(damage(initial, planned)).toBe(60);
-  expect(previewActions(initial, planned).energyAfter).toEqual([20, 40, 15]);
+  expect(previewActions(initial, planned).energyAfter).toEqual([20, 40, 10]);
 });
 
 it('distribui a energia entre golpes baratos quando três ataques menores superam um ataque mais forte', () => {
@@ -45,7 +45,7 @@ it('distribui a energia entre golpes baratos quando três ataques menores supera
   expect(damage(initial, [
     { actorId: 'enemy-0', abilityId: 'main-special', targetId: 'player-0' },
     { actorId: 'enemy-1', abilityId: 'simple-strike', targetId: 'player-0' },
-  ])).toBe(50);
+  ])).toBe(55);
 });
 
 it('prioriza eliminar dois adversários e retirar suas ações futuras em vez de apenas maximizar dano', () => {
@@ -93,7 +93,7 @@ it('aproveita suporte quando o mesmo combo continua causando o dano máximo', ()
 });
 
 it('prepara Força interna no aliado de ataque em área para vencer na próxima jogada', () => {
-  const initial = battle(['road-raider-1-base', 'protagonist-secondary-base'], 100);
+  const initial = battle(['capitao-da-guarda-ridan-base', 'protagonist-secondary-base'], 100);
   initial.teams.enemy.units[1].abilityIds = ['secondary-special'];
   initial.teams.player.units.forEach((unit) => { unit.hp = 50; unit.abilityIds = []; });
   const planned = planEnemyTurn(initial);
@@ -208,6 +208,7 @@ it('mantém combos legais e aproveita vitórias imediatas em diferentes equipes,
 
 it('usa o lado ativo corretamente, inclusive ao simular um combo da equipe do jogador', () => {
   const initial = createBattle(STARTER_UNIT_IDS.map(definition), ['road-raider-1-base', 'road-raider-2-base', 'road-raider-3-base'].map(definition), Object.values(abilities));
+  initial.teams.player.energy = 70;
   const planned = planEnemyTurn(initial);
   expect(planned.every((action) => action.actorId.startsWith('player-'))).toBe(true);
   expect(damage(initial, planned)).toBe(referenceMaximum(initial));
@@ -223,7 +224,7 @@ function duel(abilityIds: string[], hp: number, energy = 100) {
 }
 
 it.each(['heal', 'guard', 'fast-move'])('usa %s quando atacar deixaria o último combatente morrer na resposta', (defense) => {
-  const initial = duel(['simple-strike', defense], defense === 'guard' ? 25 : 20);
+  const initial = duel(['simple-strike', defense], defense === 'guard' ? 30 : 20);
   const planned = planEnemyTurn(initial);
   expect(planned.map((action) => action.abilityId)).toEqual([defense]);
   const next = executeTurn(initial, planned).state;

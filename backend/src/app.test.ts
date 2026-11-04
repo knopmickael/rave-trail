@@ -5,6 +5,8 @@ import { abilities } from '@game/content/abilities.js';
 import { narrativeCharacters, units } from '@game/content/units.js';
 import { campaigns } from '@game/content/campaigns.js';
 import { encounters } from '@game/content/encounters.js';
+import { battleUnlockRules } from '@game/content/unlocks.js';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import { GameError, type GameRepository } from './game/repository.js';
 import { createApp } from './app.js';
 import { EmailAlreadyUsedError, type AuthRepository, type Credentials, type SessionInput } from './auth/repository.js';
@@ -42,7 +44,12 @@ class MemoryRepository implements AuthRepository, GameRepository {
   async getCharacterUnlocks(userId: string) {
     const progress = this.progresses.get(userId)!;
     const defeated = new Set(encounters.filter((entry) => progress.completedEncounters.includes(entry.id)).flatMap((entry) => entry.enemyUnitIds));
-    return characterUnlockProgress(units, progress.unlockedUnitIds, [], progress.missionProgressResets, [...defeated]);
+    const allies = battleUnlockRules.filter((rule) => rule.availableFromStart
+      || (rule.availableAfterEncounterId && progress.completedEncounters.includes(rule.availableAfterEncounterId)))
+      .map((rule) => rule.unitId);
+    const visibleUnits = units.filter((unit) => !(SECOND_CAMPAIGN_UNIT_IDS as readonly string[]).includes(unit.id));
+    return characterUnlockProgress(visibleUnits, progress.unlockedUnitIds, [], progress.missionProgressResets,
+      [...allies, ...defeated], progress.completedEncounters);
   }
   async getCampaigns(userId: string) {
     return campaigns.map((campaign) => ({ ...campaign, available: campaign.released && this.progresses.get(userId)!.availablePathIds.includes(campaign.id) }));
@@ -230,8 +237,12 @@ describe('catálogo e equipe HTTP', () => {
     repository.progresses.get(first.json().user.id)!.unlockedUnitIds.push('road-raider-1-base');
     const response = await app.inject({ url: `/api/character-unlocks?userId=${first.json().user.id}`, headers: { cookie: cookie(second) } });
     expect(response.statusCode).toBe(200);
-    expect(response.json().unlocks.characters).toHaveLength(33);
-    expect(response.json().unlocks.characters.every((unit: { campaignAvailable: boolean; kind: string }) => unit.campaignAvailable === (unit.kind === 'premium'))).toBe(true);
+    expect(response.json().unlocks.characters).toHaveLength(18);
+    const characters = response.json().unlocks.characters as { id: string; campaignAvailable: boolean; kind: string }[];
+    expect(characters.find((unit) => unit.id === 'capitao-da-guarda-kalis-base')?.campaignAvailable).toBe(true);
+    expect(characters.find((unit) => unit.id === 'capitao-da-guarda-ridan-base')?.campaignAvailable).toBe(true);
+    expect(characters.find((unit) => unit.id === 'road-raider-1-base')?.campaignAvailable).toBe(false);
+    expect(characters.filter((unit) => unit.kind === 'premium').every((unit) => unit.campaignAvailable)).toBe(true);
     expect((await app.inject({ method: 'POST', url: '/api/character-unlocks', headers: { origin, cookie: cookie(second) }, payload: { unlockedUnitIds: ['rival-b-final-mode'] } })).statusCode).toBe(404);
   });
   it('lista duas campanhas autenticadas com apenas a primeira disponível', async () => {
@@ -245,9 +256,9 @@ describe('catálogo e equipe HTTP', () => {
   it('usa a disponibilidade da conta da sessão para os capítulos lançados', async () => {
     const first = await register();
     const second = await register('campanha-outra@example.com');
-    repository.progresses.get(second.json().user.id)!.availablePathIds = ['path-2'];
+    repository.progresses.get(second.json().user.id)!.availablePathIds = [];
     const response = await app.inject({ url: `/api/campaigns?userId=${first.json().user.id}`, headers: { cookie: cookie(second) } });
-    expect(response.json().campaigns.map((campaign: { available: boolean }) => campaign.available)).toEqual([false, true]);
+    expect(response.json().campaigns.map((campaign: { available: boolean }) => campaign.available)).toEqual([false, false]);
   });
 
   it('exige sessão para ler o catálogo e modificar equipe', async () => {

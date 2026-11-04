@@ -51,7 +51,7 @@ it('apresenta todos os personagens com suas quatro habilidades e a energia de ca
     expect(within(row).getAllByRole('button', { name: new RegExp(` — ${name}$`) })).toHaveLength(4);
     expect(within(row).getByRole('progressbar', { name: `HP de ${name}` })).toHaveAttribute('aria-valuenow', '100');
   }
-  expect(screen.getByRole('button', { name: 'Força interna — Saqueador da estrada I (inimigo)' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Golpe forte — Saqueador da estrada I (inimigo)' })).toBeDisabled();
   expect(screen.queryByRole('button', { name: /Voltar ao mapa|Voltar à Batalha rápida|Retomar/ })).not.toBeInTheDocument();
   expect(endTurn()).toBeEnabled();
   expect(screen.queryByText('VS')).not.toBeInTheDocument();
@@ -220,27 +220,27 @@ it('mantém a batalha visível na escolha de alvo, sem opção de cancelar, e de
 it('seleciona uma ação por personagem, mantém a ordem do combo e remove somente pela lista central', async () => {
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={initial()} title="Batalha" {...handlers()} />);
-  expect(skill('Varredura tática', 'Doko de Berdal')).toBeDisabled();
+  expect(skill('Varredura tática', 'Anna de Berdal')).toBeDisabled();
   await user.click(skill('Reter energia'));
   expect(energy()).toHaveAttribute('aria-valuenow', '35');
-  expect(skill('Varredura tática', 'Doko de Berdal')).toBeEnabled();
-  await user.click(skill('Varredura tática', 'Doko de Berdal'));
+  expect(skill('Varredura tática', 'Anna de Berdal')).toBeEnabled();
+  await user.click(skill('Varredura tática', 'Anna de Berdal'));
   const combo = screen.getByRole('region', { name: 'Combo do turno' });
   const comboRows = within(combo).getAllByRole('listitem');
   expect(comboRows).toHaveLength(2);
   expect(within(comboRows[1]).getAllByRole('img', { name: /^Alvo: / })).toHaveLength(3);
-  await user.click(skill('Reter energia', 'Anna de Berdal'));
-  expect(energy()).toHaveAttribute('aria-valuenow', '30');
-  expect(skill('Guarda', 'Doko de Berdal')).toBeDisabled();
-  await user.click(skill('Reter energia', 'Anna de Berdal'));
-  expect(energy()).toHaveAttribute('aria-valuenow', '30');
-  const rowsAfterAnna = within(combo).getAllByRole('listitem');
-  expect(rowsAfterAnna).toHaveLength(3);
-  await user.click(within(rowsAfterAnna[2]).getByRole('button', { name: 'Remover ação 3' }));
-  expect(energy()).toHaveAttribute('aria-valuenow', '10');
+  await user.click(skill('Reter energia', 'Doko de Berdal'));
+  expect(energy()).toHaveAttribute('aria-valuenow', '25');
+  expect(skill('Guarda', 'Anna de Berdal')).toBeDisabled();
+  await user.click(skill('Reter energia', 'Doko de Berdal'));
+  expect(energy()).toHaveAttribute('aria-valuenow', '25');
+  const rowsAfterDoko = within(combo).getAllByRole('listitem');
+  expect(rowsAfterDoko).toHaveLength(3);
+  await user.click(within(rowsAfterDoko[2]).getByRole('button', { name: 'Remover ação 3' }));
+  expect(energy()).toHaveAttribute('aria-valuenow', '5');
   await user.click(endTurn());
   await vi.waitFor(() => expect(api.turn).toHaveBeenCalledWith(initial().id, 0, expect.any(String), [
-    { actorId: 'player-0', abilityId: 'retain-energy' }, { actorId: 'player-1', abilityId: 'secondary-special' },
+    { actorId: 'player-0', abilityId: 'retain-energy' }, { actorId: 'player-2', abilityId: 'secondary-special' },
   ]));
 });
 
@@ -256,7 +256,7 @@ it('Guarda entra diretamente na fila e não permite proteger outro aliado', asyn
 
 it('permite direcionar Força interna a um aliado e exibe seu efeito após a confirmação', async () => {
   const record = initial();
-  record.state = createBattle(['road-raider-1-base', 'protagonist-secondary-base'].map((id) => units.find((unit) => unit.id === id)!),
+  record.state = createBattle(['capitao-da-guarda-ridan-base', 'protagonist-secondary-base'].map((id) => units.find((unit) => unit.id === id)!),
     [units.find((unit) => unit.id === 'road-raider-3-base')!], Object.values(abilities));
   record.state.teams.player.energy = 100;
   vi.mocked(api.turn).mockImplementation(async (_id, _revision, _requestId, actions) => {
@@ -265,8 +265,8 @@ it('permite direcionar Força interna a um aliado e exibe seu efeito após a con
   });
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
-  await user.click(skill('Força interna', 'Saqueador da estrada I'));
-  expect(energy()).toHaveAttribute('aria-valuenow', '65');
+  await user.click(skill('Força interna', 'Capitão da guarda Ridan'));
+  expect(energy()).toHaveAttribute('aria-valuenow', '70');
   expect(screen.getByRole('status')).toHaveTextContent('Escolha um aliado');
   await user.click(screen.getByRole('button', { name: 'Alvo: Doko de Berdal' }));
   await user.click(endTurn());
@@ -285,10 +285,10 @@ it('ressurreição reserva 50 de energia e permite selecionar somente um aliado 
   });
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
-  await user.click(skill('Trazer dos mortos', 'Fera Lendária'));
+  await user.click(skill('Trazer dos mortos', 'Besta Lendária'));
   expect(energy()).toHaveAttribute('aria-valuenow', '50');
   expect(screen.getByRole('status')).toHaveTextContent('Escolha um aliado derrotado');
-  expect(screen.getByRole('button', { name: 'Personagem: Fera Lendária' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Personagem: Besta Lendária' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Adversário: Saqueador da estrada I' })).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Alvo: Ravi de Berdal' }));
   await user.click(endTurn());
@@ -300,13 +300,13 @@ it('impede remover uma ação com dependentes e orienta remover as dependentes p
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={initial()} title="Batalha" {...handlers()} />);
   await user.click(skill('Reter energia'));
-  await user.click(skill('Varredura tática', 'Doko de Berdal'));
+  await user.click(skill('Varredura tática', 'Anna de Berdal'));
   const combo = screen.getByRole('region', { name: 'Combo do turno' });
   expect(within(combo).getAllByRole('listitem')).toHaveLength(2);
   await user.click(within(combo).getByRole('button', { name: 'Remover ação 1' }));
   const dialog = screen.getByRole('dialog', { name: 'Não é possível remover a ação' });
   expect(within(dialog).getByText(/Remover "Reter energia"/)).toBeInTheDocument();
-  expect(within(dialog).getByRole('listitem')).toHaveTextContent('Doko de Berdal: Varredura tática');
+  expect(within(dialog).getByRole('listitem')).toHaveTextContent('Anna de Berdal: Varredura tática');
   expect(within(combo).getAllByRole('listitem')).toHaveLength(2);
   expect(endTurn()).toBeEnabled();
   await user.click(within(dialog).getByRole('button', { name: 'Entendi' }));
@@ -509,8 +509,29 @@ it('alinha à direita as ações inimigas no registro do combate', async () => {
   render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
   await user.click(screen.getByRole('button', { name: 'Registro do combate' }));
   const rows = within(screen.getByRole('dialog', { name: 'Registro do combate' })).getAllByRole('listitem');
-  expect(rows[0]).not.toHaveClass('battle-log-entry--enemy');
-  expect(rows[1]).toHaveClass('battle-log-entry--enemy');
+  expect(rows[0]).toHaveClass('battle-log-entry--enemy');
+  expect(rows[1]).not.toHaveClass('battle-log-entry--enemy');
+});
+
+it('agrupa o registro por turnos decrescentes e lista os movimentos do último para o primeiro', async () => {
+  const record = initial();
+  record.log = [
+    { kind: 'damage', message: 'Ataque aliado 1.', actionId: 'player:1:0', actorId: 'player-0', abilityId: 'simple-strike', targetIds: ['enemy-0'] },
+    { kind: 'damage', message: 'Ataque aliado 2.', actionId: 'player:1:1', actorId: 'player-1', abilityId: 'simple-strike', targetIds: ['enemy-0'] },
+    { kind: 'damage', message: 'Ataque inimigo 1.', actionId: 'enemy:2:0', actorId: 'enemy-0', abilityId: 'strong-strike', targetIds: ['player-0'] },
+    { kind: 'damage', message: 'Ataque inimigo 2.', actionId: 'enemy:2:1', actorId: 'enemy-1', abilityId: 'simple-strike', targetIds: ['player-1'] },
+  ];
+  const user = userEvent.setup();
+  render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
+  await user.click(screen.getByRole('button', { name: 'Registro do combate' }));
+  const dialog = screen.getByRole('dialog', { name: 'Registro do combate' });
+  expect(within(dialog).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual(['Turno 2', 'Turno 1']);
+  const rows = within(dialog).getAllByRole('listitem');
+  expect(rows).toHaveLength(4);
+  expect(within(rows[0]).getByRole('img', { name: 'Saqueador da estrada II' })).toBeInTheDocument();
+  expect(within(rows[1]).getByRole('img', { name: 'Saqueador da estrada I' })).toBeInTheDocument();
+  expect(within(rows[2]).getByRole('img', { name: 'Doko de Berdal' })).toBeInTheDocument();
+  expect(within(rows[3]).getByRole('img', { name: 'Ravi de Berdal' })).toBeInTheDocument();
 });
 
 it('descarta a fila quando o servidor encerra automaticamente o turno de 45 segundos', async () => {

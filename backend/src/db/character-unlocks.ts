@@ -3,17 +3,20 @@ import type { PlayerProgress } from '@game/contracts.js';
 import type { UnitDefinition } from '@game/content/units.js';
 import { characterUnlockProgress, type BattleVictory } from '@game/core/unlocks.js';
 import { battleUnlockRules } from '@game/content/unlocks.js';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 
 type MissionProgress = Pick<PlayerProgress, 'unlockedUnitIds' | 'completedEncounters' | 'missionProgressResets'>;
 
 export async function readCharacterUnlocks(client: Pool | PoolClient, userId: string, progress: MissionProgress) {
-  const allies = battleUnlockRules.filter((rule) => rule.availableAfterEncounterId
-    && progress.completedEncounters.includes(rule.availableAfterEncounterId)).map((rule) => rule.unitId);
+  const allies = battleUnlockRules.filter((rule) => rule.availableFromStart
+    || (rule.availableAfterEncounterId && progress.completedEncounters.includes(rule.availableAfterEncounterId)))
+    .map((rule) => rule.unitId);
   const units = await client.query<Pick<UnitDefinition, 'id' | 'name' | 'portrait'> & { campaignAvailable: boolean }>(
     `SELECT u.id, u.name, u.portrait_path AS portrait,
       (u.id = ANY($2::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[]))) AS "campaignAvailable"
       FROM units u
-      ORDER BY u.roster_order NULLS LAST, u.id`, [progress.completedEncounters, allies]);
+      WHERE NOT (u.id = ANY($3::text[]))
+      ORDER BY u.roster_order NULLS LAST, u.id`, [progress.completedEncounters, allies, SECOND_CAMPAIGN_UNIT_IDS]);
   if (!units.rows.length) return { characters: [] };
   const victories = await client.query<BattleVictory>(`SELECT mode,
     to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt",
@@ -21,7 +24,7 @@ export async function readCharacterUnlocks(client: Pool | PoolClient, userId: st
     ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,enemy,units}') AS fighter) AS "enemyUnitIds"
     FROM battles WHERE user_id = $1 AND status = 'victory' AND mode IN ('quick', 'multiplayer')`, [userId]);
   return characterUnlockProgress(units.rows, progress.unlockedUnitIds, victories.rows, progress.missionProgressResets,
-    units.rows.filter((unit) => unit.campaignAvailable).map((unit) => unit.id));
+    units.rows.filter((unit) => unit.campaignAvailable).map((unit) => unit.id), progress.completedEncounters);
 }
 
 /** O chamador mantém player_progress bloqueado na transação que registra a vitória. */

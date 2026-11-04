@@ -1,63 +1,128 @@
 import { SECOND_CAMPAIGN_UNIT_IDS } from './second-campaign.js';
 
 export type UnlockBattleMode = 'quick' | 'multiplayer';
-export interface UnlockRequirement {
+export interface BattleWinsUnlockRequirement {
+  readonly kind: 'battle-wins';
   readonly opponentUnitIds?: readonly string[];
   readonly mode: UnlockBattleMode;
   readonly target: number;
   readonly description: string;
   readonly requiredPlayerUnitIds?: readonly string[];
 }
+export interface EncounterUnlockRequirement {
+  readonly kind: 'encounter';
+  readonly encounterId: string;
+  readonly target: 1;
+  readonly description: string;
+}
+export type UnlockRequirement = BattleWinsUnlockRequirement | EncounterUnlockRequirement;
 export interface BattleUnlockRule {
   readonly unitId: string;
   readonly description: string;
   readonly requirements: readonly UnlockRequirement[];
   readonly availableAfterEncounterId?: string;
+  readonly availableFromStart?: boolean;
 }
 
-const berdalUnits = ['protagonist-main-base', 'protagonist-secondary-base', 'protagonist-female-base', 'protagonist-main-transformed'];
-const grimorianUnits = ['rival-a-base', 'jung-de-grimoria-ii', 'rival-b-base', 'rival-female-base'];
+export const KALIS_UNIT_ID = 'capitao-da-guarda-kalis-base';
+export const RIDAN_UNIT_ID = 'capitao-da-guarda-ridan-base';
+const raiderUnits = ['road-raider-1-base', 'road-raider-2-base', 'road-raider-3-base'];
+
 const wins = (opponents: string | readonly string[] | undefined, target: number, description: string,
-  mode: UnlockBattleMode = 'quick', requiredPlayerUnitIds?: readonly string[]): UnlockRequirement =>
-  ({ opponentUnitIds: typeof opponents === 'string' ? [opponents] : opponents, target, description, mode,
+  mode: UnlockBattleMode = 'quick', requiredPlayerUnitIds?: readonly string[]): BattleWinsUnlockRequirement =>
+  ({ kind: 'battle-wins', opponentUnitIds: typeof opponents === 'string' ? [opponents] : opponents, target, description, mode,
     ...(requiredPlayerUnitIds ? { requiredPlayerUnitIds } : {}) });
-const single = (unitId: string, requirement: UnlockRequirement): BattleUnlockRule =>
-  ({ unitId, description: requirement.description, requirements: [requirement] });
+const encounter = (encounterId: string, battle: number): EncounterUnlockRequirement =>
+  ({ kind: 'encounter', encounterId, target: 1, description: `Finalize a batalha ${battle} da campanha 1.` });
+const rule = (unitId: string, requirements: readonly UnlockRequirement[],
+  options: Pick<BattleUnlockRule, 'availableAfterEncounterId' | 'availableFromStart'> = {}): BattleUnlockRule =>
+  ({ unitId, description: requirements.map((requirement) => requirement.description).join(' '), requirements, ...options });
+const single = (unitId: string, requirement: UnlockRequirement): BattleUnlockRule => rule(unitId, [requirement]);
+
+const quickWins = (target: number) => wins(undefined, target, `Vença ${target} partidas no modo Batalha rápida.`);
+const defeat = (opponentUnitId: string, target: number, name: string) =>
+  wins(opponentUnitId, target, `Derrote ${name} na Batalha rápida ${target} vezes.`);
 
 export const battleUnlockRules: readonly BattleUnlockRule[] = [
+  rule(KALIS_UNIT_ID, [quickWins(3)], { availableFromStart: true }),
+  rule(RIDAN_UNIT_ID, [quickWins(3)], { availableFromStart: true }),
   ...SECOND_CAMPAIGN_UNIT_IDS.filter((unitId) => unitId !== 'maga-artemis').map((unitId) => ({
-    ...single(unitId, wins(undefined, 100, 'Vença 100 batalhas na batalha rápida.')),
+    ...single(unitId, wins(undefined, 100, 'Vença 100 batalhas na Batalha rápida.')),
   })),
-  single('road-raider-1-base', wins('road-raider-1-base', 5, 'Derrote Saqueador da estrada I na Batalha rápida 5 vezes.')),
-  single('road-raider-2-base', wins('road-raider-2-base', 5, 'Derrote Saqueador da estrada II na Batalha rápida 5 vezes.')),
-  single('road-raider-3-base', wins('road-raider-3-base', 5, 'Derrote Saqueadora da estrada na Batalha rápida 5 vezes.')),
-  single('rival-a-base', wins('rival-a-base', 10, 'Derrote Jung de Grimória na Batalha rápida 10 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base'])),
-  single('jung-de-grimoria-ii', wins('jung-de-grimoria-ii', 25, 'Derrote Jung de Grimória II na Batalha rápida 25 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base'])),
-  single('rival-b-base', wins('rival-b-base', 10, 'Derrote Exal de Grimória no Multiplayer 10 vezes.', 'multiplayer')),
-  single('rival-female-base', wins('rival-female-base', 10, 'Derrote Monnica de Grimória na Batalha rápida 10 vezes.')),
-  single('guardian-healer-male-base', wins('guardian-healer-male-base', 10, 'Derrote Curandeiro de Pontes na Batalha rápida 10 vezes.')),
-  single('guardian-healer-female-base', wins('guardian-healer-female-base', 10, 'Derrote Curandeira de Pontes na Batalha rápida 10 vezes.')),
-  single('passage-guardian-base', wins('passage-guardian-base', 15, 'Derrote Drak de Pontes na Batalha rápida 15 vezes utilizando alguém de Berdal.', 'quick', berdalUnits)),
-  single('guerreiros-habilidosos-a', wins(grimorianUnits, 20, 'Derrote Grimorianos na Batalha rápida 20 vezes (Jung I ou II, Exal de Grimória ou Monnica).')),
-  single('guerreiros-habilidosos-b', wins(grimorianUnits, 20, 'Derrote Grimorianos na Batalha rápida 20 vezes (Jung I ou II, Exal de Grimória ou Monnica).')),
-  {
-    unitId: 'guerreiros-habilidosos-c',
-    description: 'Derrote Grimorianos em 20 Batalhas rápidas e 10 partidas Multiplayer (Jung I ou II, Exal de Grimória ou Monnica).',
-    requirements: [
-      wins(grimorianUnits, 20, 'Derrote Grimorianos na Batalha rápida 20 vezes (Jung I ou II, Exal de Grimória ou Monnica).'),
-      wins(grimorianUnits, 10, 'Derrote Grimorianos no Multiplayer 10 vezes (Jung I ou II, Exal de Grimória ou Monnica).', 'multiplayer'),
-    ],
-  },
-  {
-    unitId: 'protagonist-main-transformed',
-    description: 'Na Batalha rápida, vença 50 partidas e derrote Jung de Grimória 15 vezes, Exal de Grimória 20 vezes e Monnica de Grimória 10 vezes.',
-    requirements: [
-      wins('rival-a-base', 15, 'Derrote Jung de Grimória na Batalha rápida 15 vezes.'),
-      wins('rival-b-base', 20, 'Derrote Exal de Grimória na Batalha rápida 20 vezes.'),
-      wins('rival-female-base', 10, 'Derrote Monnica de Grimória na Batalha rápida 10 vezes.'),
-      wins(undefined, 50, 'Vença 50 batalhas rápidas.'),
-    ],
-  },
+  rule('road-raider-1-base', [
+    encounter('path-1-encounter-1', 1),
+    quickWins(5),
+    defeat('road-raider-1-base', 3, 'Saqueador da estrada I'),
+  ]),
+  rule('road-raider-2-base', [
+    encounter('path-1-encounter-1', 1),
+    quickWins(5),
+    defeat('road-raider-2-base', 3, 'Saqueador da estrada II'),
+  ]),
+  rule('road-raider-3-base', [
+    encounter('path-1-encounter-1', 1),
+    quickWins(5),
+    defeat('road-raider-3-base', 3, 'Saqueadora da estrada'),
+  ]),
+  rule('rival-a-base', [
+    encounter('path-1-encounter-2', 2),
+    quickWins(10),
+    defeat('rival-a-base', 5, 'Jung de Grimória'),
+    wins('rival-a-base', 3, 'Derrote Jung de Grimória na Batalha rápida 3 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
+  ]),
+  rule('jung-de-grimoria-ii', [
+    encounter('path-1-encounter-6', 6),
+    quickWins(25),
+    defeat('rival-a-base', 15, 'Jung de Grimória'),
+    wins('rival-a-base', 10, 'Derrote Jung de Grimória na Batalha rápida 10 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
+  ]),
+  rule('rival-b-base', [
+    encounter('path-1-encounter-2', 2),
+    quickWins(10),
+    defeat('rival-b-base', 5, 'Exal de Grimória'),
+  ]),
+  rule('rival-female-base', [
+    encounter('path-1-encounter-2', 2),
+    quickWins(10),
+    defeat('rival-female-base', 5, 'Monnica de Grimória'),
+  ]),
+  rule('guardian-healer-male-base', [
+    encounter('path-1-encounter-3', 3),
+    quickWins(10),
+    defeat('guardian-healer-male-base', 5, 'Curandeiro de Pontes'),
+  ]),
+  rule('guardian-healer-female-base', [
+    encounter('path-1-encounter-3', 3),
+    quickWins(10),
+    defeat('guardian-healer-female-base', 5, 'Curandeira de Pontes'),
+  ]),
+  rule('passage-guardian-base', [
+    encounter('path-1-encounter-3', 3),
+    quickWins(20),
+    defeat('passage-guardian-base', 10, 'Drak de Pontes'),
+    wins('passage-guardian-base', 5, 'Derrote Drak de Pontes na Batalha rápida 5 vezes utilizando Saqueadores da estrada.', 'quick', raiderUnits),
+  ]),
+  rule('guerreiros-habilidosos-a', [
+    encounter('path-1-encounter-4', 4),
+    quickWins(15),
+    defeat('guerreiros-habilidosos-a', 15, 'Trinity de Espinea'),
+  ]),
+  rule('guerreiros-habilidosos-b', [
+    encounter('path-1-encounter-4', 4),
+    quickWins(15),
+    defeat('guerreiros-habilidosos-b', 15, 'Vlade de Espinea'),
+  ]),
+  rule('guerreiros-habilidosos-c', [
+    encounter('path-1-encounter-4', 4),
+    quickWins(15),
+    defeat('guerreiros-habilidosos-c', 15, 'Passago de Espinea'),
+  ]),
+  rule('protagonist-main-transformed', [
+    encounter('path-1-encounter-7', 7),
+    quickWins(30),
+    defeat('rival-a-base', 20, 'Jung de Grimória'),
+    wins('jung-de-grimoria-ii', 10, 'Derrote Jung de Grimória II na Batalha rápida 10 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
+  ], { availableAfterEncounterId: 'path-1-encounter-7' }),
 ];
 
 export const premiumUnitPrices: Readonly<Record<string, number>> = {
@@ -67,7 +132,7 @@ export const premiumUnitPrices: Readonly<Record<string, number>> = {
 };
 
 export function battleUnlock(unitId: string): { readonly kind: 'battle-wins'; readonly description: string } {
-  const rule = battleUnlockRules.find((entry) => entry.unitId === unitId);
-  if (!rule) throw new Error(`Regra de desbloqueio não encontrada: ${unitId}`);
-  return { kind: 'battle-wins', description: rule.description };
+  const found = battleUnlockRules.find((entry) => entry.unitId === unitId);
+  if (!found) throw new Error(`Regra de desbloqueio não encontrada: ${unitId}`);
+  return { kind: 'battle-wins', description: found.description };
 }

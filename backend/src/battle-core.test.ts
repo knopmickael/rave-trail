@@ -32,14 +32,14 @@ describe('motor determinístico de combate', () => {
     const enemyTurn = executeTurn(initial, [action(0, 'guard')]).state;
     expect(enemyTurn.teams.player.units[0].unitId).toBe('protagonist-main-base');
     expect(initial.teams.player.units[0].guardExpiresAt).toBeNull();
-    enemyTurn.teams.enemy.energy = 35;
+    enemyTurn.teams.enemy.energy = 45;
     const before = JSON.stringify(enemyTurn);
-    const transformed = executeTurn(enemyTurn, [{ actorId: 'enemy-0', abilityId: 'soul-drain-plus', targetId: 'player-0' }]);
+    const transformed = executeTurn(enemyTurn, [{ actorId: 'enemy-0', abilityId: 'soul-drain-plus' }]);
     expect(JSON.stringify(enemyTurn)).toBe(before);
     expect(transformed.state.pendingTransformation).toBeUndefined();
     expect(transformed.state.teams.player.units).toHaveLength(1);
     expect(transformed.state.teams.player.units[0]).toMatchObject({ id: 'player-0', unitId: 'protagonist-main-transformed',
-      name: 'Ravi Berserk', hp: 75, maxHp: 100, guardExpiresAt: 3, abilityIds: definition('protagonist-main-transformed').abilityIds });
+      name: 'Ravi Berserk', hp: 80, maxHp: 100, guardExpiresAt: 3, abilityIds: definition('protagonist-main-transformed').abilityIds });
     expect(transformed.state.teams.player.energy).toBe(20);
     expect(transformed.events.filter((event) => event.kind === 'transform')).toHaveLength(1);
     expect(() => previewActions(transformed.state, [action(0, 'retain-energy')])).toThrow(/habilidade inválidos/);
@@ -54,16 +54,16 @@ describe('motor determinístico de combate', () => {
     expect(previewActions(initial, [action(0, 'strong-strike', 'enemy-0')]).state.teams.enemy.units[0].hp).toBe(70);
   });
 
-  it('aplica especial de Ravi com 30 de dano', () => {
+  it('aplica especial de Ravi com 35 de dano', () => {
     const initial = state(); initial.teams.player.energy = 25;
-    expect(previewActions(initial, [action(0, 'main-special', 'enemy-0')]).state.teams.enemy.units[0].hp).toBe(70);
+    expect(previewActions(initial, [action(0, 'main-special', 'enemy-0')]).state.teams.enemy.units[0].hp).toBe(65);
   });
 
-  it('cura 30 sem exceder o máximo e não revive um alvo derrotado', () => {
+  it('cura 20 sem exceder o máximo e não revive um alvo derrotado', () => {
     const initial = state(['guardian-healer-male-base']); initial.teams.player.energy = 100;
-    initial.teams.player.units[0].hp = 85;
+    initial.teams.player.units[0].hp = 70;
     const outcome = previewActions(initial, [action(0, 'heal', 'player-0')]);
-    expect(outcome.state.teams.player.units[0].hp).toBe(100);
+    expect(outcome.state.teams.player.units[0].hp).toBe(90);
     expect(outcome.state.teams.player.energy).toBe(65);
     initial.teams.player.units[0].hp = 0;
     expect(() => previewActions(initial, [action(0, 'heal', 'player-0')])).toThrow();
@@ -98,25 +98,28 @@ describe('motor determinístico de combate', () => {
   });
 
   it.each([
-    ['rival-b-base', 'soul-drain', 25, 30],
-    ['rival-b-final-mode', 'soul-drain-plus', 40, 35],
+    ['rival-b-base', 'soul-drain', 25, 35],
+    ['rival-b-final-mode', 'soul-drain-plus', 30, 45],
   ] as const)('%s drena vida, debita energia, respeita Guarda e limita a cura', (unitId, abilityId, amount, cost) => {
     const initial = state([unitId]); initial.teams.player.energy = 100;
+    if (abilityId === 'soul-drain-plus') initial.teams.enemy.units.slice(1).forEach((unit) => { unit.hp = 0; });
     initial.teams.player.units[0].hp = 30;
     const before = JSON.stringify(initial);
-    const outcome = previewActions(initial, [action(0, abilityId, 'enemy-0')]);
+    const drain = (targetId?: string) => action(0, abilityId, targetId);
+    const outcome = previewActions(initial, [drain(abilityId === 'soul-drain-plus' ? undefined : 'enemy-0')]);
     expect(outcome.state.teams.enemy.units[0].hp).toBe(100 - amount);
     expect(outcome.state.teams.player.units[0].hp).toBe(30 + amount);
     expect(outcome.state.teams.player.energy).toBe(100 - cost);
     expect(JSON.stringify(initial)).toBe(before);
     initial.teams.enemy.units[0].guardExpiresAt = 2;
     initial.teams.enemy.units[0].guardReduction = 15;
-    initial.teams.player.units[0].hp = 95;
-    const guarded = previewActions(initial, [action(0, abilityId, 'enemy-0')]).state;
+    initial.teams.player.units[0].hp = 40;
+    const guarded = previewActions(initial, [drain(abilityId === 'soul-drain-plus' ? undefined : 'enemy-0')]).state;
     expect(guarded.teams.enemy.units[0].hp).toBe(115 - amount);
-    expect(guarded.teams.player.units[0].hp).toBe(100);
+    expect(guarded.teams.player.units[0].hp).toBe(25 + amount);
     initial.teams.enemy.units[0].hp = 1;
-    expect(previewActions(initial, [action(0, abilityId, 'enemy-0')]).state.teams.player.units[0].hp).toBe(100);
+    initial.teams.player.units[0].hp = 95;
+    expect(previewActions(initial, [drain(abilityId === 'soul-drain-plus' ? undefined : 'enemy-0')]).state.teams.player.units[0].hp).toBe(100);
   });
 
   it('drenagem em alvo derrotado antes no combo gera MISS, cobra energia e não cura', () => {
@@ -124,15 +127,15 @@ describe('motor determinístico de combate', () => {
     initial.teams.player.units[1].hp = 50; initial.teams.enemy.units[0].hp = 20;
     const outcome = previewActions(initial, [action(0, 'simple-strike', 'enemy-0'), action(1, 'soul-drain', 'enemy-0')]);
     expect(outcome.state.teams.player.units[1].hp).toBe(50);
-    expect(outcome.state.teams.player.energy).toBe(55);
+    expect(outcome.state.teams.player.energy).toBe(50);
     expect(outcome.events.some((event) => event.kind === 'miss')).toBe(true);
   });
 
-  it('Fúria devastadora causa 25 em área, desconta Guarda e ignora derrotados', () => {
-    const initial = state(['protagonist-main-transformed']); initial.teams.player.energy = 30;
+  it('Fúria devastadora causa 35 em área, desconta Guarda e ignora derrotados', () => {
+    const initial = state(['protagonist-main-transformed']); initial.teams.player.energy = 40;
     initial.teams.enemy.units[1].guardExpiresAt = 2; initial.teams.enemy.units[2].hp = 0;
     const outcome = previewActions(initial, [action(0, 'fury-scream')]);
-    expect(outcome.state.teams.enemy.units.map((unit) => unit.hp)).toEqual([75, 85, 0]);
+    expect(outcome.state.teams.enemy.units.map((unit) => unit.hp)).toEqual([65, 75, 0]);
     expect(outcome.state.teams.player.energy).toBe(0);
   });
 
@@ -176,9 +179,9 @@ describe('motor determinístico de combate', () => {
 
   it('valida recuperação intermediária na ordem do combo', () => {
     const initial = state(); initial.teams.player.energy = 30;
-    const result = previewActions(initial, [action(0, 'simple-strike', 'enemy-0'), action(2, 'retain-energy'), action(1, 'secondary-special')]);
-    expect(result.energyAfter).toEqual([15, 35, 10]);
-    expect(() => previewActions(initial, [action(0, 'simple-strike', 'enemy-0'), action(1, 'secondary-special'), action(2, 'retain-energy')])).toThrow(/Energia insuficiente/);
+    const result = previewActions(initial, [action(0, 'simple-strike', 'enemy-0'), action(1, 'retain-energy'), action(2, 'secondary-special')]);
+    expect(result.energyAfter).toEqual([15, 35, 5]);
+    expect(() => previewActions(initial, [action(0, 'simple-strike', 'enemy-0'), action(2, 'secondary-special'), action(1, 'retain-energy')])).toThrow(/Energia insuficiente/);
   });
 
   it('não permite energia negativa, ação duplicada, habilidade alheia ou alvo inválido', () => {
@@ -211,7 +214,7 @@ describe('motor determinístico de combate', () => {
     initial = executeTurn(initial, [action(0, 'guard'), action(1, 'guard')]).state;
     expect(initial.teams.player.units[0].guardExpiresAt).toBe(3);
     initial = executeTurn(initial, [{ actorId: 'enemy-0', abilityId: 'simple-strike', targetId: 'player-0' }]).state;
-    expect(initial.teams.player.units[0].hp).toBe(95);
+    expect(initial.teams.player.units[0].hp).toBe(90);
     expect(initial.teams.player.units[0].guardExpiresAt).toBe(3);
     initial = executeTurn(initial, []).state;
     initial = executeTurn(initial, []).state;
@@ -221,14 +224,14 @@ describe('motor determinístico de combate', () => {
 
   it('aplica Guarda AOE e ataque AOE somente em vivos', () => {
     const initial = state(); initial.teams.player.energy = 100; initial.teams.enemy.units[2].hp = 0;
-    const result = previewActions(initial, [action(2, 'female-special'), action(1, 'secondary-special')]).state;
+    const result = previewActions(initial, [action(1, 'female-special'), action(2, 'secondary-special')]).state;
     expect(result.teams.player.units.map((unit) => unit.guardExpiresAt)).toEqual([3, 3, 3]);
     expect(result.teams.player.units.map((unit) => unit.guardAbilityId)).toEqual(['female-special', 'female-special', 'female-special']);
     expect(result.teams.enemy.units.map((unit) => unit.hp)).toEqual([80, 80, 0]);
     result.activeSide = 'enemy'; result.teams.enemy.energy = 100;
     result.teams.enemy.units[0].abilityIds = ['secondary-special'];
     const protectedTeam = previewActions(result, [{ actorId: 'enemy-0', abilityId: 'secondary-special' }]).state;
-    expect(protectedTeam.teams.player.units.map((unit) => unit.hp)).toEqual([95, 95, 95]);
+    expect(protectedTeam.teams.player.units.map((unit) => unit.hp)).toEqual([90, 90, 90]);
   });
 
   it('gera MISS com custo integral ao atacar alvo derrotado anteriormente no combo', () => {
@@ -281,7 +284,7 @@ describe('motor determinístico de combate', () => {
 
   it('IA é determinística, respeita energia/ações e combina ataque com cura para sustentar a equipe', () => {
     const initial = createBattle(STARTER_UNIT_IDS.map(definition), ['passage-guardian-base', 'guardian-healer-male-base', 'guardian-healer-female-base'].map(definition), Object.values(abilities));
-    initial.activeSide = 'enemy'; initial.teams.enemy.energy = 100; initial.teams.enemy.units[0].hp = 40;
+    initial.activeSide = 'enemy'; initial.teams.enemy.energy = 100; initial.teams.enemy.units[0].hp = 30;
     const planned = planEnemyTurn(initial);
     expect(planned).toEqual(planEnemyTurn(initial));
     const outcome = previewActions(initial, planned).state;

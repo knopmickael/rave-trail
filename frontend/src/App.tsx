@@ -7,6 +7,7 @@ import { MainMenu } from './features/menu/MainMenu';
 import { CampaignSelection } from './features/campaigns/CampaignSelection';
 import { CampaignMap } from './features/campaigns/CampaignMap';
 import { QuickBattle } from './features/quick-battle/QuickBattle';
+import { Store } from './features/store/Store';
 import { CharacterUnlocks } from './features/unlocks/CharacterUnlocks';
 import { BattleLoading } from './features/battle/BattleLoading';
 import { useAudioSettings } from './audio/useAudioSettings';
@@ -19,7 +20,7 @@ const battleScreenImport = () => import('./features/battle/BattleScreen');
 const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default: module.BattleScreen })));
 
 export function App() {
-  const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
+  const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
   const [campaignId, setCampaignId] = useState('path-1');
   const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map'>('menu');
   const [battle, setBattle] = useState<BattleRecord | null>(null);
@@ -123,6 +124,10 @@ export function App() {
       backLabel={charactersReturn === 'map' ? 'Voltar ao mapa' : 'Voltar ao menu principal'} />;
   }
 
+  if (screen === 'store' && user) {
+    return <Store onBack={() => setScreen('menu')} onSessionExpired={handleSessionExpired} />;
+  }
+
   if (screen === 'campaigns' && user) {
     return <CampaignSelection onBack={() => setScreen('menu')} onSessionExpired={handleSessionExpired}
       onSelectCampaign={(id) => { setCampaignId(id); setScreen('map'); }} />;
@@ -158,6 +163,7 @@ export function App() {
       onOpenCampaigns={() => { setError(''); setScreen('campaigns'); }}
       onOpenQuickBattle={() => { setError(''); setScreen('quick-battle'); }}
       onOpenUnlocks={() => { setError(''); setScreen('unlocks'); }}
+      onOpenStore={() => { setError(''); setScreen('store'); }}
       onOpenCharacters={() => { setError(''); setCharactersReturn('menu'); setScreen('characters'); }} />;
   }
 

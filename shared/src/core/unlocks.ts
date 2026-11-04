@@ -12,8 +12,10 @@ export interface BattleVictory {
 /** Cada registro representa uma batalha vencida, independentemente do número de turnos ou de alvos repetidos. */
 export function characterUnlockProgress(units: readonly Pick<UnitDefinition, 'id' | 'name' | 'portrait'>[],
   unlockedUnitIds: readonly string[], victories: readonly BattleVictory[],
-  resetAtByUnitId: Readonly<Record<string, string>> = {}, campaignOpponentUnitIds?: readonly string[]): CharacterUnlockData {
+  resetAtByUnitId: Readonly<Record<string, string>> = {}, campaignOpponentUnitIds?: readonly string[],
+  completedEncounterIds: readonly string[] = []): CharacterUnlockData {
   const unlocked = new Set(unlockedUnitIds);
+  const completedEncounters = new Set(completedEncounterIds);
   const opponents = campaignOpponentUnitIds ? new Set(campaignOpponentUnitIds) : null;
   const characters: CharacterUnlockProgress[] = [];
   for (const unit of units) {
@@ -27,9 +29,11 @@ export function characterUnlockProgress(units: readonly Pick<UnitDefinition, 'id
         requirements: rule.requirements.map((requirement) => ({
           description: requirement.description,
           target: requirement.target,
-          current: Math.min(requirement.target, missionVictories.filter((victory) => victory.mode === requirement.mode
-            && (!requirement.opponentUnitIds || requirement.opponentUnitIds.some((id) => victory.enemyUnitIds.includes(id)))
-            && (!requirement.requiredPlayerUnitIds || requirement.requiredPlayerUnitIds.some((id) => victory.playerUnitIds.includes(id)))).length),
+          current: requirement.kind === 'encounter'
+            ? (completedEncounters.has(requirement.encounterId) ? 1 : 0)
+            : Math.min(requirement.target, missionVictories.filter((victory) => victory.mode === requirement.mode
+              && (!requirement.opponentUnitIds || requirement.opponentUnitIds.some((id) => victory.enemyUnitIds.includes(id)))
+              && (!requirement.requiredPlayerUnitIds || requirement.requiredPlayerUnitIds.some((id) => victory.playerUnitIds.includes(id)))).length),
         })),
       });
     } else if (premiumUnitPrices[unit.id] !== undefined) {

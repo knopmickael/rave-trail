@@ -88,29 +88,43 @@ it('coloca Jung II somente no encontro 6 e o disponibiliza no sorteio rápido de
   expect(won.battle.state.status).toBe('victory');
   expect((await battles.getQuickBattle(user.id)).opponents.find((unit) => unit.id === second.id)?.portrait).toBe(second.portrait);
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ campaignAvailable: true, unlocked: false,
-    requirements: [expect.objectContaining({ current: 0, target: 25 })] });
+    requirements: [
+      expect.objectContaining({ current: 1, target: 1 }),
+      expect.objectContaining({ current: 0, target: 25 }),
+      expect.objectContaining({ current: 0, target: 15 }),
+      expect.objectContaining({ current: 0, target: 10 }),
+    ] });
   await expect(game.setTeamSlot(user.id, 1, second.id)).rejects.toMatchObject({ statusCode: 403 });
 });
 
-it('a 25ª vitória rápida contra Jung II usando Ravi base libera a unidade sem duplicar o progresso', async () => {
+it('a 10ª vitória rápida contra Jung II usando Ravi base libera a unidade sem duplicar o progresso', async () => {
   const user = await player(6);
-  await history(user.id, 'rival-a-base', 30);
-  await history(user.id, 'jung-de-grimoria-ii', 30, 'protagonist-secondary-base');
+  await history(user.id, 'rival-a-base', 30, 'protagonist-secondary-base');
   await history(user.id, 'jung-de-grimoria-ii', 30, 'protagonist-main-transformed');
   await history(user.id, 'jung-de-grimoria-ii', 30, undefined, 'multiplayer');
   await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'campaign');
   await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'quick', 'defeat');
-  expect(mission(await game.getCharacterUnlocks(user.id)).requirements[0].current).toBe(0);
-  await history(user.id, 'jung-de-grimoria-ii', 24);
+  expect(mission(await game.getCharacterUnlocks(user.id)).requirements[3].current).toBe(0);
+  await history(user.id, 'rival-a-base', 9);
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ unlocked: false,
-    requirements: [expect.objectContaining({ current: 24, target: 25 })] });
+    requirements: [
+      expect.objectContaining({ current: 1, target: 1 }),
+      expect.objectContaining({ current: 25, target: 25 }),
+      expect.objectContaining({ current: 15, target: 15 }),
+      expect.objectContaining({ current: 9, target: 10 }),
+    ] });
   await expect(game.setTeamSlot(user.id, 1, 'jung-de-grimoria-ii')).rejects.toMatchObject({ statusCode: 403 });
-  const [last] = await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'quick', 'active');
+  const [last] = await history(user.id, 'rival-a-base', 1, undefined, 'quick', 'active');
   const requestId = randomUUID();
   const response = await finish(user.id, last, requestId);
   expect(response.battle.state.status).toBe('victory');
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ unlocked: true,
-    requirements: [expect.objectContaining({ current: 25, target: 25 })] });
+    requirements: [
+      expect.objectContaining({ current: 1, target: 1 }),
+      expect.objectContaining({ current: 25, target: 25 }),
+      expect.objectContaining({ current: 15, target: 15 }),
+      expect.objectContaining({ current: 10, target: 10 }),
+    ] });
   const repeated = await battles.submitTurn(user.id, last.id, 0, requestId,
     [{ actorId: 'player-0', abilityId: 'simple-strike', targetId: 'enemy-0' }]);
   expect(repeated).toEqual(response);
@@ -134,7 +148,7 @@ it('migra a formação antiga e reaplica o balanceamento de Jung II sem alterar 
   await migrate(pool);
   await seedDatabase(pool);
   const catalog = await game.getCatalog();
-  expect(catalog.units).toHaveLength(36);
+  expect(catalog.units).toHaveLength(38);
   expect(catalog.units.find((unit) => unit.id === 'rival-a-base')).toEqual(original);
   expect(catalog.units.find((unit) => unit.id === 'jung-de-grimoria-ii')?.abilityIds).toEqual(definition('jung-de-grimoria-ii').abilityIds);
   expect((await battles.getMap(user.id, 'path-1')).encounters[5].enemyUnitIds).toEqual(['jung-de-grimoria-ii', 'rival-b-base']);

@@ -32,8 +32,8 @@ export const abilities = {
   },
   guard: {
     id: 'guard', name: 'Guarda', energyCost: 10, target: 'self', icon: '/media/abilities/guard.jpg',
-    description: 'Protege o próprio jogador reduzindo 15 de dano de cada golpe por dois turnos da própria equipe. Não acumula redução.',
-    effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }],
+    description: 'Protege o próprio jogador reduzindo 10 de dano de cada golpe por dois turnos da própria equipe. Não acumula redução.',
+    effects: [{ kind: 'guard', reduction: 10, teamTurns: 2 }],
   },
   'retain-energy': {
     id: 'retain-energy', name: 'Reter energia', energyCost: 0, target: 'team', icon: '/media/abilities/retain-energy.jpg',
@@ -48,9 +48,9 @@ export const abilities = {
     description: 'Causa 30 de dano a um inimigo.', effects: [{ kind: 'damage', amount: 30 }],
   },
   'internal-strength': {
-    id: 'internal-strength', name: 'Força interna', energyCost: 35, target: 'ally', icon: '/media/abilities/internal-strength.png',
-    description: 'Aumenta em 15 o dano das habilidades usadas por um aliado ou por si mesmo no próximo turno da equipe. Não acumula bônus.',
-    effects: [{ kind: 'damage-boost', amount: 15, teamTurns: 1 }],
+    id: 'internal-strength', name: 'Força interna', energyCost: 30, target: 'ally', icon: '/media/abilities/internal-strength.png',
+    description: 'Aumenta em 10 o dano das habilidades usadas por um aliado ou por si mesmo no próximo turno da equipe (não funciona no turno atual). Não acumula bônus.',
+    effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 1 }],
   },
   'quick-slash': {
     id: 'quick-slash', name: 'Corte rápido', energyCost: 35, target: 'enemy', icon: '/media/abilities/quick-slash.png',
@@ -69,19 +69,19 @@ export const abilities = {
   },
   heal: {
     id: 'heal', name: 'Recuperar vida', energyCost: 35, target: 'ally', icon: '/media/abilities/heal.jpg',
-    description: 'Restaura 30 HP de um aliado vivo, sem ultrapassar o HP máximo.', effects: [{ kind: 'heal', amount: 30 }],
+    description: 'Restaura 20 HP de um aliado vivo, sem ultrapassar o HP máximo.', effects: [{ kind: 'heal', amount: 20 }],
   },
   'soul-drain': {
-    id: 'soul-drain', name: 'Drenar alma', energyCost: 30, target: 'enemy', icon: '/media/abilities/soul-drain.jpg',
-    description: 'Causa 25 de dano a um inimigo e recupera 25 HP do usuário, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 25 }],
+    id: 'soul-drain', name: 'Drenar alma', energyCost: 35, target: 'enemy', icon: '/media/abilities/soul-drain.jpg',
+    description: 'Causa 25 de dano a um inimigo e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 25 }],
   },
   'soul-drain-plus': {
-    id: 'soul-drain-plus', name: 'Drenar existência', energyCost: 35, target: 'enemy', icon: '/media/abilities/soul-drain-plus.jpg',
-    description: 'Causa 40 de dano a um inimigo e recupera 40 HP do usuário, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 40 }],
+    id: 'soul-drain-plus', name: 'Drenar existência', energyCost: 45, target: 'all-enemies', icon: '/media/abilities/soul-drain-plus.jpg',
+    description: 'Causa 30 de dano a todos os inimigos vivos e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 30 }],
   },
   'fury-scream': {
-    id: 'fury-scream', name: 'Fúria devastadora', energyCost: 30, target: 'all-enemies', icon: '/media/abilities/fury-scream.jpg',
-    description: 'Causa 25 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 25 }],
+    id: 'fury-scream', name: 'Fúria devastadora', energyCost: 40, target: 'all-enemies', icon: '/media/abilities/fury-scream.jpg',
+    description: 'Causa 35 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 35 }],
   },
   'heal-plus': {
     id: 'heal-plus', name: 'Recuperar muita vida', energyCost: 45, target: 'all-allies', icon: '/media/abilities/heal-plus.jpg',
@@ -93,16 +93,16 @@ export const abilities = {
   },
   'main-special': {
     id: 'main-special', name: 'Investida', energyCost: 25, target: 'enemy', icon: '/media/abilities/main-special.jpg',
-    description: 'Uma investida física que causa 30 de dano a um inimigo.', effects: [{ kind: 'damage', amount: 30 }],
+    description: 'Uma investida física que causa 35 de dano a um inimigo.', effects: [{ kind: 'damage', amount: 35 }],
   },
   'secondary-special': {
-    id: 'secondary-special', name: 'Varredura tática', energyCost: 25, target: 'all-enemies', icon: '/media/abilities/secondary-special.jpg',
+    id: 'secondary-special', name: 'Varredura tática', energyCost: 30, target: 'all-enemies', icon: '/media/abilities/secondary-special.jpg',
     description: 'Causa 20 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 20 }],
   },
   'female-special': {
     id: 'female-special', name: 'Proteção coletiva', energyCost: 20, target: 'all-allies', icon: '/media/abilities/female-special.jpg',
-    description: 'Aplica Guarda a todos os aliados vivos: reduz 15 de dano por golpe durante dois turnos da equipe. Não acumula redução.',
-    effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }],
+    description: 'Aplica Guarda a todos os aliados vivos: reduz 10 de dano por golpe durante dois turnos da equipe. Não acumula redução.',
+    effects: [{ kind: 'guard', reduction: 10, teamTurns: 2 }],
   },
   'extra-turn': {
     id: 'extra-turn', name: 'Turno extra', energyCost: 40, target: 'team', icon: '/media/abilities/extra-turn.jpg',

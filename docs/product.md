@@ -288,7 +288,7 @@ A narrativa deve desenvolver gradualmente uma conspiração envolvendo o control
 
 Criar três protagonistas originais.
 
-Nomes aprovados: protagonista principal **Ravi de Berdal**, protagonista secundário de ataque AOE **Doko de Berdal** e protagonista feminina **Anna de Berdal**. Manter identificadores internos estáveis, independentes dos nomes de exibição.
+Nomes aprovados: protagonista principal **Ravi de Berdal**, protagonista secundário de defesa em equipe **Doko de Berdal** e protagonista feminina de ataque AOE **Anna de Berdal**. Manter identificadores internos estáveis, independentes dos nomes de exibição.
 
 ## Protagonista principal
 
@@ -372,17 +372,19 @@ Não duplicar definições para versões controladas por jogador e IA.
 Inicialmente, três unidades estarão liberadas:
 
 1. Ravi de Berdal — protagonista principal.
-2. Doko de Berdal — protagonista secundário, especial AOE.
-3. Anna de Berdal — protagonista feminina, suporte/defesa.
+2. Doko de Berdal — protagonista secundário, suporte/defesa.
+3. Anna de Berdal — protagonista feminina, especial AOE.
+
+Capitão da guarda Kalis e Capitão da guarda Ridan são aliados que exigem três vitórias rápidas na Tabela de missões para serem desbloqueados. Eles não aparecem como adversários na Batalha rápida enquanto não forem desbloqueados. Eles não possuem missão de campanha contra si.
 
 As demais unidades do catálogo estarão inicialmente bloqueadas, incluindo:
 
 4. Drak de Pontes — chefão, desbloqueado ao vencer o combate 4 da jornada 1.
 5. Ravi Berserk — unidade independente da transformação de Ravi, desbloqueada ao vencer o combate 6.
-6. Fera Lendária — unidade premium, disponível futuramente na loja.
-7. Exal - Verdadeiro poder (`rival-b-final-mode`) — unidade Premium, assim como a Fera Lendária, disponível futuramente na loja.
+6. Besta Lendária — unidade premium, disponível futuramente na loja.
+7. Exal - Verdadeiro poder (`rival-b-final-mode`) — unidade Premium, assim como a Besta Lendária, disponível futuramente na loja.
 
-Saqueadores, rivais, curandeiros e guerreiros habilidosos também aparecem na lista completa, com bloqueios conforme o progresso. Adicionar unidades ao catálogo não concede desbloqueios automaticamente.
+Saqueadores, rivais, curandeiros, Jung de Grimória II e guerreiros habilidosos também aparecem na lista completa, com bloqueios conforme o progresso. Adicionar unidades ao catálogo não concede desbloqueios automaticamente. As unidades da campanha 02 permanecem ocultas da Lista e da Tabela de missões. As unidades premium Exal - Verdadeiro poder e Besta Lendária não aparecem na Tabela de missões.
 
 ## Nomes e ordem aprovados da Lista de personagens
 
@@ -391,25 +393,28 @@ Exibir da esquerda para a direita, linha a linha, nesta sequência:
 1. Ravi de Berdal.
 2. Doko de Berdal.
 3. Anna de Berdal.
-4. Saqueador da estrada I.
-5. Saqueador da estrada II.
-6. Saqueadora da estrada.
-7. Jung de Grimória (`rival-a-base`).
-8. Exal de Grimória (`rival-b-base`).
-9. Monnica de Grimória (`rival-female-base`).
-10. Curandeiro de Pontes (`guardian-healer-male-base`).
-11. Curandeira de Pontes (`guardian-healer-female-base`).
-12. Drak de Pontes.
-13. Trinity de Espinea (`guerreiros-habilidosos-a`).
-14. Vlade de Espinea (`guerreiros-habilidosos-b`).
-15. Passago de Espinea (`guerreiros-habilidosos-c`).
-16. Ravi Berserk.
-17. Exal - Verdadeiro poder (`rival-b-final-mode`).
-18. Fera Lendária.
+4. Capitão da guarda Kalis.
+5. Capitão da guarda Ridan.
+6. Saqueador da estrada I.
+7. Saqueador da estrada II.
+8. Saqueadora da estrada.
+9. Jung de Grimória (`rival-a-base`).
+10. Exal de Grimória (`rival-b-base`).
+11. Monnica de Grimória (`rival-female-base`).
+12. Curandeiro de Pontes (`guardian-healer-male-base`).
+13. Curandeira de Pontes (`guardian-healer-female-base`).
+14. Drak de Pontes.
+15. Trinity de Espinea (`guerreiros-habilidosos-a`).
+16. Vlade de Espinea (`guerreiros-habilidosos-b`).
+17. Passago de Espinea (`guerreiros-habilidosos-c`).
+18. Jung de Grimória II (`jung-de-grimoria-ii`).
+19. Ravi Berserk.
+20. Exal - Verdadeiro poder (`rival-b-final-mode`).
+21. Besta Lendária.
 
 Os novos nomes substituem os rótulos anteriores dos rivais, curandeiros e guerreiros. Preservar IDs, identidades narrativas, caminhos das imagens, atributos, habilidades, desbloqueios e equipe; apenas nomes/apresentação e ordem são remapeados.
 
-A besta lendária poderá aparecer brevemente durante a campanha, sem interagir diretamente com os protagonistas.
+A Besta Lendária poderá aparecer brevemente durante a campanha, sem interagir diretamente com os protagonistas.
 
 Ela representa a existência de forças muito superiores às conhecidas pelos habitantes do vilarejo.
 
@@ -419,7 +424,7 @@ Implementar interface para exibir unidades premium.
 
 No MVP, não processar pagamentos reais nem conceder acesso premium por uma compra fictícia apresentada como real.
 
-Exibir o personagem, sua descrição e o estado "Disponível futuramente".
+Exibir o personagem com a arte original, sem cadeado, e o botão de compra desabilitado; unidades já presentes em `unlockedUnitIds` mostram "Personagem adquirido".
 
 Preparar interfaces de serviço no backend para integração futura com provedor de pagamentos.
 
@@ -545,9 +550,9 @@ A expiração ocorre no início dessa segunda oportunidade de agir. Turnos extra
 
 ## Recuperar vida
 
-- Custo: 30.
+- Custo: 35.
 - Alvo: um aliado vivo.
-- Efeito: restaura 30 HP.
+- Efeito: restaura 20 HP.
 - Não ultrapassa o HP máximo.
 
 ---
@@ -571,20 +576,20 @@ Especial:
 
 ## Protagonista secundário
 
-Especial:
-
-- Custo: 30.
-- Alvo: todos os inimigos vivos.
-- Dano: 15 por inimigo.
-
-## Protagonista feminina
-
-Especial:
+Especial: Proteção coletiva.
 
 - Custo: 20.
 - Alvo: todos os aliados vivos.
 - Efeito: Guarda de 10 por golpe recebido.
 - Duração: dois turnos.
+
+## Protagonista feminina
+
+Especial: Varredura tática.
+
+- Custo: 25.
+- Alvo: todos os inimigos vivos.
+- Dano: 20 por inimigo.
 
 AOE significa Area of Effect, uma habilidade que afeta múltiplos alvos.
 
@@ -629,7 +634,7 @@ Os nomes são provisórios.
 
 Somente o primeiro caminho será jogável no MVP.
 
-Os demais capítulos cadastrados devem aparecer bloqueados. Inicialmente, exibir apenas capítulo 1 e capítulo 2.
+Os demais capítulos cadastrados devem aparecer bloqueados. Inicialmente, exibir apenas capítulo 1 e capítulo 2. O capítulo 2 permanece permanentemente bloqueado nesta revisão, mesmo após a conclusão da batalha 7 do capítulo 1; tentar acessar seus encontros ou iniciar batalhas neles deve retornar 403. As unidades e missões do capítulo 2 não aparecem na Lista de personagens nem na Tabela de missões.
 
 ## Página "Selecionar campanha" — apresentação aprovada
 
@@ -752,7 +757,7 @@ Eles retornarão em combates posteriores. Nomes aprovados: Jung de Grimória, Ex
 - Reter energia.
 - Recuperar vida.
 
-A rival feminina recupera 30 HP de um aliado por 30 de energia.
+A rival feminina recupera 20 HP de um aliado por 35 de energia.
 
 Objetivo narrativo:
 
@@ -970,7 +975,7 @@ Priorizar CSS.
 ## Cura
 
 - Partículas verdes.
-- Indicador +30 HP.
+- Indicador +20 HP.
 - Atualização da barra de vida.
 
 ## Turno extra
@@ -1146,7 +1151,7 @@ Criar testes automatizados para:
 37. Isolamento da disponibilidade por conta e bloqueio de capítulos não lançados.
 38. Expansão da lista por novos registros do banco, rolagem horizontal e retorno ao menu.
 39. Catálogo completo na lista, incluindo registros sem `roster_order`, sem conceder desbloqueios.
-40. `rival-b-final-mode` e Fera Lendária com condição Premium persistida, impedindo escalação enquanto bloqueados.
+40. `rival-b-final-mode` e Besta Lendária com condição Premium persistida, impedindo escalação enquanto bloqueados.
 41. Nomes e ordem aprovados no catálogo/SQL/API, com reordenação idempotente sem conflitos de posição e sem alterar equipe, desbloqueios ou habilidades.
 42. Mapa da campanha com sete pontos, progressão sequencial que impede pular encontros e desbloqueio do chefão somente após os três primeiros combates.
 43. Abertura, retomada e fechamento do painel de detalhes do encontro, exigência de equipe para iniciar e sessão expirada tratada sem inventar progresso.
@@ -1290,8 +1295,12 @@ Durante uma fase explicitamente limitada a planejamento, não implemente código
 
 ## Estado da implementação nesta revisão
 
-A fundação React/Vite, API Fastify, migrações PostgreSQL, autenticação e progresso estão implementados. A lista mostra todo o catálogo persistido em cinco colunas, com imagem/nome centralizados e dados à direita. Unidades bloqueadas abrem detalhes com cadeado, sem permitir escalação; a forma final do rival B e a Fera Lendária são Premium. A equipe começa vazia e pode ser editada em três slots persistentes por conta, sem avisos de sucesso e sem tooltip nas miniaturas.
+A fundação React/Vite, API Fastify, migrações PostgreSQL, autenticação e progresso estão implementados. A lista mostra todo o catálogo persistido em cinco colunas, com imagem/nome centralizados e dados à direita. Unidades bloqueadas abrem detalhes com cadeado, sem permitir escalação; a forma final do rival B e a Besta Lendária são Premium. A equipe começa vazia e pode ser editada em três slots persistentes por conta, sem avisos de sucesso e sem tooltip nas miniaturas.
 
 A página "Selecionar campanha" está implementada com dois capítulos persistidos, estados visuais de disponibilidade, seleção e carrossel extensível. O capítulo disponível abre a página do mapa da campanha, com os sete pontos de batalha posicionados sobre a arte do mapa, painel lateral de detalhes e progressão sequencial validada pelo servidor.
 
-O motor de combate determinístico (`shared/core/battle.ts`) e a resolução autoritativa no backend estão implementados: criação de batalha por encontro disponível, validação de equipe, fila com prévia de energia, MISS, turnos extras acumuláveis, IA determinística e recompensas idempotentes. A interface de batalha é montada sob demanda (chunk separado). Restam no backlog `implementation_tasks.md`: loja, áudio, diálogos completos dos sete encontros, transformação com poderes próprios, testes restantes da matriz e a validação final da jornada no navegador.
+O motor de combate determinístico (`shared/core/battle.ts`) e a resolução autoritativa no backend estão implementados: criação de batalha por encontro disponível, validação de equipe, fila com prévia de energia, MISS, turnos extras acumuláveis, IA determinística e recompensas idempotentes. A interface de batalha é montada sob demanda (chunk separado). O balanceamento de habilidades foi atualizado por migrations idempotentes, incluindo Força interna, Investida, Varredura tática, Fúria devastadora, Drenar existência, Recuperar vida, Guarda e a troca de habilidade do Saqueador da estrada I.
+
+O catálogo atual possui 38 unidades persistidas, incluindo Capitão da guarda Kalis e Capitão da guarda Ridan, que só entram no sorteio de Batalha rápida após serem desbloqueados com três vitórias rápidas. A Lista de personagens, a Batalha rápida e a Tabela de missões exibem apenas o conteúdo do capítulo 1; as unidades e missões do capítulo 2 ficam ocultas, e o capítulo 2 permanece bloqueado mesmo após a batalha 7. A loja exibe as duas unidades premium com arte original, sem cadeado, botão de aquisição desabilitado e estado "Personagem adquirido" quando já desbloqueadas na conta, sem checkout ou cobrança real.
+
+Verificações desta revisão: `npm run typecheck`, `npm test` (275 testes), `npm run test:db` (74 testes) e `npm run build` passaram. Restam no backlog: áudio, diálogos completos dos sete encontros, transformação com poderes próprios, integração real de pagamentos e validação manual final da jornada no navegador.

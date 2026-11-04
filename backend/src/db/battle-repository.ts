@@ -4,7 +4,8 @@ import type { CampaignBattleOptions, CampaignMapData, PlayerProgress, QuickBattl
 import type { EncounterDefinition } from '@game/content/encounters.js';
 import { FINAL_ENCOUNTER_ID, FINAL_BATTLE_REQUIREMENT, SECOND_FINAL_ENCOUNTER_ID, OSIRIS_UNIT_ID,
   OSIRIS_BATTLE_REQUIREMENT, withOsiris } from '@game/content/campaign-rules.js';
-import { STARTER_UNIT_IDS, type UnitDefinition } from '@game/content/units.js';
+import { QUICK_BATTLE_ALWAYS_UNIT_IDS, QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS, type UnitDefinition } from '@game/content/units.js';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import { BOT_THINK_MS, TURN_DURATION_MS, createBattle, executeTurn, planEnemyTurn, type BattleAction, type BattleCombo, type BattleRecord, type BattleTurnResult, type BattleEvent } from '@game/core/battle.js';
 import type { BattleRepository } from '../game/battle-repository.js';
 import { GameError } from '../game/repository.js';
@@ -157,18 +158,23 @@ export class PostgresBattleRepository implements BattleRepository {
     return team;
   }
 
-  private async quickBattleOpponents(client: Pool | PoolClient, completedEncounters: readonly string[]) {
+  private async quickBattleOpponents(client: Pool | PoolClient, completedEncounters: readonly string[],
+    unlockedUnitIds: readonly string[]) {
+    const missionOpponents = QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS.filter((id) => unlockedUnitIds.includes(id));
     const opponents = await client.query<QuickBattleData['opponents'][number]>(`SELECT u.id, u.name, u.portrait_path AS portrait
-      FROM units u WHERE u.id = ANY($2::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
-        WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[]))
-      ORDER BY u.roster_order NULLS LAST, u.id`, [completedEncounters, STARTER_UNIT_IDS]);
+      FROM units u WHERE NOT (u.id = ANY($3::text[]))
+        AND (u.id = ANY($2::text[]) OR u.id = ANY($4::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
+          WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[])))
+      ORDER BY u.roster_order NULLS LAST, u.id`, [completedEncounters, QUICK_BATTLE_ALWAYS_UNIT_IDS,
+        SECOND_CAMPAIGN_UNIT_IDS, missionOpponents]);
     return opponents.rows;
   }
 
   async getQuickBattle(userId: string): Promise<QuickBattleData> {
     const progress = await this.pool.query<{ data: PlayerProgress }>('SELECT data FROM player_progress WHERE user_id = $1', [userId]);
     if (!progress.rows[0]) throw new GameError(404, 'Progresso não encontrado.');
-    return { opponents: await this.quickBattleOpponents(this.pool, progress.rows[0].data.completedEncounters) };
+    return { opponents: await this.quickBattleOpponents(this.pool, progress.rows[0].data.completedEncounters,
+      progress.rows[0].data.unlockedUnitIds) };
   }
 
   async startQuickBattle(userId: string): Promise<BattleRecord> {
@@ -176,7 +182,7 @@ export class PostgresBattleRepository implements BattleRepository {
     try {
       await client.query('BEGIN');
       const progress = await this.lockProgress(client, userId);
-      const opponents = await this.quickBattleOpponents(client, progress.completedEncounters);
+      const opponents = await this.quickBattleOpponents(client, progress.completedEncounters, progress.unlockedUnitIds);
       if (!opponents.length) throw new GameError(503, 'Adversários indisponíveis no catálogo.');
       const team = await this.playerTeam(client, userId, progress);
       const catalog = await new PostgresGameRepository(this.pool).getCatalog(client);

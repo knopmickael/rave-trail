@@ -97,8 +97,9 @@ it('executa cadastro, login, consulta e logout HTTP com PostgreSQL real', async 
 
 it('lê catálogo persistido, com os nomes aprovados e quatro habilidades por unidade', async () => {
   const catalog = await gameRepository.getCatalog();
-  expect(catalog.units.slice(0, 6).map((unit) => unit.name)).toEqual([
-    'Ravi de Berdal', 'Doko de Berdal', 'Anna de Berdal', 'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
+  expect(catalog.units.slice(0, 8).map((unit) => unit.name)).toEqual([
+    'Ravi de Berdal', 'Doko de Berdal', 'Anna de Berdal', 'Capitão da guarda Kalis', 'Capitão da guarda Ridan',
+    'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
   ]);
   expect(catalog.abilities).toHaveLength(20);
   for (const unit of catalog.units) expect(unit.abilityIds).toHaveLength(4);
@@ -111,13 +112,17 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
   const user = await repository.register('habilidades-migradas@example.com', 'hash', session());
   await gameRepository.setTeamSlot(user.id, 1, 'protagonist-main-base');
   const progressBefore = await repository.getProgress(user.id);
-  const changedIds = ['road-raider-2-base', 'rival-a-base', 'rival-b-base', 'passage-guardian-base',
+  const changedIds = ['protagonist-secondary-base', 'protagonist-female-base',
+    'road-raider-2-base', 'rival-a-base', 'rival-b-base', 'rival-female-base', 'passage-guardian-base',
     'guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c', 'protagonist-main-transformed', 'rival-b-final-mode', 'legendary-beast-premium'];
   await pool.query("UPDATE abilities SET target = 'ally' WHERE id = 'guard'");
   await pool.query("UPDATE abilities SET energy_cost = 30 WHERE id = 'heal'");
   await pool.query('DELETE FROM unit_abilities');
   for (const id of changedIds) {
     const previous = id === 'passage-guardian-base' ? ['strong-strike', 'guard', 'retain-energy', 'extra-turn']
+      : id === 'rival-female-base' ? ['simple-strike', 'female-special', 'retain-energy', 'heal']
+      : id === 'protagonist-secondary-base' ? ['simple-strike', 'guard', 'retain-energy', 'secondary-special']
+      : id === 'protagonist-female-base' ? ['simple-strike', 'guard', 'retain-energy', 'female-special']
       : ['simple-strike', 'guard', 'retain-energy', id === 'protagonist-main-transformed' ? 'main-special' : 'strong-strike'];
     for (const [slot, abilityId] of previous.entries()) {
       await pool.query('INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES ($1,$2,$3)', [id, slot, abilityId]);
@@ -126,7 +131,7 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
   await pool.query("DELETE FROM abilities WHERE id IN ('retain-energy-plus', 'soul-drain', 'soul-drain-plus', 'fury-scream', 'heal-plus', 'resurrection', 'simple-strike-ii', 'quick-slash', 'dark-vortex', 'fast-move', 'internal-strength')");
   await pool.query('ALTER TABLE abilities DROP CONSTRAINT abilities_target_check');
   await pool.query("ALTER TABLE abilities ADD CONSTRAINT abilities_target_check CHECK (target IN ('enemy', 'ally', 'all-enemies', 'all-allies', 'team'))");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '028_internal_strength.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '028_internal_strength.sql', '029_monnica_guard.sql', '030_heal_20.sql',     '031_swap_starter_specials.sql', '032_soul_drain_35.sql', '033_drain_heal_on_damage.sql', '034_reduce_guard_absorption.sql', '035_ability_rebalance.sql', '036_guard_captains_and_store_content.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
@@ -143,8 +148,8 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
 
 it('persiste Força interna e a ativação no próximo turno no snapshot oficial da batalha', async () => {
   const user = await repository.register('forca-interna@example.com', 'hash', session());
-  await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || '[\"road-raider-1-base\"]'::jsonb) WHERE user_id = $1", [user.id]);
-  await gameRepository.setTeamSlot(user.id, 0, 'road-raider-1-base');
+  await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || '[\"capitao-da-guarda-ridan-base\"]'::jsonb) WHERE user_id = $1", [user.id]);
+  await gameRepository.setTeamSlot(user.id, 0, 'capitao-da-guarda-ridan-base');
   await gameRepository.setTeamSlot(user.id, 1, STARTER_UNIT_IDS[1]);
   const battle = await battleRepository.startBattle(user.id, 'path-1-encounter-1');
   battle.state.teams.player.energy = 35;
@@ -152,9 +157,9 @@ it('persiste Força interna e a ativação no próximo turno no snapshot oficial
   const result = await battleRepository.submitTurn(user.id, battle.id, 0, randomUUID(),
     [{ actorId: 'player-0', abilityId: 'internal-strength', targetId: 'player-1' }]);
   const restored = await battleRepository.getBattle(user.id, battle.id);
-  expect(restored.state.teams.player.units[1]).toMatchObject({ damageBoostAmount: 15, damageBoostStartsAt: 2, damageBoostExpiresAt: 3 });
+  expect(restored.state.teams.player.units[1]).toMatchObject({ damageBoostAmount: 10, damageBoostStartsAt: 2, damageBoostExpiresAt: 3 });
   expect(restored.state.teams.player.units[0].abilityIds).toEqual(['simple-strike', 'guard', 'retain-energy', 'internal-strength']);
-  expect(restored.state.teams.player.energy).toBe(0);
+  expect(restored.state.teams.player.energy).toBe(5);
   expect(restored).toEqual(result.battle);
 });
 
@@ -174,7 +179,7 @@ it('persiste os quatro inimigos posteriores a Drak sem duplicar registros ao rea
   }
   expect(catalog.units.find((unit) => unit.id === 'rival-b-base')?.characterId).toBe('rival-b');
   expect(catalog.units.find((unit) => unit.id === 'rival-b-final-mode')?.characterId).toBe('rival-b');
-  expect(catalog.units).toHaveLength(36);
+  expect(catalog.units).toHaveLength(38);
   expect(catalog.units.find((unit) => unit.id === 'rival-b-final-mode')?.unlock.kind).toBe('premium');
   expect(catalog.units.find((unit) => unit.id === 'legendary-beast-premium')?.unlock.kind).toBe('premium');
 });
@@ -215,13 +220,13 @@ it('migra a antiga equipe automática para vazia e preserva configurações pers
   expect((await repository.getProgress(second.id))!.selectedTeam).toEqual([null, 'protagonist-female-base', null]);
 });
 
-it('persiste duas campanhas e deriva disponibilidade por conta sem alterar progresso no seed', async () => {
+it('persiste duas campanhas e mantém o capítulo 02 bloqueado no seed', async () => {
   const user = await repository.register('campanha@example.com', 'hash', session());
   const initial = await gameRepository.getCampaigns(user.id);
   expect(initial.map((campaign) => [campaign.id, campaign.chapterNumber, campaign.available])).toEqual([['path-1', 1, true], ['path-2', 2, false]]);
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{availablePathIds}', '[\"path-2\"]'::jsonb) WHERE user_id = $1", [user.id]);
   await seedDatabase(pool);
-  expect((await gameRepository.getCampaigns(user.id)).map((campaign) => campaign.available)).toEqual([false, true]);
+  expect((await gameRepository.getCampaigns(user.id)).map((campaign) => campaign.available)).toEqual([false, false]);
   expect((await pool.query('SELECT count(*)::int AS count FROM campaigns')).rows[0].count).toBe(2);
 });
 
@@ -250,11 +255,12 @@ it('reaplica nomes e ordem sobre posições antigas sem conflito e preserva equi
   const catalog = await gameRepository.getCatalog();
   expect(catalog.units.map((unit) => unit.name)).toEqual([
     'Ravi de Berdal', 'Doko de Berdal', 'Anna de Berdal',
+    'Capitão da guarda Kalis', 'Capitão da guarda Ridan',
     'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
     'Jung de Grimória', 'Exal de Grimória', 'Monnica de Grimória',
     'Curandeiro de Pontes', 'Curandeira de Pontes', 'Drak de Pontes',
     'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
-    'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Fera Lendária',
+    'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
     ...units.filter((unit) => unit.version === 'Além das Fronteiras').map((unit) => unit.name),
   ]);
   expect(catalog.units.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));

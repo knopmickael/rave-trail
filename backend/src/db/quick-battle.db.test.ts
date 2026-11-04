@@ -3,8 +3,10 @@ import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { hashSessionToken } from '../auth/crypto.js';
-import { STARTER_UNIT_IDS } from '@game/content/units.js';
+import { QUICK_BATTLE_ALWAYS_UNIT_IDS, STARTER_UNIT_IDS } from '@game/content/units.js';
+import { KALIS_UNIT_ID, RIDAN_UNIT_ID } from '@game/content/unlocks.js';
 import { encounters } from '@game/content/encounters.js';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import type { BattleRecord } from '@game/core/battle.js';
 import { PostgresAuthRepository } from './auth-repository.js';
 import { PostgresBattleRepository } from './battle-repository.js';
@@ -38,19 +40,54 @@ async function readyPlayer(count = 3) {
   return user;
 }
 
+async function winQuick(userId: string) {
+  const quick = await battles.startQuickBattle(userId);
+  const snapshot = JSON.parse(JSON.stringify(quick.state)) as BattleRecord['state'];
+  snapshot.teams.enemy.units.forEach((unit, index) => { unit.hp = index === 0 ? 1 : 0; });
+  snapshot.teams.player.energy = 100;
+  await pool.query('UPDATE battles SET state = $2 WHERE id = $1', [quick.id, JSON.stringify(snapshot)]);
+  const outcome = await battles.submitTurn(userId, quick.id, 0, randomUUID(),
+    [{ actorId: 'player-0', abilityId: 'simple-strike', targetId: 'enemy-0' }]);
+  expect(outcome.battle.state.status).toBe('victory');
+}
+
 it('disponibiliza protagonistas desde o início e acrescenta somente inimigos já vencidos por conta', async () => {
   const user = await readyPlayer(2);
   const other = await auth.register('outra@example.com', 'hash', session());
   const initial = await battles.getQuickBattle(user.id);
-  expect(initial.opponents.map((unit) => unit.id)).toEqual([...STARTER_UNIT_IDS, ...encounters[0].enemyUnitIds, ...encounters[1].enemyUnitIds]);
+  expect(initial.opponents.map((unit) => unit.id)).toEqual([...QUICK_BATTLE_ALWAYS_UNIT_IDS, ...encounters[0].enemyUnitIds, ...encounters[1].enemyUnitIds]);
   expect(initial.opponents.every((unit) => unit.name && unit.portrait)).toBe(true);
-  expect((await battles.getQuickBattle(other.id)).opponents.map((unit) => unit.id)).toEqual([...STARTER_UNIT_IDS]);
+  expect((await battles.getQuickBattle(other.id)).opponents.map((unit) => unit.id)).toEqual([...QUICK_BATTLE_ALWAYS_UNIT_IDS]);
   await complete(user.id, 3);
   const expanded = await battles.getQuickBattle(user.id);
-  expect(new Set(expanded.opponents.map((unit) => unit.id))).toEqual(new Set([...STARTER_UNIT_IDS, ...encounters.slice(0, 3).flatMap((entry) => entry.enemyUnitIds)]));
+  expect(new Set(expanded.opponents.map((unit) => unit.id))).toEqual(new Set([...QUICK_BATTLE_ALWAYS_UNIT_IDS, ...encounters.slice(0, 3).flatMap((entry) => entry.enemyUnitIds)]));
   expect(new Set(expanded.opponents.map((unit) => unit.id)).size).toBe(12);
   expect(initial.opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(false);
   expect(expanded.opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(true);
+});
+
+it('não lista nem sorteia personagens da campanha 2 na Batalha rápida', async () => {
+  const user = await readyPlayer(encounters.length);
+  const hidden = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
+  const opponents = (await battles.getQuickBattle(user.id)).opponents;
+  expect(opponents.some((unit) => hidden.has(unit.id))).toBe(false);
+  expect(opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(true);
+  const quick = await battles.startQuickBattle(user.id);
+  expect(quick.state.teams.enemy.units.every((unit) => !hidden.has(unit.unitId))).toBe(true);
+});
+
+it('libera capitães como adversários somente após as três vitórias rápidas exigidas', async () => {
+  const user = await readyPlayer(0);
+  const captains = new Set([KALIS_UNIT_ID, RIDAN_UNIT_ID]);
+  expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => captains.has(unit.id))).toBe(false);
+  await winQuick(user.id);
+  await winQuick(user.id);
+  expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => captains.has(unit.id))).toBe(false);
+  expect((await auth.getProgress(user.id))!.unlockedUnitIds.some((id) => captains.has(id))).toBe(false);
+  await winQuick(user.id);
+  expect((await auth.getProgress(user.id))!.unlockedUnitIds).toEqual(expect.arrayContaining([...captains]));
+  expect((await battles.getQuickBattle(user.id)).opponents.filter((unit) => captains.has(unit.id)).map((unit) => unit.id))
+    .toEqual([KALIS_UNIT_ID, RIDAN_UNIT_ID]);
 });
 
 it('permite jogar antes da campanha, mas rejeita equipe vazia ou personagem bloqueado', async () => {
@@ -61,7 +98,9 @@ it('permite jogar antes da campanha, mas rejeita equipe vazia ou personagem bloq
   expect((await pool.query('SELECT count(*)::int AS count FROM battles WHERE user_id = $1', [user.id])).rows[0].count).toBe(0);
   await game.setTeamSlot(user.id, 0, STARTER_UNIT_IDS[0]);
   const quick = await battles.startQuickBattle(user.id);
-  expect(new Set(quick.state.teams.enemy.units.map((unit) => unit.unitId))).toEqual(new Set(STARTER_UNIT_IDS));
+  const alwaysIds = new Set<string>(QUICK_BATTLE_ALWAYS_UNIT_IDS);
+  expect(quick.state.teams.enemy.units).toHaveLength(3);
+  expect(quick.state.teams.enemy.units.every((unit) => alwaysIds.has(unit.unitId))).toBe(true);
   expect((await auth.getProgress(user.id))!.completedEncounters).toEqual([]);
 });
 
@@ -146,12 +185,12 @@ it('protege as rotas HTTP e recusa adversários ou progresso enviados pelo clien
     const registered = await app.inject({ method: 'POST', url: '/api/auth/register', headers: { origin }, payload: { email: 'rapida-http@example.com', password: 'senha longa de teste' } });
     const user = registered.json().user;
     const cookie = `rave_trail_session=${registered.cookies[0].value}`;
-    expect((await app.inject({ url: '/api/quick-battle', headers: { cookie } })).json().quickBattle.opponents.map((unit: { id: string }) => unit.id)).toEqual([...STARTER_UNIT_IDS]);
+    expect((await app.inject({ url: '/api/quick-battle', headers: { cookie } })).json().quickBattle.opponents.map((unit: { id: string }) => unit.id)).toEqual([...QUICK_BATTLE_ALWAYS_UNIT_IDS]);
     expect((await app.inject({ method: 'POST', url: '/api/quick-battle/battles', headers: { origin, cookie }, payload: {} })).statusCode).toBe(400);
     await complete(user.id, 2);
     await game.setTeamSlot(user.id, 0, STARTER_UNIT_IDS[0]);
     const available = await app.inject({ url: '/api/quick-battle?userId=outra-conta', headers: { cookie } });
-    expect(available.json().quickBattle.opponents.map((unit: { id: string }) => unit.id)).toEqual([...STARTER_UNIT_IDS, ...encounters[0].enemyUnitIds, ...encounters[1].enemyUnitIds]);
+    expect(available.json().quickBattle.opponents.map((unit: { id: string }) => unit.id)).toEqual([...QUICK_BATTLE_ALWAYS_UNIT_IDS, ...encounters[0].enemyUnitIds, ...encounters[1].enemyUnitIds]);
     for (const payload of [{ enemyUnitIds: ['rival-b-final-mode'] }, { completedEncounters: [encounters[6].id] }, { userId: 'outra-conta' }]) {
       expect((await app.inject({ method: 'POST', url: '/api/quick-battle/battles', headers: { origin, cookie }, payload })).statusCode).toBe(400);
     }

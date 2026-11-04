@@ -22,6 +22,6 @@ export const campaigns: readonly CampaignDefinition[] = [
   {
     id: 'path-2', chapterNumber: 2, title: 'Além das Fronteiras',
     description: 'Os heróis procuram a corte de Osiris e enfrentam a ameaça que desperta além das fronteiras.',
-    background: '/media/campaigns/path-2.webp', sortOrder: 1, released: true,
+    background: '/media/campaigns/path-2.webp', sortOrder: 1, released: false,
   },
 ];

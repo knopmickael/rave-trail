@@ -25,6 +25,7 @@
     "db:down": "docker compose down",
     "db:migrate": "tsx --tsconfig backend/tsconfig.json backend/src/db/migrate.ts",
     "db:seed": "tsx --tsconfig backend/tsconfig.json backend/src/db/seed-cli.ts",
+    "db:reset-progress": "tsx --tsconfig backend/tsconfig.json backend/src/db/reset-progress-cli.ts",
     "assets:mocks": "node --import tsx tools/assets/generate-mock-art.mjs",
     "assets:campaigns": "node tools/assets/generate-campaign-art.mjs"
   },

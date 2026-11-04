@@ -64,7 +64,7 @@ export function QuickBattle({ onBack, onSessionExpired, onBattleStarted }: {
       <section className="quick-battle-panel" aria-labelledby="quick-battle-intro" aria-busy={busy}>
         <h2 id="quick-battle-intro">Prepare-se para o confronto</h2>
         <p>Enfrente uma equipe sorteada entre os três protagonistas, disponíveis desde o início,
-          e os inimigos que você já derrotou na campanha.
+          os inimigos que você já derrotou na campanha e os capitães desbloqueados na Tabela de missões.
           Cada Batalha rápida é um novo confronto, sem mapa e sem avançar a campanha.</p>
         {error ? <>
           <p className="feedback" role="alert">{error}</p>

@@ -60,7 +60,7 @@ describe('catálogo compartilhado', () => {
     for (const unit of units.filter((unit) => unit.characterId.startsWith('guardian-healer'))) {
       expect(unit.abilityIds).toEqual(['simple-strike', 'female-special', 'retain-energy', 'heal']);
     }
-    expect(abilities['main-special'].effects).toEqual([{ kind: 'damage', amount: 30 }]);
+    expect(abilities['main-special'].effects).toEqual([{ kind: 'damage', amount: 35 }]);
     expect(abilities['secondary-special'].target).toBe('all-enemies');
     expect(abilities['female-special'].target).toBe('all-allies');
   });
@@ -68,18 +68,22 @@ describe('catálogo compartilhado', () => {
   it('cadastra custos e efeitos do balanceamento e das novas habilidades', () => {
     expect(abilities['retain-energy']).toMatchObject({ energyCost: 0, effects: [{ kind: 'restore-energy', amount: 20 }] });
     expect(abilities['retain-energy-plus']).toMatchObject({ energyCost: 0, effects: [{ kind: 'restore-energy', amount: 35 }] });
-    expect(abilities.guard).toMatchObject({ effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }] });
-    expect(abilities['female-special']).toMatchObject({ target: 'all-allies', effects: [{ kind: 'guard', reduction: 15, teamTurns: 2 }] });
-    expect(abilities['secondary-special']).toMatchObject({ energyCost: 25, effects: [{ kind: 'damage', amount: 20 }] });
+    expect(abilities.guard).toMatchObject({ effects: [{ kind: 'guard', reduction: 10, teamTurns: 2 }] });
+    expect(abilities['female-special']).toMatchObject({ target: 'all-allies', effects: [{ kind: 'guard', reduction: 10, teamTurns: 2 }] });
+    expect(abilities['secondary-special']).toMatchObject({ energyCost: 30, effects: [{ kind: 'damage', amount: 20 }] });
     expect(abilities['strong-strike']).toMatchObject({ energyCost: 30 });
-    expect(abilities['internal-strength']).toMatchObject({ energyCost: 35, target: 'ally',
-      icon: '/media/abilities/internal-strength.png', effects: [{ kind: 'damage-boost', amount: 15, teamTurns: 1 }] });
-    expect(abilities['soul-drain']).toMatchObject({ energyCost: 30 });
-    expect(abilities.heal).toMatchObject({ energyCost: 35 });
-    expect(abilities['heal-plus']).toMatchObject({ energyCost: 45 });
+    expect(abilities['internal-strength']).toMatchObject({ energyCost: 30, target: 'ally',
+      icon: '/media/abilities/internal-strength.png', effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 1 }] });
+    expect(abilities['soul-drain']).toMatchObject({ energyCost: 35,
+      description: 'Causa 25 de dano a um inimigo e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.' });
+    expect(abilities['soul-drain-plus']).toMatchObject({ target: 'all-enemies', energyCost: 45,
+      description: 'Causa 30 de dano a todos os inimigos vivos e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.',
+      effects: [{ kind: 'drain', amount: 30 }] });
+    expect(abilities.heal).toMatchObject({ energyCost: 35, effects: [{ kind: 'heal', amount: 20 }] });
+    expect(abilities['heal-plus']).toMatchObject({ energyCost: 45, effects: [{ kind: 'heal', amount: 30 }] });
     expect(abilities.resurrection).toMatchObject({ energyCost: 50 });
     expect(abilities['extra-turn']).toMatchObject({ energyCost: 40 });
-    expect(abilities['fury-scream']).toMatchObject({ energyCost: 30 });
+    expect(abilities['fury-scream']).toMatchObject({ energyCost: 40, effects: [{ kind: 'damage', amount: 35 }] });
     expect(abilities['simple-strike-ii']).toMatchObject({ name: 'Golpe simples II', energyCost: 20, target: 'enemy',
       icon: '/media/abilities/simple-strike-II.png', effects: [{ kind: 'damage', amount: 30 }] });
     expect(abilities['quick-slash']).toMatchObject({ energyCost: 35, target: 'enemy',
@@ -118,11 +122,14 @@ describe('catálogo compartilhado', () => {
   });
 
   it.each([
-    ['road-raider-1-base', ['simple-strike', 'guard', 'retain-energy', 'internal-strength']],
+    ['protagonist-secondary-base', ['simple-strike', 'guard', 'retain-energy', 'female-special']],
+    ['protagonist-female-base', ['simple-strike', 'guard', 'retain-energy', 'secondary-special']],
+    ['road-raider-1-base', ['simple-strike', 'guard', 'retain-energy', 'strong-strike']],
     ['road-raider-2-base', ['simple-strike', 'guard', 'retain-energy', 'secondary-special']],
     ['rival-a-base', ['simple-strike', 'guard', 'retain-energy', 'main-special']],
     ['jung-de-grimoria-ii', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash']],
     ['rival-b-base', ['simple-strike', 'guard', 'retain-energy', 'soul-drain']],
+    ['rival-female-base', ['simple-strike', 'guard', 'retain-energy', 'heal']],
     ['passage-guardian-base', ['main-special', 'fast-move', 'retain-energy', 'extra-turn']],
     ['guerreiros-habilidosos-a', ['main-special', 'fast-move', 'retain-energy', 'secondary-special']],
     ['guerreiros-habilidosos-b', ['main-special', 'fast-move', 'retain-energy', 'female-special']],
@@ -137,16 +144,17 @@ describe('catálogo compartilhado', () => {
   it('mantém os nomes e a ordem aprovada da lista completa', () => {
     expect(rosterUnits.map((unit) => unit.name)).toEqual([
       'Ravi de Berdal', 'Doko de Berdal', 'Anna de Berdal',
+      'Capitão da guarda Kalis', 'Capitão da guarda Ridan',
       'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
       'Jung de Grimória', 'Exal de Grimória', 'Monnica de Grimória',
       'Curandeiro de Pontes', 'Curandeira de Pontes', 'Drak de Pontes',
       'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
-      'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Fera Lendária',
+      'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
       ...SECOND_CAMPAIGN_CHARACTERS.map((character) => character.name),
     ]);
     expect(rosterUnits.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));
-    expect(rosterUnits[31].id).toBe('combatente-demonio');
-    expect(rosterUnits[33].id).toBe('lorde-demonio-rakin');
+    expect(rosterUnits.findIndex((unit) => unit.id === 'combatente-demonio')).toBe(33);
+    expect(rosterUnits.findIndex((unit) => unit.id === 'lorde-demonio-rakin')).toBe(35);
   });
 
   it('cadastra Jung II como uma unidade independente com o mesmo personagem e conjunto próprio de habilidades', () => {

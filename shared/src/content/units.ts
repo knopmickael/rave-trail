@@ -1,11 +1,14 @@
 import type { AbilityId } from './abilities.js';
-import { battleUnlock } from './unlocks.js';
+import { battleUnlock, KALIS_UNIT_ID, RIDAN_UNIT_ID } from './unlocks.js';
 import { SECOND_CAMPAIGN_CHARACTERS, SECOND_CAMPAIGN_UNIT_IDS, type SecondCampaignCharacterId } from './second-campaign.js';
 
 export const STARTER_UNIT_IDS = ['protagonist-main-base', 'protagonist-secondary-base', 'protagonist-female-base'] as const;
+export const QUICK_BATTLE_ALWAYS_UNIT_IDS = [...STARTER_UNIT_IDS] as const;
+export const QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS = [KALIS_UNIT_ID, RIDAN_UNIT_ID] as const;
 
 export const ROSTER_UNIT_IDS = [
-  ...STARTER_UNIT_IDS,
+  ...QUICK_BATTLE_ALWAYS_UNIT_IDS,
+  ...QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS,
   'road-raider-1-base',
   'road-raider-2-base',
   'road-raider-3-base',
@@ -36,6 +39,8 @@ export const narrativeCharacters = {
   'protagonist-main': { id: 'protagonist-main', name: 'Ravi de Berdal' },
   'protagonist-secondary': { id: 'protagonist-secondary', name: 'Doko de Berdal' },
   'protagonist-female': { id: 'protagonist-female', name: 'Anna de Berdal' },
+  'capitao-da-guarda-kalis': { id: 'capitao-da-guarda-kalis', name: 'Capitão da guarda Kalis' },
+  'capitao-da-guarda-ridan': { id: 'capitao-da-guarda-ridan', name: 'Capitão da guarda Ridan' },
   'road-raider-1': { id: 'road-raider-1', name: 'Saqueador da estrada I' },
   'road-raider-2': { id: 'road-raider-2', name: 'Saqueador da estrada II' },
   'road-raider-3': { id: 'road-raider-3', name: 'Saqueadora da estrada' },
@@ -45,7 +50,7 @@ export const narrativeCharacters = {
   'passage-guardian': { id: 'passage-guardian', name: 'Drak de Pontes' },
   'guardian-healer-male': { id: 'guardian-healer-male', name: 'Curandeiro de Pontes' },
   'guardian-healer-female': { id: 'guardian-healer-female', name: 'Curandeira de Pontes' },
-  'legendary-beast': { id: 'legendary-beast', name: 'Fera Lendária' },
+  'legendary-beast': { id: 'legendary-beast', name: 'Besta Lendária' },
   'guerreiros-habilidosos-a': { id: 'guerreiros-habilidosos-a', name: 'Trinity de Espinea' },
   'guerreiros-habilidosos-b': { id: 'guerreiros-habilidosos-b', name: 'Vlade de Espinea' },
   'guerreiros-habilidosos-c': { id: 'guerreiros-habilidosos-c', name: 'Passago de Espinea' },
@@ -79,18 +84,29 @@ const unitNameOverrides: Readonly<Record<string, string>> = {
   'protagonist-main-transformed': 'Ravi Berserk',
   'rival-b-final-mode': 'Exal - Verdadeiro poder',
 };
+const unitAssetOverrides: Readonly<Record<string, { portrait: string; illustration: string }>> = {
+  'capitao-da-guarda-ridan-base': {
+    portrait: '/media/characters/capitao-da-guarda-kalis-face.png',
+    illustration: '/media/characters/capitao-da-guarda-kalis-body.png',
+  },
+  'legendary-beast-premium': {
+    portrait: '/media/characters/fera-lendaria-face.png',
+    illustration: '/media/characters/fera-lendaria-body.png',
+  },
+};
 
 function defineUnit(unit: Omit<UnitDefinition, 'name' | 'maxHp' | 'portrait' | 'illustration' | 'rosterOrder'>): UnitDefinition {
   const rosterOrder = (ROSTER_UNIT_IDS as readonly string[]).indexOf(unit.id);
   const name = unitNameOverrides[unit.id] ?? narrativeCharacters[unit.characterId].name;
   const assetName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const assets = unitAssetOverrides[unit.id];
   return {
     ...unit,
     name,
     maxHp: 100,
-    portrait: `/media/characters/${assetName}-face.png`,
-    illustration: `/media/characters/${assetName}-body.png`,
+    portrait: assets?.portrait ?? `/media/characters/${assetName}-face.png`,
+    illustration: assets?.illustration ?? `/media/characters/${assetName}-body.png`,
     rosterOrder: rosterOrder < 0 ? null : rosterOrder,
   };
 }
@@ -104,17 +120,27 @@ export const units: readonly UnitDefinition[] = [
   defineUnit({
     id: STARTER_UNIT_IDS[1], characterId: 'protagonist-secondary', version: 'Jovem da guarda',
     description: 'Reservado, disciplinado e atento aos movimentos do adversário. Encontra na estratégia uma maneira de proteger os amigos durante a missão de reconhecimento.',
-    abilityIds: [...common, 'secondary-special'], unlock: starter,
+    abilityIds: [...common, 'female-special'], unlock: starter,
   }),
   defineUnit({
     id: STARTER_UNIT_IDS[2], characterId: 'protagonist-female', version: 'Jovem da guarda',
     description: 'Inteligente, pragmática e corajosa. Seu talento para a defesa e o suporte mantém a equipe unida diante dos perigos das rotas comerciais.',
-    abilityIds: [...common, 'female-special'], unlock: starter,
+    abilityIds: [...common, 'secondary-special'], unlock: starter,
+  }),
+  defineUnit({
+    id: KALIS_UNIT_ID, characterId: 'capitao-da-guarda-kalis', version: 'Capitão da guarda',
+    description: 'Capitão da guarda de Berdal, aliado dos protagonistas. Combina defesa, recuperação de energia e cura para sustentar a equipe.',
+    abilityIds: ['simple-strike', 'guard', 'retain-energy', 'heal'], unlock: battleUnlock(KALIS_UNIT_ID),
+  }),
+  defineUnit({
+    id: RIDAN_UNIT_ID, characterId: 'capitao-da-guarda-ridan', version: 'Capitão da guarda',
+    description: 'Capitão da guarda de Berdal, aliado dos protagonistas. Prepara os companheiros com Força interna antes de partir para o ataque.',
+    abilityIds: ['simple-strike', 'guard', 'retain-energy', 'internal-strength'], unlock: battleUnlock(RIDAN_UNIT_ID),
   }),
   ...(['road-raider-1', 'road-raider-2', 'road-raider-3'] as const).map((characterId) => defineUnit({
     id: `${characterId}-base`, characterId, version: 'Saqueadores da estrada',
     description: 'Combatente encontrado na primeira estrada fora do vilarejo. Explora a insegurança das rotas comerciais para atacar viajantes.',
-    abilityIds: [...common, characterId === 'road-raider-1' ? 'internal-strength' : characterId === 'road-raider-2' ? 'secondary-special' : 'strong-strike'], unlock: battleUnlock(`${characterId}-base`),
+    abilityIds: [...common, characterId === 'road-raider-2' ? 'secondary-special' : 'strong-strike'], unlock: battleUnlock(`${characterId}-base`),
   })),
   ...(['rival-a', 'rival-b'] as const).map((characterId) => defineUnit({
     id: `${characterId}-base`, characterId, version: 'Primeiro encontro',
@@ -129,7 +155,7 @@ export const units: readonly UnitDefinition[] = [
   defineUnit({
     id: 'rival-female-base', characterId: 'rival-female', version: 'Primeiro encontro',
     description: 'Integrante do trio de mercenários rivais. Apoia seus companheiros recuperando a vida dos aliados durante os confrontos.',
-    abilityIds: ['simple-strike', 'female-special', 'retain-energy', 'heal'], unlock: battleUnlock('rival-female-base'),
+    abilityIds: ['simple-strike', 'guard', 'retain-energy', 'heal'], unlock: battleUnlock('rival-female-base'),
   }),
   defineUnit({
     id: 'passage-guardian-base', characterId: 'passage-guardian', version: 'Guardião',

@@ -262,16 +262,17 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
           }
           if (target.hp <= 0) continue;
           if (effect.kind === 'damage' || effect.kind === 'drain') {
+            let appliedDamage = 0;
             if (target.invulnerableExpiresAt != null) {
               events.push({ kind: 'guard', message: `${target.name} está invulnerável e não recebe dano.`, ...targetMetadata });
             } else {
               const reduction = target.guardExpiresAt === null ? 0 : guardReduction(state, target);
-              const damage = Math.max(0, effect.amount + damageBonus(actor, team.turns) - reduction);
-              target.hp = clamp(target.hp - damage, target.maxHp);
-              events.push({ kind: 'damage', message: `${target.name} recebe ${damage} de dano.`, ...targetMetadata });
+              appliedDamage = Math.max(0, effect.amount + damageBonus(actor, team.turns) - reduction);
+              target.hp = clamp(target.hp - appliedDamage, target.maxHp);
+              events.push({ kind: 'damage', message: `${target.name} recebe ${appliedDamage} de dano.`, ...targetMetadata });
               if (target.hp === 0) events.push({ kind: 'defeated', message: `${target.name} foi derrotado.`, ...targetMetadata });
             }
-            if (effect.kind === 'drain') heal(actor, effect.amount, events, metadata);
+            if (effect.kind === 'drain') heal(actor, appliedDamage, events, metadata);
           } else if (effect.kind === 'heal') {
             heal(target, effect.amount, events, targetMetadata);
           } else if (effect.kind === 'guard') {

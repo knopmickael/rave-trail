@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameCatalog, PlayerProgress } from '@game/contracts';
 import type { UnitDefinition } from '@game/content/units';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
 import { api, ApiError } from '../../api';
 import { CharacterArt } from './CharacterArt';
 import { AbilityIcon } from './AbilityIcon';
 import { TeamSlotDialog } from './TeamSlotDialog';
 import './characters.css';
+
+const hiddenUnitIds = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
 
 interface CharacterListProps {
   onBack: () => void;
@@ -42,7 +45,7 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
 
   const unlocked = new Set(progress?.unlockedUnitIds ?? []);
   const units = catalog?.units ?? [];
-  const rosterUnits = units;
+  const rosterUnits = units.filter((unit) => !hiddenUnitIds.has(unit.id));
   const selected = rosterUnits.find((unit) => unit.id === selectedId);
 
   function chooseSlot() {
@@ -142,16 +145,17 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
   );
 }
 
-function CharacterDetails({ unit, catalog, unlocked, busy, onAdd }: {
-  unit: UnitDefinition; catalog: GameCatalog; unlocked: boolean; busy: boolean; onAdd: () => void;
+export function CharacterDetails({ unit, catalog, unlocked, busy, onAdd, purchaseLabel, showLock = true }: {
+  unit: UnitDefinition; catalog: GameCatalog; unlocked: boolean; busy: boolean; onAdd: () => void; purchaseLabel?: string; showLock?: boolean;
 }) {
   const name = unit.name;
+  const locked = !unlocked && showLock;
   return (
     <section className="character-details" aria-label={`Detalhes de ${name}`}>
       <div className="character-display">
-        <div className={`character-illustration ${!unlocked ? 'character-illustration--locked' : ''}`} role="img" aria-label={`Ilustração de corpo inteiro de ${name}${!unlocked ? ' — bloqueada' : ''}`}>
+        <div className={`character-illustration ${locked ? 'character-illustration--locked' : ''}`} role="img" aria-label={`Ilustração de corpo inteiro de ${name}${locked ? ' - bloqueada' : ''}`}>
           <CharacterArt unit={unit} />
-          {!unlocked && <span className="character-lock" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3"><rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" /></svg></span>}
+          {locked && <span className="character-lock" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3"><rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" /></svg></span>}
         </div>
         <div className="character-nameplate">
           <h2>{name}</h2>
@@ -180,8 +184,8 @@ function CharacterDetails({ unit, catalog, unlocked, busy, onAdd }: {
         <section className="character-description" aria-labelledby="description-title">
           <h3 id="description-title">Descrição</h3>
           <div className="description-copy"><p>{unit.description}</p></div>
-          {unit.unlock.kind === 'premium' && !unlocked
-            ? <button type="button" className="fantasy-button compact team-add" disabled>Adquirir personagem</button>
+          {purchaseLabel
+            ? <button type="button" className="fantasy-button compact team-add" disabled>{purchaseLabel}</button>
             : <button type="button" className="fantasy-button compact team-add" disabled={!unlocked || busy}
               title={!unlocked ? unit.unlock.description : undefined} onClick={onAdd}>Adicionar à equipe</button>}
         </section>

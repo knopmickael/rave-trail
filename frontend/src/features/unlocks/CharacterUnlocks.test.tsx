@@ -23,51 +23,52 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-it('mostra todos os requisitos dentro dos cartões e os preços com compra desabilitada', async () => {
+it('mostra todos os requisitos dentro dos cartões e oculta as unidades premium', async () => {
   render(<CharacterUnlocks {...props()} />);
   const raider = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
   expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveClass('unlocks-container');
   expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveAttribute('tabindex', '0');
-  expect(within(raider).getByRole('progressbar')).toHaveAttribute('aria-valuemax', '5');
-  expect(within(raider).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+  expect(within(raider).getAllByRole('progressbar')).toHaveLength(3);
+  expect(within(raider).getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuemax', '5');
+  expect(within(raider).getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuenow', '0');
   const jung = screen.getByRole('region', { name: 'Jung de Grimória' });
   expect(within(jung).getByText(/utilizando Ravi de Berdal/)).toBeInTheDocument();
-  expect(within(screen.getByRole('region', { name: 'Exal de Grimória' })).getByText(/Multiplayer 10 vezes/)).toBeInTheDocument();
+  expect(within(screen.getByRole('region', { name: 'Exal de Grimória' })).getByText(/Derrote Exal de Grimória na Batalha rápida 5 vezes/)).toBeInTheDocument();
   const berserk = screen.getByRole('region', { name: 'Ravi Berserk' });
-  expect(within(berserk).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['15', '20', '10', '50']);
+  expect(within(berserk).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['1', '30', '20', '10']);
   expect(within(berserk).getByRole('list', { name: 'Requisitos de Ravi Berserk' })).toHaveAttribute('tabindex', '0');
   expect(screen.queryByRole('button', { name: /Ver requisitos/ })).not.toBeInTheDocument();
   expect(screen.queryByText(/requisitos? concluídos?/)).not.toBeInTheDocument();
   for (const name of ['Trinity de Espinea', 'Vlade de Espinea']) {
     const card = screen.getByRole('region', { name });
-    expect(within(card).getByRole('progressbar')).toHaveAttribute('aria-valuemax', '20');
-    expect(within(card).getByText(/Derrote Grimorianos na Batalha rápida 20 vezes/)).toBeInTheDocument();
+    expect(within(card).getAllByRole('progressbar')[2]).toHaveAttribute('aria-valuemax', '15');
+    expect(within(card).getByText(/Derrote Trinity de Espinea na Batalha rápida 15 vezes|Derrote Vlade de Espinea na Batalha rápida 15 vezes/)).toBeInTheDocument();
   }
+  const drak = screen.getByRole('region', { name: 'Drak de Pontes' });
+  expect(within(drak).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['1', '20', '10', '5']);
+  expect(within(drak).getByText(/Derrote Drak de Pontes na Batalha rápida 5 vezes utilizando Saqueadores da estrada/)).toBeInTheDocument();
   const passago = screen.getByRole('region', { name: 'Passago de Espinea' });
-  expect(within(passago).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['20', '10']);
-  expect(within(passago).getByText(/Derrote Grimorianos no Multiplayer 10 vezes/)).toBeInTheDocument();
-  for (const name of ['Exal - Verdadeiro poder', 'Fera Lendária', 'Maga Ártemis']) {
-    const premium = screen.getByRole('region', { name });
-    expect(within(premium).getByRole('button', { name: 'Adquirir personagem' })).toBeDisabled();
-    expect(within(premium).getByText(/9,90/)).toBeInTheDocument();
-    expect(within(premium).queryByRole('progressbar')).not.toBeInTheDocument();
+  expect(within(passago).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['1', '15', '15']);
+  expect(within(passago).getByText(/Derrote Passago de Espinea na Batalha rápida 15 vezes/)).toBeInTheDocument();
+  for (const name of ['Exal - Verdadeiro poder', 'Besta Lendária']) {
+    expect(screen.queryByRole('region', { name })).not.toBeInTheDocument();
   }
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Resgatar|Liberar/ })).not.toBeInTheDocument();
 });
 
-it('exibe Ravi Berserk e Fera Lendária liberados na conta GM sem cadeado ou conteúdo inerte', async () => {
+it('exibe Ravi Berserk liberado na conta GM e oculta as unidades premium', async () => {
   const ids = units.map((unit) => unit.id);
   vi.mocked(api.characterUnlocks).mockResolvedValue(characterUnlockProgress(units, ids, [], {}, []));
   render(<CharacterUnlocks {...props()} />);
-  for (const name of ['Ravi Berserk', 'Fera Lendária']) {
-    const card = await screen.findByRole('region', { name });
-    expect(card).toHaveAttribute('aria-disabled', 'false');
-    expect(card).not.toHaveClass('unlock-card--locked');
-    expect(card.querySelector('.unlock-card-content')).not.toHaveAttribute('inert');
-    expect(within(card).getByText('Disponível')).toBeInTheDocument();
-    expect(card.querySelector('.unlock-mission-lock')).toBeNull();
-  }
+  const card = await screen.findByRole('region', { name: 'Ravi Berserk' });
+  expect(card).toHaveAttribute('aria-disabled', 'false');
+  expect(card).not.toHaveClass('unlock-card--locked');
+  expect(card.querySelector('.unlock-card-content')).not.toHaveAttribute('inert');
+  expect(within(card).getByText('Disponível')).toBeInTheDocument();
+  expect(card.querySelector('.unlock-mission-lock')).toBeNull();
+  expect(screen.queryByRole('region', { name: 'Exal - Verdadeiro poder' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Besta Lendária' })).not.toBeInTheDocument();
 });
 
 it('mostra um estado vazio se o catálogo não possuir missões', async () => {
@@ -88,18 +89,22 @@ it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado'
   expect(locked).toHaveAttribute('aria-disabled', 'true');
   expect(locked.querySelector('.unlock-card-content')).toHaveAttribute('inert');
   expect(within(locked).getByRole('img', { name: /Missão de Ravi Berserk bloqueada/ })).toBeInTheDocument();
-  expect(document.querySelectorAll('.unlock-card')).toHaveLength(33);
+  expect(within(locked).getByText('Finalize a batalha 7 da campanha 1.')).toBeInTheDocument();
+  expect(within(within(locked).getByRole('list', { name: 'Requisitos de Ravi Berserk' }))
+    .queryByText('Finalize a batalha 7 da campanha 1.')).not.toBeInTheDocument();
+  expect(within(locked).getAllByRole('progressbar')).toHaveLength(3);
+  expect(document.querySelectorAll('.unlock-card')).toHaveLength(16);
 });
 
 it('atualiza o progresso ao retornar à janela e reflete a disponibilidade sem notificações', async () => {
   const victories = Array.from({ length: 4 }, () => ({ mode: 'quick' as const, playerUnitIds: ['protagonist-main-base'], enemyUnitIds: ['road-raider-1-base'] }));
-  vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, [], victories));
+  vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, [], victories, {}, undefined, ['path-1-encounter-1']));
   render(<CharacterUnlocks {...props()} />);
   const card = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
-  expect(within(card).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '4');
-  vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, ['road-raider-1-base'], [...victories, victories[0]]));
+  expect(within(card).getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuenow', '4');
+  vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, ['road-raider-1-base'], [...victories, victories[0]], {}, undefined, ['path-1-encounter-1']));
   fireEvent.focus(window);
-  await vi.waitFor(() => expect(within(card).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '5'));
+  await vi.waitFor(() => expect(within(card).getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuenow', '5'));
   expect(within(card).getByText('Disponível')).toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.queryByText(/desbloqueado com sucesso/i)).not.toBeInTheDocument();

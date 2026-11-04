@@ -6,6 +6,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createInitialProgress } from '@game/contracts';
 import { abilities } from '@game/content/abilities';
 import { narrativeCharacters, units } from '@game/content/units';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
 import { api } from '../../api';
 import { CharacterList } from './CharacterList';
 
@@ -29,13 +30,13 @@ function renderList() {
   return render(<CharacterList onBack={vi.fn()} onSessionExpired={vi.fn()} />);
 }
 
-it.each(['Exal - Verdadeiro poder', 'Fera Lendária'])('mostra somente aquisição desabilitada para %s bloqueado', async (name) => {
+it.each(['Exal - Verdadeiro poder', 'Besta Lendária'])('mostra somente aquisição desabilitada para %s bloqueado', async (name) => {
   const user = userEvent.setup();
   renderList();
   await user.click(await screen.findByRole('button', { name: `Selecionar ${name} — bloqueado` }));
   const details = screen.getByRole('region', { name: `Detalhes de ${name}` });
-  expect(within(details).getByRole('button', { name: 'Adquirir personagem' })).toBeDisabled();
-  expect(within(details).queryByRole('button', { name: 'Adicionar à equipe' })).not.toBeInTheDocument();
+  expect(within(details).getByRole('button', { name: 'Adicionar à equipe' })).toBeDisabled();
+  expect(within(details).queryByRole('button', { name: 'Adquirir personagem' })).not.toBeInTheDocument();
   expect(api.setTeamSlot).not.toHaveBeenCalled();
 });
 
@@ -55,7 +56,7 @@ it('destaca a thumb clicada e apresenta as quatro habilidades do personagem à d
   await user.click(lia);
   expect(lia).toHaveAttribute('aria-pressed', 'true');
   expect(aren).toHaveAttribute('aria-pressed', 'false');
-  expect(screen.getByRole('heading', { name: 'Proteção coletiva' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Varredura tática' })).toBeInTheDocument();
   expect(screen.queryByRole('region', { name: 'Detalhes de Ravi de Berdal' })).not.toBeInTheDocument();
   expect(screen.queryByText('ARTE PROVISÓRIA')).not.toBeInTheDocument();
   expect(screen.queryByText(/Nomes e artes provisórios/)).not.toBeInTheDocument();
@@ -67,12 +68,12 @@ it('exibe todo o catálogo do banco sem textos auxiliares e com os novos inimigo
   renderList();
   await screen.findByRole('button', { name: 'Selecionar Ravi de Berdal' });
   const catalog = screen.getByRole('region', { name: 'Catálogo de personagens' });
-  expect(within(catalog).getAllByRole('button')).toHaveLength(units.length);
+  expect(within(catalog).getAllByRole('button')).toHaveLength(units.filter((unit) => !(SECOND_CAMPAIGN_UNIT_IDS as readonly string[]).includes(unit.id)).length);
   expect(within(catalog).getByRole('button', { name: 'Selecionar Doko de Berdal' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Anna de Berdal' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Drak de Pontes — bloqueado' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Ravi Berserk — bloqueado' })).toBeEnabled();
-  expect(within(catalog).getByRole('button', { name: 'Selecionar Fera Lendária — bloqueado' })).toBeEnabled();
+  expect(within(catalog).getByRole('button', { name: 'Selecionar Besta Lendária — bloqueado' })).toBeEnabled();
   expect(screen.queryByText(/Seus companheiros de jornada/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/unidades desbloqueadas/i)).not.toBeInTheDocument();
   expect(screen.queryByText('Retratos e ilustrações provisórios.')).not.toBeInTheDocument();
@@ -120,7 +121,7 @@ it('permite selecionar retratos com o teclado', async () => {
   ivo.focus();
   await user.keyboard('{Enter}');
   expect(ivo).toHaveAttribute('aria-pressed', 'true');
-  expect(screen.getByRole('heading', { name: 'Varredura tática' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Proteção coletiva' })).toBeInTheDocument();
 });
 
 it('não inventa desbloqueios quando a consulta falha e permite tentar novamente', async () => {

@@ -100,6 +100,8 @@
 .battle-log-dialog h2 { margin: 0; font-size: clamp(19px, 2vw, 23px); }
 .battle-log-dialog header button { width: 36px; height: 36px; border: 1px solid var(--button-border); border-radius: 5px; background: var(--button-background); color: var(--button-ink); font-size: 26px; cursor: pointer; }
 .battle-log-scroll { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; overscroll-behavior: contain; }
+.battle-log-turn + .battle-log-turn { margin-top: 18px; }
+.battle-log-turn h3 { margin: 0 0 8px; color: #8a4e1a; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
 .battle-log-scroll ol { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .battle-log-scroll li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; padding: 8px 10px; border: 1px solid #bd935c; border-radius: 6px; background: #fff5e5; }
 .battle-log-scroll .battle-log-entry--enemy { flex-direction: row-reverse; justify-content: flex-start; }

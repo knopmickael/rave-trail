@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { CharacterUnlockData } from '@game/contracts';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
 import { api, ApiError } from '../../api';
 import '../characters/characters.css';
 import './unlocks.css';
 
 const price = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' });
+const hiddenUnitIds = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
 
 export function CharacterUnlocks({ onBack, onSessionExpired }: {
   onBack: () => void;
@@ -31,6 +33,8 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
     return () => window.removeEventListener('focus', refresh);
   }, []);
 
+  const missions = data?.characters.filter((unit) => !hiddenUnitIds.has(unit.id) && unit.kind !== 'premium') ?? [];
+
   return <main className="unlocks-page">
     <header className="roster-header">
       <button type="button" className="back-arrow" onClick={onBack} aria-label="Voltar ao menu principal">
@@ -38,18 +42,24 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
           <path d="M14 6 4 16l10 10M5 16h23" />
         </svg>
       </button>
-      <h1>Missões</h1>
+      <h1>Tabela de missões</h1>
     </header>
     {error && <section className="unlocks-state"><p className="feedback" role="alert">{error}</p>
       <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button>
     </section>}
     {!data && !error && <p className="unlocks-state" role="status">Carregando desbloqueios…</p>}
-    {data && (data.characters.length === 0
+    {data && (missions.length === 0
       ? <p className="unlocks-state" role="status">Nenhuma missão disponível no catálogo.</p>
       : <div className="unlocks-container" role="region" aria-label="Lista de missões" tabIndex={0}>
         <div className="unlocks-grid">
-          {data.characters.map((unit) => {
+          {missions.map((unit) => {
             const locked = !unit.unlocked && !unit.campaignAvailable;
+            const campaignRequirement = locked && unit.kind === 'battle-wins'
+              ? unit.requirements.find((requirement) => requirement.description.startsWith('Finalize a batalha '))
+              : undefined;
+            const requirements = unit.kind === 'battle-wins'
+              ? unit.requirements.filter((requirement) => requirement !== campaignRequirement)
+              : [];
             return <section key={unit.id} className={`unlock-card ${unit.unlocked ? 'unlock-card--available' : ''} ${locked ? 'unlock-card--locked' : ''}`}
               aria-labelledby={`unlock-${unit.id}`} aria-disabled={locked}>
               <div className="unlock-card-content" inert={locked}>
@@ -63,17 +73,21 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
                 <div className="unlock-card-body unlock-premium"><p className="unlock-price">{price.format(unit.priceUsd)}</p></div>
                 <button type="button" className="fantasy-button compact" disabled>{unit.unlocked ? 'Personagem adquirido' : 'Adquirir personagem'}</button>
               </> : <ul className="unlock-requirements" tabIndex={locked ? -1 : 0} aria-label={`Requisitos de ${unit.name}`}>
-                {unit.requirements.map((requirement, index) => <li key={index}>
+                {requirements.map((requirement, index) => <li key={index}>
                   <p id={`unlock-${unit.id}-${index}`}>{requirement.description}</p>
                   <RequirementProgress requirement={requirement} labelId={`unlock-${unit.id}-${index}`} />
                 </li>)}
               </ul>}
               </div>
-              {locked && <span className="unlock-mission-lock" role="img" aria-label={`Missão de ${unit.name} bloqueada. Derrote este personagem na campanha para habilitá-la.`}>
-                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                  <rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" />
-                </svg>
-              </span>}
+              {locked && <div className="unlock-mission-lock" role="img"
+                aria-label={`Missão de ${unit.name} bloqueada. ${campaignRequirement?.description ?? 'Derrote este personagem na campanha para habilitá-la.'}`}>
+                <span className="unlock-mission-lock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3">
+                    <rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" />
+                  </svg>
+                </span>
+                {campaignRequirement && <p aria-hidden="true">{campaignRequirement.description}</p>}
+              </div>}
             </section>;
           })}
         </div>
