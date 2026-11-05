@@ -21,6 +21,22 @@ if [[ -z "$NEW_IMAGE" ]]; then
   exit 1
 fi
 
+# O .env.prod existe so na instancia (nao e versionado nem sincronizado pelo CI).
+# Falha cedo se estiver ausente ou incompleto, em vez de criar um arquivo parcial.
+if [[ ! -f .env.prod ]]; then
+  echo "ERRO: $DEPLOY_DIR/.env.prod nao existe. Crie-o a partir de .env.prod.example" >&2
+  echo "      (ver docs/deploy/lightsail-setup.md, passo 5)." >&2
+  exit 1
+fi
+missing=()
+for var in APP_DOMAIN APP_ORIGIN POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB; do
+  grep -qE "^${var}=.+" .env.prod || missing+=("$var")
+done
+if (( ${#missing[@]} )); then
+  echo "ERRO: variaveis ausentes ou vazias em .env.prod: ${missing[*]}" >&2
+  exit 1
+fi
+
 # Regiao e registry derivados da propria tag da imagem:
 #   <acct>.dkr.ecr.<regiao>.amazonaws.com/<repo>:<tag>
 ECR_REGISTRY="${NEW_IMAGE%%/*}"
@@ -31,7 +47,7 @@ aws ecr get-login-password --region "$AWS_REGION" \
   | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
 # Atualiza APP_IMAGE no .env.prod para a nova tag (persistente entre reboots).
-if grep -q '^APP_IMAGE=' .env.prod; then
+if grep -qE '^APP_IMAGE=' .env.prod; then
   sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$NEW_IMAGE|" .env.prod
 else
   echo "APP_IMAGE=$NEW_IMAGE" >> .env.prod
