@@ -85,10 +85,6 @@ const unitNameOverrides: Readonly<Record<string, string>> = {
   'rival-b-final-mode': 'Exal - Verdadeiro poder',
 };
 const unitAssetOverrides: Readonly<Record<string, { portrait: string; illustration: string }>> = {
-  'capitao-da-guarda-ridan-base': {
-    portrait: '/media/characters/capitao-da-guarda-kalis-face.png',
-    illustration: '/media/characters/capitao-da-guarda-kalis-body.png',
-  },
   'legendary-beast-premium': {
     portrait: '/media/characters/fera-lendaria-face.png',
     illustration: '/media/characters/fera-lendaria-body.png',
