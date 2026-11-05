@@ -99,10 +99,11 @@ it('coloca Jung II somente no encontro 6 e o disponibiliza no sorteio rápido de
 
 it('a 10ª vitória rápida contra Jung II usando Ravi base libera a unidade sem duplicar o progresso', async () => {
   const user = await player(6);
+  await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'campaign');
+  await new Promise((resolve) => setTimeout(resolve, 10));
   await history(user.id, 'rival-a-base', 30, 'protagonist-secondary-base');
   await history(user.id, 'jung-de-grimoria-ii', 30, 'protagonist-main-transformed');
   await history(user.id, 'jung-de-grimoria-ii', 30, undefined, 'multiplayer');
-  await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'campaign');
   await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'quick', 'defeat');
   expect(mission(await game.getCharacterUnlocks(user.id)).requirements[3].current).toBe(0);
   await history(user.id, 'rival-a-base', 9);

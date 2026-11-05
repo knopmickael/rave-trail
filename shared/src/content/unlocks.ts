@@ -33,7 +33,7 @@ const wins = (opponents: string | readonly string[] | undefined, target: number,
   ({ kind: 'battle-wins', opponentUnitIds: typeof opponents === 'string' ? [opponents] : opponents, target, description, mode,
     ...(requiredPlayerUnitIds ? { requiredPlayerUnitIds } : {}) });
 const encounter = (encounterId: string, battle: number): EncounterUnlockRequirement =>
-  ({ kind: 'encounter', encounterId, target: 1, description: `Finalize a batalha ${battle} da campanha 1.` });
+  ({ kind: 'encounter', encounterId, target: 1, description: `Finalize a batalha ${battle} da campanha 1` });
 const rule = (unitId: string, requirements: readonly UnlockRequirement[],
   options: Pick<BattleUnlockRule, 'availableAfterEncounterId' | 'availableFromStart'> = {}): BattleUnlockRule =>
   ({ unitId, description: requirements.map((requirement) => requirement.description).join(' '), requirements, ...options });

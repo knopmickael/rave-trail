@@ -131,7 +131,7 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
   await pool.query("DELETE FROM abilities WHERE id IN ('retain-energy-plus', 'soul-drain', 'soul-drain-plus', 'fury-scream', 'heal-plus', 'resurrection', 'simple-strike-ii', 'quick-slash', 'dark-vortex', 'fast-move', 'internal-strength')");
   await pool.query('ALTER TABLE abilities DROP CONSTRAINT abilities_target_check');
   await pool.query("ALTER TABLE abilities ADD CONSTRAINT abilities_target_check CHECK (target IN ('enemy', 'ally', 'all-enemies', 'all-allies', 'team'))");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '028_internal_strength.sql', '029_monnica_guard.sql', '030_heal_20.sql',     '031_swap_starter_specials.sql', '032_soul_drain_35.sql', '033_drain_heal_on_damage.sql', '034_reduce_guard_absorption.sql', '035_ability_rebalance.sql', '036_guard_captains_and_store_content.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '028_internal_strength.sql', '029_monnica_guard.sql', '030_heal_20.sql',     '031_swap_starter_specials.sql', '032_soul_drain_35.sql', '033_drain_heal_on_damage.sql', '034_reduce_guard_absorption.sql', '035_ability_rebalance.sql', '036_guard_captains_and_store_content.sql', '037_internal_strength_two_turns.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
@@ -146,7 +146,7 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
   expect(await repository.getProgress(user.id)).toEqual(progressBefore);
 });
 
-it('persiste Força interna e a ativação no próximo turno no snapshot oficial da batalha', async () => {
+it('persiste Força interna e a ativação nos próximos dois turnos no snapshot oficial da batalha', async () => {
   const user = await repository.register('forca-interna@example.com', 'hash', session());
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || '[\"capitao-da-guarda-ridan-base\"]'::jsonb) WHERE user_id = $1", [user.id]);
   await gameRepository.setTeamSlot(user.id, 0, 'capitao-da-guarda-ridan-base');
@@ -157,7 +157,7 @@ it('persiste Força interna e a ativação no próximo turno no snapshot oficial
   const result = await battleRepository.submitTurn(user.id, battle.id, 0, randomUUID(),
     [{ actorId: 'player-0', abilityId: 'internal-strength', targetId: 'player-1' }]);
   const restored = await battleRepository.getBattle(user.id, battle.id);
-  expect(restored.state.teams.player.units[1]).toMatchObject({ damageBoostAmount: 10, damageBoostStartsAt: 2, damageBoostExpiresAt: 3 });
+  expect(restored.state.teams.player.units[1]).toMatchObject({ damageBoostAmount: 10, damageBoostStartsAt: 2, damageBoostExpiresAt: 4 });
   expect(restored.state.teams.player.units[0].abilityIds).toEqual(['simple-strike', 'guard', 'retain-energy', 'internal-strength']);
   expect(restored.state.teams.player.energy).toBe(5);
   expect(restored).toEqual(result.battle);

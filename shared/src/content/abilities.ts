@@ -49,8 +49,8 @@ export const abilities = {
   },
   'internal-strength': {
     id: 'internal-strength', name: 'Força interna', energyCost: 30, target: 'ally', icon: '/media/abilities/internal-strength.png',
-    description: 'Aumenta em 10 o dano das habilidades usadas por um aliado ou por si mesmo no próximo turno da equipe (não funciona no turno atual). Não acumula bônus.',
-    effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 1 }],
+    description: 'Aumenta em 10 o dano das habilidades usadas por um aliado ou por si mesmo nos próximos 2 turnos da equipe (não funciona no turno atual). Não acumula bônus.',
+    effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 2 }],
   },
   'quick-slash': {
     id: 'quick-slash', name: 'Corte rápido', energyCost: 35, target: 'enemy', icon: '/media/abilities/quick-slash.png',

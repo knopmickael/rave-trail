@@ -13,19 +13,23 @@ function battle(allies = ['road-raider-1-base', 'protagonist-main-base', 'protag
 }
 const action = (actor: number, abilityId: string, targetId?: string): BattleAction => ({ actorId: `player-${actor}`, abilityId, ...(targetId ? { targetId } : {}) });
 
-it('amplifica somente no próximo turno do aliado, expira depois dele e preserva a entrada', () => {
+it('amplifica nos dois turnos seguintes do aliado, expira depois deles e preserva a entrada', () => {
   const initial = battle();
   const snapshot = JSON.stringify(initial);
   let state = executeTurn(initial, [action(0, 'internal-strength', 'player-1'), action(1, 'simple-strike', 'enemy-0')]).state;
   expect(state.teams.enemy.units[0].hp).toBe(80);
   expect(state.teams.player.energy).toBe(55);
-  expect(state.teams.player.units[1]).toMatchObject({ damageBoostAmount: 10, damageBoostStartsAt: 2, damageBoostExpiresAt: 3 });
+  expect(state.teams.player.units[1]).toMatchObject({ damageBoostAmount: 10, damageBoostStartsAt: 2, damageBoostExpiresAt: 4 });
   state = executeTurn(state, []).state;
   state = executeTurn(state, [action(0, 'simple-strike', 'enemy-0'), action(1, 'simple-strike', 'enemy-1')]).state;
   expect(state.teams.enemy.units.map((unit) => unit.hp)).toEqual([60, 70, 100]);
   state = executeTurn(state, []).state;
+  state.teams.player.energy = 100;
+  state = executeTurn(state, [action(0, 'simple-strike', 'enemy-0'), action(1, 'simple-strike', 'enemy-1')]).state;
+  expect(state.teams.enemy.units.map((unit) => unit.hp)).toEqual([40, 40, 100]);
+  state = executeTurn(state, []).state;
   expect(state.teams.player.units[1].damageBoostExpiresAt).toBeNull();
-  expect(previewActions(state, [action(1, 'simple-strike', 'enemy-1')]).state.teams.enemy.units[1].hp).toBe(50);
+  expect(previewActions(state, [action(1, 'simple-strike', 'enemy-1')]).state.teams.enemy.units[1].hp).toBe(20);
   expect(JSON.stringify(initial)).toBe(snapshot);
 });
 
@@ -84,9 +88,11 @@ it('preserva o dano ampliado do sangramento criado pelo golpe e não altera sang
   expect(state.teams.enemy.units[0]).toMatchObject({ hp: 50, bleedAmount: 20, bleedTurns: 2 });
   expect(state.teams.enemy.units[1]).toMatchObject({ hp: 80, bleedAmount: 10 });
   state = executeTurn(state, []).state;
-  expect(state.teams.player.units[1].damageBoostExpiresAt).toBeNull();
+  expect(state.teams.player.units[1].damageBoostExpiresAt).toBe(4);
   state = executeTurn(state, []).state;
   expect(state.teams.enemy.units[0].hp).toBe(30);
+  state = executeTurn(state, []).state;
+  expect(state.teams.player.units[1].damageBoostExpiresAt).toBeNull();
 });
 
 it('ativa o bônus no turno extra da própria equipe', () => {

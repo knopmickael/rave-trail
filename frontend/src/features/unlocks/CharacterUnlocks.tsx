@@ -54,11 +54,12 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
         <div className="unlocks-grid">
           {missions.map((unit) => {
             const locked = !unit.unlocked && !unit.campaignAvailable;
-            const campaignRequirement = locked && unit.kind === 'battle-wins'
+            const campaignRequirement = unit.kind === 'battle-wins'
               ? unit.requirements.find((requirement) => requirement.description.startsWith('Finalize a batalha '))
               : undefined;
             const requirements = unit.kind === 'battle-wins'
-              ? unit.requirements.filter((requirement) => requirement !== campaignRequirement)
+              ? unit.requirements.filter((requirement) => requirement !== campaignRequirement
+                || (!locked && requirement.current < requirement.target))
               : [];
             return <section key={unit.id} className={`unlock-card ${unit.unlocked ? 'unlock-card--available' : ''} ${locked ? 'unlock-card--locked' : ''}`}
               aria-labelledby={`unlock-${unit.id}`} aria-disabled={locked}>
@@ -86,7 +87,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
                     <rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" />
                   </svg>
                 </span>
-                {campaignRequirement && <p aria-hidden="true">{campaignRequirement.description}</p>}
+                {campaignRequirement && <CampaignRequirementLines description={campaignRequirement.description} />}
               </div>}
             </section>;
           })}
@@ -94,6 +95,14 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
       </div>)}
 
   </main>;
+}
+
+function CampaignRequirementLines({ description }: { description: string }) {
+  const [battleLine, campaignLine] = description.split(' da campanha ');
+  return <p aria-hidden="true">
+    <span>{battleLine}</span>
+    {campaignLine && <span>da campanha {campaignLine}</span>}
+  </p>;
 }
 
 function RequirementProgress({ requirement, labelId }: {

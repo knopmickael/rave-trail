@@ -300,7 +300,7 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
             // Renovar o efeito não remove o bônus que já estiver ativo neste turno.
             if (!alreadyActive) target.damageBoostStartsAt = targetTeam.turns + 1;
             target.damageBoostExpiresAt = targetTeam.turns + 1 + effect.teamTurns;
-            events.push({ kind: 'guard', message: `${target.name} recebe Força interna: +${effect.amount} de dano no próximo turno da equipe.`, ...targetMetadata });
+            events.push({ kind: 'guard', message: `${target.name} recebe Força interna: +${effect.amount} de dano nos próximos ${effect.teamTurns} turnos da equipe.`, ...targetMetadata });
           }
         }
       }

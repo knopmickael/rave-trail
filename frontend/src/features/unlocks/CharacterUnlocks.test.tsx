@@ -89,9 +89,10 @@ it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado'
   expect(locked).toHaveAttribute('aria-disabled', 'true');
   expect(locked.querySelector('.unlock-card-content')).toHaveAttribute('inert');
   expect(within(locked).getByRole('img', { name: /Missão de Ravi Berserk bloqueada/ })).toBeInTheDocument();
-  expect(within(locked).getByText('Finalize a batalha 7 da campanha 1.')).toBeInTheDocument();
+  expect(within(locked).getByText('Finalize a batalha 7')).toBeInTheDocument();
+  expect(within(locked).getByText('da campanha 1')).toBeInTheDocument();
   expect(within(within(locked).getByRole('list', { name: 'Requisitos de Ravi Berserk' }))
-    .queryByText('Finalize a batalha 7 da campanha 1.')).not.toBeInTheDocument();
+    .queryByText('Finalize a batalha 7')).not.toBeInTheDocument();
   expect(within(locked).getAllByRole('progressbar')).toHaveLength(3);
   expect(document.querySelectorAll('.unlock-card')).toHaveLength(16);
 });
@@ -101,10 +102,11 @@ it('atualiza o progresso ao retornar à janela e reflete a disponibilidade sem n
   vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, [], victories, {}, undefined, ['path-1-encounter-1']));
   render(<CharacterUnlocks {...props()} />);
   const card = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
-  expect(within(card).getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuenow', '4');
+  expect(within(card).getAllByRole('progressbar')[0]).toHaveAttribute('aria-valuenow', '4');
   vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, ['road-raider-1-base'], [...victories, victories[0]], {}, undefined, ['path-1-encounter-1']));
   fireEvent.focus(window);
-  await vi.waitFor(() => expect(within(card).getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuenow', '5'));
+  await vi.waitFor(() => expect(within(card).getAllByRole('progressbar')[0]).toHaveAttribute('aria-valuenow', '5'));
+  expect(within(card).queryByText('Finalize a batalha 1')).not.toBeInTheDocument();
   expect(within(card).getByText('Disponível')).toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.queryByText(/desbloqueado com sucesso/i)).not.toBeInTheDocument();

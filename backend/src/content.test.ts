@@ -73,7 +73,7 @@ describe('catálogo compartilhado', () => {
     expect(abilities['secondary-special']).toMatchObject({ energyCost: 30, effects: [{ kind: 'damage', amount: 20 }] });
     expect(abilities['strong-strike']).toMatchObject({ energyCost: 30 });
     expect(abilities['internal-strength']).toMatchObject({ energyCost: 30, target: 'ally',
-      icon: '/media/abilities/internal-strength.png', effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 1 }] });
+      icon: '/media/abilities/internal-strength.png', effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 2 }] });
     expect(abilities['soul-drain']).toMatchObject({ energyCost: 35,
       description: 'Causa 25 de dano a um inimigo e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.' });
     expect(abilities['soul-drain-plus']).toMatchObject({ target: 'all-enemies', energyCost: 45,

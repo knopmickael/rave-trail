@@ -102,6 +102,17 @@ it('mant�m miss�es de personagens j� liberados acess�veis mesmo sem um e
   expect(data.characters.find((unit) => unit.id === 'maga-artemis')).toMatchObject({ kind: 'premium', priceUsd: 9.9 });
 });
 
+it('ignora vitórias rápidas anteriores à revelação do personagem na campanha', () => {
+  const before = { mode: 'quick' as const, playerUnitIds: ['protagonist-main-base'],
+    enemyUnitIds: ['road-raider-1-base'], completedAt: '2026-10-30T10:00:00.000Z' };
+  const after = { ...before, completedAt: '2026-10-30T12:00:00.000Z' };
+  const data = characterUnlockProgress(units, [], [before, before, after], {}, ['road-raider-1-base'],
+    ['path-1-encounter-1'], { 'path-1-encounter-1': '2026-10-30T11:00:00.000Z' });
+  const raider = data.characters.find((unit) => unit.id === 'road-raider-1-base')!;
+  expect(raider.kind === 'battle-wins' && raider.requirements[1].current).toBe(1);
+  expect(raider.kind === 'battle-wins' && raider.requirements[2].current).toBe(1);
+});
+
 it('zera somente a miss�o indicada e conta novas vit�rias ap�s o marco sem descartar o hist�rico das demais', () => {
   const before = { ...victories('rival-a-base', 1)[0], completedAt: '2026-10-30T10:00:00.000Z',
     enemyUnitIds: ['rival-a-base', 'guerreiros-habilidosos-a', 'guerreiros-habilidosos-b'] };

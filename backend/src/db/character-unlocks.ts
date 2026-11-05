@@ -23,8 +23,13 @@ export async function readCharacterUnlocks(client: Pool | PoolClient, userId: st
     ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,player,units}') AS fighter) AS "playerUnitIds",
     ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,enemy,units}') AS fighter) AS "enemyUnitIds"
     FROM battles WHERE user_id = $1 AND status = 'victory' AND mode IN ('quick', 'multiplayer')`, [userId]);
+  const campaignCompletions = await client.query<{ encounterId: string; completedAt: string }>(`SELECT encounter_id AS "encounterId",
+    to_char(MIN(updated_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt"
+    FROM battles WHERE user_id = $1 AND status = 'victory' AND encounter_id IS NOT NULL
+    GROUP BY encounter_id`, [userId]);
+  const encounterCompletedAt = Object.fromEntries(campaignCompletions.rows.map((row) => [row.encounterId, row.completedAt]));
   return characterUnlockProgress(units.rows, progress.unlockedUnitIds, victories.rows, progress.missionProgressResets,
-    units.rows.filter((unit) => unit.campaignAvailable).map((unit) => unit.id), progress.completedEncounters);
+    units.rows.filter((unit) => unit.campaignAvailable).map((unit) => unit.id), progress.completedEncounters, encounterCompletedAt);
 }
 
 /** O chamador mantém player_progress bloqueado na transação que registra a vitória. */

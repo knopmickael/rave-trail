@@ -114,8 +114,9 @@ it('usa a equipe congelada da batalha para Jung, mesmo depois de alterar a escal
 
 it('distingue Multiplayer de Batalha rápida e ignora derrotas e vitórias da campanha', async () => {
   const user = await player();
-  await history(user.id, ['road-raider-1-base'], 4);
   await history(user.id, ['road-raider-1-base'], 5, undefined, 'campaign');
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  await history(user.id, ['road-raider-1-base'], 4);
   await history(user.id, ['road-raider-1-base'], 5, undefined, 'multiplayer');
   await history(user.id, ['road-raider-1-base'], 5, undefined, 'quick', 'defeat');
   const before = await game.getCharacterUnlocks(user.id);
@@ -326,10 +327,39 @@ it('não concede missões ocultas por vitória ou seed e sincroniza a liberaçã
   const espinea = await battles.startBattle(user.id, encounters[3].id);
   await finish(user.id, espinea);
   const visible = await game.getCharacterUnlocks(user.id);
-  expect(entry(visible, 'guerreiros-habilidosos-a').unlocked).toBe(true);
-  expect(entry(visible, 'guerreiros-habilidosos-b').unlocked).toBe(true);
+  expect(entry(visible, 'guerreiros-habilidosos-a').campaignAvailable).toBe(true);
+  expect(entry(visible, 'guerreiros-habilidosos-a').unlocked).toBe(false);
+  expect(entry(visible, 'guerreiros-habilidosos-b').unlocked).toBe(false);
   expect(entry(visible, 'guerreiros-habilidosos-c').unlocked).toBe(false);
-  expect(current(visible, 'guerreiros-habilidosos-a', 1)).toBe(15);
+  expect(current(visible, 'guerreiros-habilidosos-a', 1)).toBe(0);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  await history(user.id, pair, 15);
+  await seedDatabase(pool);
+  const earned = await game.getCharacterUnlocks(user.id);
+  expect(entry(earned, 'guerreiros-habilidosos-a').unlocked).toBe(true);
+  expect(entry(earned, 'guerreiros-habilidosos-b').unlocked).toBe(true);
+  expect(entry(earned, 'guerreiros-habilidosos-c').unlocked).toBe(false);
+});
+
+it('não conta vitórias rápidas anteriores à revelação do personagem na campanha', async () => {
+  const user = await player(0);
+  await history(user.id, ['capitao-da-guarda-kalis-base'], 3);
+  const raider = 'road-raider-1-base';
+  const campaign = await battles.startBattle(user.id, encounters[0].id);
+  await finish(user.id, campaign);
+  const revealed = await game.getCharacterUnlocks(user.id);
+  expect(entry(revealed, raider).campaignAvailable).toBe(true);
+  expect(entry(revealed, raider).unlocked).toBe(false);
+  expect(current(revealed, raider, 1)).toBe(0);
+  expect(current(revealed, raider, 2)).toBe(0);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  await history(user.id, [raider], 5);
+  const earned = await game.getCharacterUnlocks(user.id);
+  expect(current(earned, raider, 1)).toBe(5);
+  expect(current(earned, raider, 2)).toBe(3);
+  expect(entry(earned, raider).unlocked).toBe(false);
+  await seedDatabase(pool);
+  expect(entry(await game.getCharacterUnlocks(user.id), raider).unlocked).toBe(true);
 });
 
 it('a correção da conta solicitada zera somente missões não reveladas, preserva partidas/equipe e não retorna após o seed', async () => {

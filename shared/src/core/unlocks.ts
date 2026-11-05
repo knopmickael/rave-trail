@@ -13,7 +13,8 @@ export interface BattleVictory {
 export function characterUnlockProgress(units: readonly Pick<UnitDefinition, 'id' | 'name' | 'portrait'>[],
   unlockedUnitIds: readonly string[], victories: readonly BattleVictory[],
   resetAtByUnitId: Readonly<Record<string, string>> = {}, campaignOpponentUnitIds?: readonly string[],
-  completedEncounterIds: readonly string[] = []): CharacterUnlockData {
+  completedEncounterIds: readonly string[] = [],
+  encounterCompletedAtByEncounterId: Readonly<Record<string, string>> = {}): CharacterUnlockData {
   const unlocked = new Set(unlockedUnitIds);
   const completedEncounters = new Set(completedEncounterIds);
   const opponents = campaignOpponentUnitIds ? new Set(campaignOpponentUnitIds) : null;
@@ -23,8 +24,16 @@ export function characterUnlockProgress(units: readonly Pick<UnitDefinition, 'id
     const rule = battleUnlockRules.find((entry) => entry.unitId === unit.id);
     if (rule) {
       const resetAt = resetAtByUnitId[unit.id];
-      const missionVictories = !campaignAvailable ? [] : resetAt ? victories.filter((victory) => victory.completedAt
-        && Date.parse(victory.completedAt) > Date.parse(resetAt)) : victories;
+      const revealedAt = rule.availableFromStart ? undefined : [
+        ...rule.requirements.flatMap((requirement) => requirement.kind === 'encounter' ? [requirement.encounterId] : []),
+        ...(rule.availableAfterEncounterId ? [rule.availableAfterEncounterId] : []),
+      ].map((encounterId) => encounterCompletedAtByEncounterId[encounterId])
+        .filter((completedAt): completedAt is string => !!completedAt)
+        .reduce<string | undefined>((earliest, completedAt) => !earliest || Date.parse(completedAt) < Date.parse(earliest) ? completedAt : earliest, undefined);
+      const cutoff = [resetAt, revealedAt].filter((value): value is string => !!value)
+        .reduce<string | undefined>((latest, value) => !latest || Date.parse(value) > Date.parse(latest) ? value : latest, undefined);
+      const missionVictories = !campaignAvailable ? [] : cutoff ? victories.filter((victory) => victory.completedAt
+        && Date.parse(victory.completedAt) > Date.parse(cutoff)) : victories;
       characters.push({ id: unit.id, name: unit.name, portrait: unit.portrait, unlocked: unlocked.has(unit.id), campaignAvailable, kind: 'battle-wins',
         requirements: rule.requirements.map((requirement) => ({
           description: requirement.description,
