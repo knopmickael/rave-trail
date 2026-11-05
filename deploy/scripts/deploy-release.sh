@@ -38,18 +38,17 @@ else
 fi
 
 echo "==> [2/6] Backup do banco (pula se o db ainda nao existir)"
-if docker compose -f docker-compose.prod.yaml ps db --status running >/dev/null 2>&1 \
-   && [ -n "$(docker compose -f docker-compose.prod.yaml ps -q db)" ]; then
+if [ -n "$(docker compose --env-file .env.prod -f docker-compose.prod.yaml ps -q db 2>/dev/null)" ]; then
   ./scripts/backup-db.sh || echo "AVISO: backup falhou; prosseguindo."
 else
   echo "    Primeiro deploy: sem banco para salvar ainda."
 fi
 
 echo "==> [3/6] Puxando a nova imagem"
-docker compose -f docker-compose.prod.yaml pull app
+docker compose --env-file .env.prod -f docker-compose.prod.yaml pull app
 
 echo "==> [4/6] Subindo a stack"
-docker compose -f docker-compose.prod.yaml up -d
+docker compose --env-file .env.prod -f docker-compose.prod.yaml up -d
 
 echo "==> [5/6] Aplicando migrations + seed"
 ./scripts/run-migrations.sh

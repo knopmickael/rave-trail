@@ -67,6 +67,13 @@ O script instala Docker + compose + AWS CLI e cria `~/rave-trail/deploy/`.
 
 ## 4. Enviar os arquivos de deploy para a instância
 
+> A partir do pipeline atual, `docker-compose.prod.yaml`, `Caddyfile` e
+> `scripts/*.sh` são **sincronizados automaticamente** a cada deploy (passo
+> "Sincronizar arquivos de deploy na instância"). Este envio manual só é necessário
+> para subir a stack à mão antes do primeiro push. Nunca edite esses arquivos
+> direto na instância: o próximo deploy os sobrescreve. O `.env.prod` não é
+> sincronizado.
+
 Da raiz do projeto, na sua máquina:
 
 ```bash

@@ -27,7 +27,9 @@ push develop
          4. push no ECR com duas tags:
               develop-<sha7>   (imutável, para rollback)
               latest           (conveniência)
-         5. SSH no Lightsail → deploy-release.sh
+         5. SCP: sincroniza compose, Caddyfile e scripts para a instância
+              (o .env.prod nunca é enviado)
+         6. SSH no Lightsail → deploy-release.sh
               backup → pull → up → migrations → prune
 ```
 

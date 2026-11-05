@@ -79,6 +79,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Mantem compose, Caddyfile e scripts da instancia sincronizados com o repo.
+      # Sem isso, a instancia continuaria rodando a copia feita manualmente no setup.
+      # O .env.prod NAO e enviado: ele so existe na instancia (contem segredos).
+      - name: Sincronizar arquivos de deploy na instancia
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          source: "deploy/docker-compose.prod.yaml,deploy/Caddyfile,deploy/scripts/*.sh"
+          target: "~/rave-trail"
+
       - name: Deploy por SSH no Lightsail
         uses: appleboy/ssh-action@v1
         with:
@@ -87,4 +99,5 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
             cd ~/rave-trail/deploy
+            chmod +x scripts/*.sh
             ./scripts/deploy-release.sh "${{ steps.image.outputs.uri }}"

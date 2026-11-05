@@ -3,6 +3,20 @@
 Comandos e procedimentos para operar a Rave Trail em produção. Todos rodam na
 instância Lightsail, em `~/rave-trail/deploy`, salvo indicação contrária.
 
+## Antes de tudo: variáveis do Compose
+
+O Docker Compose só lê `.env` automaticamente; as variáveis de produção estão em
+`.env.prod`. Os scripts de `deploy/scripts/` já passam `--env-file .env.prod`. Para
+os comandos manuais abaixo (e em `database.md`) funcionarem igual, exporte uma vez
+por sessão SSH:
+
+```bash
+export COMPOSE_ENV_FILES=.env.prod
+```
+
+Sem isso, o Compose avisa que `POSTGRES_*`/`APP_IMAGE` não estão definidas, ou usa
+valores de outro lugar (e pode subir uma imagem antiga).
+
 ## Estado da stack
 
 ```bash

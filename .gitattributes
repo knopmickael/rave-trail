@@ -1,0 +1,4 @@
+# Scripts executados em Linux (instancia Lightsail) precisam de finais de linha LF.
+# Com CRLF o bash falha com "bad interpreter".
+*.sh text eol=lf
+Caddyfile text eol=lf

@@ -9,7 +9,8 @@ cd "$HOME/rave-trail/deploy"
 
 # Roda o CLI de migracao dentro de um container efemero da imagem da app,
 # na mesma rede do compose, reutilizando as variaveis de ambiente do servico app.
-docker compose -f docker-compose.prod.yaml run --rm --no-deps \
+# --env-file: o Compose so le ".env" sozinho; as variaveis de producao estao em .env.prod.
+docker compose --env-file .env.prod -f docker-compose.prod.yaml run --rm --no-deps \
   --entrypoint node \
   app backend/dist/migrate.js
 
