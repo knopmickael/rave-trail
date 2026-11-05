@@ -66,6 +66,9 @@ test-report.xml
 *.jks
 *.keystore
 .npmrc.local
+# Credenciais AWS exportadas (ex.: usuario IAM do ECR puller do Lightsail)
+*credentials*.txt
+deploy/.env.prod
 
 # Logs, arquivos de processo e histórico de REPL
 *.log

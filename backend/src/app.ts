@@ -22,9 +22,12 @@ interface AppOptions {
   origin: string;
   production?: boolean;
   logger?: boolean;
+  // Verificação de saúde do banco para o endpoint /api/health. Opcional para
+  // manter o app desacoplado do driver; o index.ts a fornece com um SELECT 1.
+  checkDatabase?: () => Promise<void>;
 }
 
-export async function createApp({ repository, gameRepository, battleRepository, origin, production = false, logger = false }: AppOptions) {
+export async function createApp({ repository, gameRepository, battleRepository, origin, production = false, logger = false, checkDatabase }: AppOptions) {
   const app = Fastify({
     logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers.set-cookie'] } : false,
     bodyLimit: 16 * 1024,
@@ -56,6 +59,20 @@ export async function createApp({ repository, gameRepository, battleRepository, 
     }
     request.log.error({ err: error }, 'Falha na requisição');
     return reply.code(500).send({ message: 'Não foi possível concluir a solicitação.' });
+  });
+
+  // Verificação de saúde para monitores externos (UptimeRobot, etc.).
+  // Pública e leve: valida o processo e, quando possível, a conexão com o banco.
+  app.get('/api/health', async (request, reply) => {
+    if (checkDatabase) {
+      try {
+        await checkDatabase();
+      } catch (error) {
+        request.log.error({ err: error }, 'Health check: banco indisponível');
+        return reply.code(503).send({ status: 'error', database: 'down' });
+      }
+    }
+    return { status: 'ok', database: checkDatabase ? 'up' : 'unknown' };
   });
 
   function tokenHash(raw: string | undefined): string | null {

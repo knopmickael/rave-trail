@@ -1,0 +1,75 @@
+# Stack de producao da Rave Trail no Lightsail.
+# Tres servicos no mesmo box:
+#   - db   : PostgreSQL 17, dados em volume nomeado (persistente).
+#   - app  : imagem da aplicacao, puxada do Amazon ECR pelo CI/CD.
+#   - caddy: reverse proxy com HTTPS automatico (Let's Encrypt).
+#
+# Variaveis vem do arquivo deploy/.env.prod (NAO versionado) ao lado deste compose.
+# O CI/CD define APP_IMAGE com a tag da imagem recem-publicada no ECR e roda:
+#   docker compose -f deploy/docker-compose.prod.yaml pull app
+#   docker compose -f deploy/docker-compose.prod.yaml up -d
+
+# Rotacao de logs comum a todos os servicos: evita que o disco encha com os
+# logs JSON do Docker. Mantem no maximo 3 arquivos de 10 MB por container.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sem ports: o Postgres so e acessivel pelos outros containers na rede do compose.
+
+  app:
+    # APP_IMAGE e definido pelo CI/CD, ex.:
+    #   123456789012.dkr.ecr.us-east-2.amazonaws.com/rave-trail:develop-<sha>
+    image: ${APP_IMAGE}
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3001
+      APP_ORIGIN: ${APP_ORIGIN}
+      # app e o hostname do servico db na rede do compose.
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    # Sem ports: quem expoe ao mundo e o Caddy.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,18 @@
+# Nao envie para o contexto do build o que a imagem nao precisa.
+node_modules
+**/dist
+.git
+.github
+backups
+db-backups
+*.log
+coverage
+.vscode
+.idea
+docs
+tools/automation/logs
+*.dump
+*.sql.gz
+.env
+.env.*
+!.env.example

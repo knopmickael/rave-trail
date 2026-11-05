@@ -156,4 +156,10 @@ npm start
 
 A API compilada publica apenas `frontend/dist/`, atrás de HTTPS. O backend permanece autoritativo para equipes, prazos, comandos, resultados, progresso e desbloqueios. Banco e sessão não são armazenados no navegador.
 
-Documentação: [arquitetura](docs/architecture.md), [produto](docs/product.md), [histórico de implementação](docs/implementation-tasks.md), [decisões](docs/decisions.md), [vídeos](docs/assets/video.md).
+### Deploy na AWS
+
+Publicação em produção na AWS (Lightsail + ECR + GitHub Actions), com HTTPS
+automático via Caddy e deploy a cada push na branch `develop`. Guia completo em
+[docs/deploy/README.md](docs/deploy/README.md).
+
+Documentação: [arquitetura](docs/architecture.md), [produto](docs/product.md), [histórico de implementação](docs/implementation-tasks.md), [decisões](docs/decisions.md), [vídeos](docs/assets/video.md), [deploy](docs/deploy/README.md).

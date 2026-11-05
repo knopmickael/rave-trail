@@ -21,6 +21,7 @@ const app = await createApp({
   origin: config.APP_ORIGIN,
   production: config.NODE_ENV === 'production',
   logger: true,
+  checkDatabase: async () => { await pool.query('SELECT 1'); },
 });
 
 if (config.NODE_ENV === 'production') {

@@ -1,0 +1,12 @@
+# Reverse proxy com HTTPS automatico.
+# O Caddy obtem e renova o certificado TLS do dominio via Let's Encrypt
+# (desafio HTTP na porta 80). Requisito: o registro A do dominio deve
+# apontar para o IP estatico do Lightsail antes do certificado ser emitido.
+#
+# APP_DOMAIN vem do ambiente (ex.: rave-trail.com.br), definido no compose.
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+	# app e o hostname do servico Node na rede do docker compose.
+	reverse_proxy app:3001
+}
