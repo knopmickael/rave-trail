@@ -117,5 +117,37 @@ docker compose -f docker-compose.prod.yaml exec db \
   psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 ```
 
-O Postgres **não** expõe porta para fora do box (sem `ports:` no compose), então só
-é acessível de dentro da instância — o que é bom para segurança.
+O Postgres publica a porta **somente em `127.0.0.1` da instância**
+(`ports: "127.0.0.1:5432:5432"` no compose). Ela não é acessível pela internet, e
+o firewall do Lightsail continua sem a 5432.
+
+## Acesso pelo SGBD via túnel SSH
+
+Para usar DBeaver, pgAdmin ou DataGrip na sua máquina, conecte por **túnel SSH**.
+O SGBD entra pela porta 22, que já está aberta e protegida pela chave, e alcança o
+Postgres por dentro da instância. **Não abra a 5432 no firewall**: isso exporia o
+banco a tentativas de força bruta vindas da internet.
+
+| Campo | Valor |
+|---|---|
+| SSH host | IP estático do Lightsail |
+| SSH porta | `22` |
+| SSH usuário | `ubuntu` |
+| SSH autenticação | chave privada `.pem` |
+| Banco host | `127.0.0.1` (visto de dentro da instância) |
+| Banco porta | `5432` |
+| Banco / usuário / senha | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` do `.env.prod` |
+
+Sem suporte a SSH no SGBD, abra o túnel pelo terminal e aponte para
+`localhost:15432`:
+
+```powershell
+ssh -i rave-trail.pem -N -L 15432:127.0.0.1:5432 ubuntu@<IP_ESTATICO>
+```
+
+Cuidados com o banco de produção:
+
+- Consultas estão liberadas. Antes de **alterar dados**, rode
+  `./scripts/backup-db.sh`.
+- Mudanças de **schema** vão sempre por migration em `backend/migrations/`. Uma
+  alteração feita direto pelo SGBD faz o banco divergir do que o código espera.

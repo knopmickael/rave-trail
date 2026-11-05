@@ -33,7 +33,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    # Sem ports: o Postgres so e acessivel pelos outros containers na rede do compose.
+    # Publicado SOMENTE no localhost da instancia, para acesso por tunel SSH
+    # (SGBD na sua maquina). Nao abra a 5432 no firewall do Lightsail.
+    ports:
+      - "127.0.0.1:5432:5432"
 
   app:
     # APP_IMAGE e definido pelo CI/CD, ex.:
