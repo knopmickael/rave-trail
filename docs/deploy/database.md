@@ -24,8 +24,13 @@ O projeto já tem um mecanismo de migration versionado e **idempotente**:
 
 O `npm run db:migrate` local usa `tsx`, que está em `devDependencies` e **não**
 entra na imagem de runtime. Para produção, o build agora gera também
-`backend/dist/db/migrate.js` (o `tools/build-api.mjs` recebeu esse segundo
+`backend/dist/migrate.js` (o `tools/build-api.mjs` recebeu esse segundo
 entrypoint). A imagem roda JavaScript puro com Node, sem `tsx`.
+
+> O `migrate.js` fica no **mesmo nível** do `index.js` de propósito:
+> `backend/src/paths.ts` resolve `migrations/` e `.env` relativos ao arquivo
+> compilado. Um nível a mais (`dist/db/`) faz o Node procurar
+> `backend/dist/migrations/` e falhar com `ENOENT`.
 
 ### O passo no deploy
 
@@ -34,7 +39,7 @@ um container efêmero **da mesma imagem** recém-publicada:
 
 ```bash
 docker compose -f docker-compose.prod.yaml run --rm --no-deps \
-  --entrypoint node app backend/dist/db/migrate.js
+  --entrypoint node app backend/dist/migrate.js
 ```
 
 Como é idempotente, rodar a cada deploy é seguro: migrations já aplicadas são

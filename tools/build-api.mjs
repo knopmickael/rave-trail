@@ -3,9 +3,10 @@ import { fileURLToPath } from 'node:url';
 
 await build({
   absWorkingDir: fileURLToPath(new URL('..', import.meta.url)),
-  entryPoints: ['backend/src/index.ts', 'backend/src/db/migrate.ts'],
+  // Ambos ficam no mesmo nivel (backend/dist/) porque paths.ts resolve
+  // migrations/, .env e frontend/dist relativos ao arquivo compilado.
+  entryPoints: { index: 'backend/src/index.ts', migrate: 'backend/src/db/migrate.ts' },
   outdir: 'backend/dist',
-  outbase: 'backend/src',
   bundle: true,
   packages: 'external',
   alias: { '@game': fileURLToPath(new URL('../shared/src', import.meta.url)) },

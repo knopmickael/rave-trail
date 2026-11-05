@@ -85,7 +85,7 @@ scripts em `deploy/scripts/` (`pg_dump` diário + antes de cada deploy).
   imutável, rollback trivial (basta apontar para a tag anterior).
 - **Caddy para TLS**: certificado Let's Encrypt automático, sem gerenciar
   renovação. Exige apenas o registro A do domínio apontando para o IP estático.
-- **Migrations como passo do deploy**: `backend/dist/db/migrate.js` (idempotente,
+- **Migrations como passo do deploy**: `backend/dist/migrate.js` (idempotente,
   com advisory lock) roda após subir a stack. Ver [database.md](database.md).
 
 ## Pré-requisitos

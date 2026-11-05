@@ -11,6 +11,6 @@ cd "$HOME/rave-trail/deploy"
 # na mesma rede do compose, reutilizando as variaveis de ambiente do servico app.
 docker compose -f docker-compose.prod.yaml run --rm --no-deps \
   --entrypoint node \
-  app backend/dist/db/migrate.js
+  app backend/dist/migrate.js
 
 echo "==> Migrations e seed aplicados."
