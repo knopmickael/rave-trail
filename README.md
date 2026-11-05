@@ -30,6 +30,8 @@ todo-list.md            Solicitações atuais do projeto
 
 Detalhes das fronteiras e da publicação: [docs/architecture.md](docs/architecture.md).
 
+SEO, páginas públicas e envio do site aos buscadores: [docs/seo.md](docs/seo.md).
+
 `frontend/public/media/` é a única fonte dos arquivos usados pelo jogo. `frontend/dist/media/` é a cópia **gerada** para publicação. Os templates estão em `docs/design/templates/`.
 
 ## Executar localmente

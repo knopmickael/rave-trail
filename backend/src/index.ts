@@ -1,6 +1,6 @@
 import { config as loadEnvironment } from 'dotenv';
 import pg from 'pg';
-import fastifyStatic from '@fastify/static';
+import { registerFrontend } from './frontend.js';
 import { loadConfig } from './config.js';
 import { createApp } from './app.js';
 import { PostgresAuthRepository } from './db/auth-repository.js';
@@ -25,13 +25,7 @@ const app = await createApp({
 });
 
 if (config.NODE_ENV === 'production') {
-  await app.register(fastifyStatic, { root: frontendDistPath });
-  app.setNotFoundHandler((request, reply) => {
-    if (request.url.startsWith('/api/') || !['GET', 'HEAD'].includes(request.method)) {
-      return reply.code(404).send({ message: 'Recurso não encontrado.' });
-    }
-    return reply.sendFile('index.html');
-  });
+  await registerFrontend(app, frontendDistPath);
 }
 
 let advancingTurns: Promise<void> | null = null;

@@ -24,10 +24,20 @@ input:focus-visible, .text-button:focus-visible { outline: 3px solid var(--focus
 .menu-option:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .menu-option:disabled { opacity: .5; cursor: not-allowed; }
 .menu-option small { font: 11px var(--font-ui); text-align: right; }
+.title-screen--landing { gap: clamp(12px, 2.5svh, 28px); }
+.title-screen--landing .game-logo { width: min(72vw, 680px, calc(40svh * 772 / 518)); }
+.game-introduction { width: min(100%, 640px); padding: 14px 22px; border: 1px solid #fff6; border-radius: 10px; background: #fff9efed; text-align: center; }
+.game-introduction h1 { margin: 0 0 6px; color: #48210e; font-size: clamp(24px, 3vw, 32px); line-height: 1.2; }
+.game-introduction p { margin: 0 0 8px; font-size: 15px; line-height: 1.5; text-wrap: balance; }
+.game-introduction a { color: #9a3d0b; font-size: 14px; text-underline-offset: 3px; }
+.game-introduction a:focus-visible, .desktop-access a:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 4px; }
+.javascript-notice { margin: 0; padding: 16px; background: #fff9ef; color: #233b38; text-align: center; }
 @media (min-width: 720px) and (max-height: 900px) {
   :root { --page-inset: clamp(16px, 2vw, 32px); }
   .title-screen { min-height: 100svh; padding-block: var(--page-block-inset); gap: 20px; }
   .title-screen > .game-logo { width: min(64vw, 680px, calc(58svh * 772 / 518)); }
+  .title-screen--landing > .game-logo { width: min(64vw, 680px, calc(36svh * 772 / 518)); }
+  .title-screen--landing { gap: 12px; }
   .title-screen.with-panel { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 460px); gap: 16px clamp(24px, 4vw, 64px); align-content: center; }
   .with-panel > .game-logo { width: 100%; }
   .with-panel > .panel { max-height: calc(100svh - 2 * var(--page-block-inset)); padding: 20px; overflow-y: auto; scrollbar-width: thin; }

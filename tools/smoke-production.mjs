@@ -43,7 +43,14 @@ try {
   assert(script, 'Entrada JavaScript do build não encontrada.');
   assert.equal((await fetch(address + script)).status, 200);
   assert.equal((await fetch(address + '/api/unknown')).status, 404);
-  assert.match(await (await fetch(address + '/pagina-da-spa')).text(), /<div id="root"><\/div>/u);
+  assert.match(html, /<h1[^>]*>Rave Trail<\/h1>/u);
+  assert.match(html, /rel="canonical"/u);
+  assert.equal((await fetch(address + '/sobre/')).status, 200);
+  assert.equal((await fetch(address + '/robots.txt')).status, 200);
+  assert.equal((await fetch(address + '/sitemap.xml')).status, 200);
+  const missingPage = await fetch(address + '/pagina-inexistente');
+  assert.equal(missingPage.status, 404);
+  assert.equal(missingPage.headers.get('x-robots-tag'), 'noindex, follow');
   for (const path of ['/media/images/logo-rave-trail.png', '/media/images/sky-background.webp',
     '/media/images/fight-background.png', '/media/images/fight-exal-background.png', '/media/images/mapa-campanha-01.png',
     '/media/characters/ravi-de-berdal-face.png', '/media/characters/jung-de-grimoria-ii-face.png', '/media/characters/jung-de-grimoria-ii-body.png',

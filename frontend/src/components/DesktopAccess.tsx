@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { assets } from '../assets';
+import { site } from '../seo';
 import './desktop-access.css';
 
 const noticePath = '/acesse-pelo-computador';
@@ -27,6 +28,8 @@ export function DesktopAccess({ children }: { children: ReactNode }) {
     <section className="desktop-access-content">
       <img src={assets.logo} alt="Rave Trail" />
       <h1 id="desktop-access-message">Para ter uma melhor experiência com o jogo, por favor acesse-o através de um computador.</h1>
+      <p>{site.introduction}</p>
+      <a href="/sobre/">Conheça o Rave Trail e saiba como jogar</a>
     </section>
   </main>;
 }

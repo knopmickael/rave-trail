@@ -15,6 +15,7 @@ import { useGameAudio } from './audio/useGameAudio';
 import type { BattleRecord } from '@game/core/battle';
 import { isFinalEncounter } from '@game/content/campaign-rules';
 import { DesktopAccess } from './components/DesktopAccess';
+import { TitleScreen } from './components/TitleScreen';
 
 const BATTLE_LOADING_MS = 700;
 const battleScreenImport = () => import('./features/battle/BattleScreen');
@@ -172,17 +173,14 @@ function GameApp() {
       onOpenCharacters={() => { setError(''); setCharactersReturn('menu'); setScreen('characters'); }} />;
   }
 
+  if (screen === 'title') return <TitleScreen checking={checking} error={error} onStart={() => {
+    setError('');
+    setScreen(user ? 'menu' : 'auth');
+  }} />;
+
   return (
-    <main className={`title-screen ${screen !== 'title' ? 'with-panel' : ''}`}>
+    <main className="title-screen with-panel">
       <img className="game-logo" src={assets.logo} alt="Rave Trail" />
-      {screen === 'title' && (
-        <button className="fantasy-button" disabled={checking} onClick={() => {
-          setError('');
-          setScreen(user ? 'menu' : 'auth');
-        }}>
-          {checking ? 'Carregando sessão…' : 'Começar jogo'}
-        </button>
-      )}
       {screen === 'auth' && (
         <section className="panel" aria-labelledby="auth-title">
           <h1 id="auth-title">{mode === 'login' ? 'Continue sua jornada' : 'Comece sua jornada'}</h1>
