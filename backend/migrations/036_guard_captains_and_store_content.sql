@@ -19,7 +19,10 @@ ON CONFLICT (id) DO UPDATE SET
   description = EXCLUDED.description, portrait_path = EXCLUDED.portrait_path,
   illustration_path = EXCLUDED.illustration_path, unlock_condition = EXCLUDED.unlock_condition;
 
-INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES
+-- Em um banco vazio, as habilidades só existem depois do seed (que roda após as
+-- migrações e cadastra estes mesmos loadouts). Por isso a inserção é tudo ou nada:
+-- só acontece quando todas as habilidades referenciadas já estão no catálogo.
+WITH slots(unit_id, slot_index, ability_id) AS (VALUES
   ('capitao-da-guarda-kalis-base', 0, 'simple-strike'),
   ('capitao-da-guarda-kalis-base', 1, 'guard'),
   ('capitao-da-guarda-kalis-base', 2, 'retain-energy'),
@@ -27,7 +30,11 @@ INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES
   ('capitao-da-guarda-ridan-base', 0, 'simple-strike'),
   ('capitao-da-guarda-ridan-base', 1, 'guard'),
   ('capitao-da-guarda-ridan-base', 2, 'retain-energy'),
-  ('capitao-da-guarda-ridan-base', 3, 'internal-strength')
+  ('capitao-da-guarda-ridan-base', 3, 'internal-strength'))
+INSERT INTO unit_abilities (unit_id, slot_index, ability_id)
+SELECT unit_id, slot_index, ability_id FROM slots
+WHERE NOT EXISTS (
+  SELECT 1 FROM slots s LEFT JOIN abilities a ON a.id = s.ability_id WHERE a.id IS NULL)
 ON CONFLICT (unit_id, slot_index) DO UPDATE SET ability_id = EXCLUDED.ability_id;
 
 -- Saqueador da estrada I troca Força interna por Golpe forte.
