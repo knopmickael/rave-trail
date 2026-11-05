@@ -14,12 +14,17 @@ import { useAudioSettings } from './audio/useAudioSettings';
 import { useGameAudio } from './audio/useGameAudio';
 import type { BattleRecord } from '@game/core/battle';
 import { isFinalEncounter } from '@game/content/campaign-rules';
+import { DesktopAccess } from './components/DesktopAccess';
 
 const BATTLE_LOADING_MS = 700;
 const battleScreenImport = () => import('./features/battle/BattleScreen');
 const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default: module.BattleScreen })));
 
 export function App() {
+  return <DesktopAccess><GameApp /></DesktopAccess>;
+}
+
+function GameApp() {
   const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
   const [campaignId, setCampaignId] = useState('path-1');
   const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map'>('menu');

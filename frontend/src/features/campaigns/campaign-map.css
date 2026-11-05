@@ -1,6 +1,6 @@
 .campaign-map-page { height: 100svh; overflow: hidden; color: #233b38; }
-.map-canvas { position: fixed; inset: 0; overflow: hidden; background: #123948; overscroll-behavior: contain; }
-.map-world { position: relative; width: max(100%, calc(100svh * 1672 / 940)); min-height: 100%; aspect-ratio: 1672 / 940; }
+.map-canvas { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden; background: #123948; overscroll-behavior: contain; }
+.map-world { position: relative; width: min(100%, calc(100svh * 1672 / 940)); aspect-ratio: 1672 / 940; }
 .campaign-map-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none; user-select: none; }
 .map-header { position: fixed; left: var(--page-content-inset); top: var(--page-content-inset); display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 2 * var(--page-content-inset)); padding: 12px; border-radius: 10px; background: #fff9ef; box-shadow: 0 4px 24px #08192333; }
 .map-header h1 { margin: 0; font-size: clamp(17px, 2vw, 26px); }
@@ -50,6 +50,19 @@
 .encounter-drawer-footer { padding-top: 18px; }
 .encounter-drawer-footer > p { margin: 0 0 10px; font-size: 13px; line-height: 1.5; }
 .encounter-drawer-footer .fantasy-button { min-width: 0; }
+@media (min-width: 720px) and (max-height: 900px) {
+  .map-header { top: var(--page-block-inset); gap: 10px; padding: 8px; }
+  .map-header h1 { font-size: clamp(18px, 1.6vw, 24px); }
+  .map-team { bottom: var(--page-block-inset); }
+  .encounter-drawer-content { padding: 20px; }
+  .encounter-drawer-header, .encounter-drawer-footer { flex-shrink: 0; }
+  .encounter-drawer h2 { margin-bottom: 16px; font-size: 22px; }
+  .encounter-enemies { margin-bottom: 16px; }
+  .encounter-enemies figure { flex-basis: 88px; }
+  .encounter-drawer-footer { padding-top: 12px; }
+  .encounter-drawer-footer .fantasy-button { padding: 12px 18px; font-size: 17px; }
+  .campaign-story-header, .campaign-story-body { padding: 18px; }
+}
 @keyframes encounter-slide { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @media (max-width: 560px) { .map-header { gap: 10px; padding: 10px; } .map-header .campaign-back { width: 36px; height: 36px; flex-basis: 36px; } .encounter-drawer-content { padding: 22px; } }
 @media (prefers-reduced-motion: reduce) { .encounter-drawer[open] { animation: none; } }

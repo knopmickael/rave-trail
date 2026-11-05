@@ -41,3 +41,9 @@
 .unlocks-state .feedback { margin-bottom: 16px; }
 @media (max-width: 560px) { .unlocks-container { padding: 10px; } .unlock-card-content { gap: 10px; padding: 12px; } .unlocks-page .roster-header h1 { font-size: 23px; } .unlock-card-header h2 { font-size: 14px; } .unlock-card-header img { flex-basis: 40px; width: 40px; height: 40px; } }
 @media (max-height: 650px) { .unlocks-page { padding-top: 16px; padding-bottom: 16px; } .unlocks-page .roster-header { margin-bottom: 12px; } .unlock-card-content { gap: 6px; padding: 10px; } .unlock-card-header { min-height: 36px; } .unlock-card-header img { flex-basis: 36px; width: 36px; height: 36px; } .unlock-card-header h2 { font-size: 13px; } .unlock-card-content > .fantasy-button.compact { padding: 6px; font-size: 12px; } }
+@media (min-width: 720px) and (max-height: 900px) {
+  .unlocks-page { --mission-card-height: clamp(240px, calc(100svh - 130px), 320px); padding-block: var(--page-block-inset); }
+  .unlocks-page .roster-header { margin-bottom: 12px; }
+  .unlocks-container { padding: 12px; }
+  .unlocks-grid { gap: 12px; }
+}

@@ -28,7 +28,6 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
   const [startError, setStartError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
-  const canvas = useRef<HTMLDivElement>(null);
   const drawer = useRef<HTMLDialogElement>(null);
   const slotDialog = useRef<HTMLDialogElement>(null);
 
@@ -45,15 +44,6 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
     });
     return () => { active = false; };
   }, [campaignId, attempt, onSessionExpired]);
-
-  useEffect(() => {
-    const viewport = canvas.current;
-    const next = viewport?.querySelector<HTMLElement>('[data-next="true"]');
-    if (viewport && next && viewport.scrollWidth > viewport.clientWidth) {
-      viewport.scrollLeft = Math.max(0, next.offsetLeft - viewport.clientWidth / 2);
-      viewport.scrollTop = Math.max(0, next.offsetTop - viewport.clientHeight / 2);
-    }
-  }, [map]);
 
   const selected = map?.encounters.find((entry) => entry.id === selectedId);
   const next = map?.encounters.find((entry) => entry.available && !entry.completed)?.id;
@@ -89,7 +79,7 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
 
   return (
     <main className="campaign-map-page">
-      <div className="map-canvas" ref={canvas} role="region" aria-label={campaignId === 'path-1' ? 'Mapa da primeira campanha' : 'Mapa da segunda campanha'} tabIndex={0}>
+      <div className="map-canvas" role="region" aria-label={campaignId === 'path-1' ? 'Mapa da primeira campanha' : 'Mapa da segunda campanha'}>
         <div className="map-world">
           {campaignId === 'path-1' ? <CampaignMapBackground />
             : <img className="campaign-map-image" src={assets.campaignMap} alt="Mapa da campanha" draggable={false} />}

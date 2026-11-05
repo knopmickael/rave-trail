@@ -84,7 +84,7 @@
 .battle-result h2 { margin: 0 0 12px; font-size: 30px; }
 .battle-result p { font-size: 14px; line-height: 1.6; }
 .battle-result .fantasy-button { min-width: 0; }
-.battle-confirm-dialog { position: fixed; inset: 0; width: min(460px, calc(100vw - 32px)); height: fit-content; max-width: none; margin: auto; padding: 24px; border: 2px solid #d4a64d; border-radius: 10px; background: #fff9ef; color: #233b38; box-shadow: 0 15px 60px #08192366; }
+.battle-confirm-dialog { position: fixed; inset: 0; width: min(460px, calc(100vw - 32px)); height: fit-content; max-width: none; max-height: calc(100svh - 32px); overflow-y: auto; margin: auto; padding: 24px; border: 2px solid #d4a64d; border-radius: 10px; background: #fff9ef; color: #233b38; box-shadow: 0 15px 60px #08192366; }
 .battle-confirm-dialog::backdrop { background: #081923cc; }
 .battle-confirm-dialog h2 { margin: 0 0 10px; font-size: clamp(20px, 2.4vw, 24px); }
 .battle-confirm-dialog p { margin: 0; font-size: 14px; line-height: 1.6; }
@@ -116,4 +116,48 @@
 @media (max-width: 900px) { .battle-arena { grid-template-columns: minmax(0, 1fr); gap: 18px; } }
 @media (max-width: 760px) { .battle-page { padding: 16px 12px 86px; } .battle-header { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 12px; padding-top: 48px; } .battle-turn-controls { justify-self: center; } .battle-header .battle-end-turn { padding: 12px; font-size: 15px; } .battle-log-toggle { top: 12px; right: 12px; padding: 10px 12px; font-size: 12px; } .battle-arena { gap: 16px; margin-top: 16px; } .battle-team-header { padding: 10px; margin-bottom: 14px; } .battle-team-header h2 { font-size: 13px; } .fighter-abilities { --fighter-portrait-width: 58px; padding: 8px; gap: 8px; } .fighter-primary-abilities { grid-template-columns: repeat(2, minmax(0, 1fr)); } .battle-skill { padding: 3px; } .hp-track b { font-size: 8px; } .battle-fighters { gap: 14px; } .battle-combo { padding: 12px; } .battle-surrender { bottom: 16px; left: 12px; } }
 @media (max-width: 600px) { .battle-arena { grid-template-columns: minmax(0, 1fr); gap: 28px; } .fighter-abilities { --fighter-portrait-width: 76px; gap: 10px; } .fighter-primary-abilities { grid-template-columns: repeat(4, minmax(0, 1fr)); } .battle-team-header h2 { font-size: 15px; } }
+@media (min-width: 720px) and (max-width: 1100px) {
+  .battle-page { --battle-arena-gap: 16px; padding: 16px var(--page-content-inset) 68px; }
+  .battle-header { grid-template-columns: minmax(0, 1fr) auto; min-height: 0; padding-top: 0; padding-right: 180px; }
+  .battle-heading h1 { font-size: 17px; }
+  .battle-header .battle-end-turn { padding: 10px 14px; font-size: 16px; }
+  .battle-log-toggle { top: 20px; right: var(--page-content-inset); padding: 10px; font-size: 13px; }
+  .battle-arena { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .battle-team--enemy { grid-column: 2; grid-row: 1; }
+  .battle-combo { grid-column: 1 / -1; grid-row: 2; }
+  .battle-combo ol { flex-direction: row; flex-wrap: wrap; }
+  .fighter-abilities { --fighter-portrait-width: 56px; gap: 8px; padding: 8px; }
+  .fighter-primary-abilities { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .battle-skill { padding: 2px; }
+  .battle-combo .combo-actor, .battle-combo .combo-ability { width: 32px; height: 32px; }
+  .battle-combo .combo-targets img { width: 24px; height: 24px; }
+  .battle-surrender { bottom: 16px; left: var(--page-content-inset); }
+}
+@media (min-width: 720px) and (max-height: 900px) {
+  .battle-page { --battle-arena-gap: 20px; padding-top: 12px; padding-bottom: 60px; }
+  .battle-header { min-height: 54px; gap: 12px; }
+  .battle-heading { padding: 8px 12px; }
+  .battle-heading h1 { font-size: clamp(16px, 1.4vw, 20px); }
+  .battle-heading p { margin-top: 3px; }
+  .battle-header .battle-end-turn { margin-top: 0; padding: 10px 18px; font-size: 16px; }
+  .battle-log-toggle { top: 16px; padding: 10px 12px; }
+  .battle-arena { margin-top: 12px; margin-bottom: 0; }
+  .battle-team-header { margin-bottom: 10px; padding: 8px 12px; }
+  .battle-team-header h2 { margin-bottom: 6px; font-size: 14px; }
+  .energy-track { height: 10px; }
+  .battle-fighters { gap: 8px; }
+  .fighter-abilities { --fighter-portrait-width: clamp(44px, 8svh, 64px); gap: 10px; padding: 6px 10px; }
+  .fighter-effects { min-height: 18px; gap: 4px; margin-bottom: 4px; flex-wrap: wrap; }
+  .fighter-effects li, .fighter-effects img { width: 18px; height: 18px; }
+  .hp-track b { font-size: clamp(8px, 1.4svh, 10px); }
+  .battle-skill { max-width: clamp(44px, 8svh, 64px); padding: 3px; }
+  .battle-combo { padding: 10px; }
+  .battle-combo h2 { margin-bottom: 8px; }
+  .battle-combo li { flex-wrap: wrap; }
+  .battle-combo .combo-targets { flex-wrap: wrap; }
+  .battle-surrender { bottom: 12px; padding: 10px 16px; }
+  .battle-target-hint { margin-block: 10px; padding: 8px 12px; }
+  .battle-result { top: 50%; max-height: calc(100svh - 32px); overflow-y: auto; }
+  .battle-result h2 { font-size: 24px; }
+}
 @media (prefers-reduced-motion: reduce) { .hp-track > span, .energy-track > span { transition: none; } }
