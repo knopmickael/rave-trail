@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CampaignOption } from '@game/content/campaigns';
-import { api, ApiError } from '../../api';
+import { api, ApiError, gameDataCache } from '../../api';
 import { useI18n } from '../../i18n/LanguageProvider';
 import './campaigns.css';
 
@@ -12,7 +12,7 @@ interface CampaignSelectionProps {
 
 export function CampaignSelection({ onBack, onSessionExpired, onSelectCampaign }: CampaignSelectionProps) {
   const { t, text } = useI18n();
-  const [campaigns, setCampaigns] = useState<CampaignOption[] | null>(null);
+  const [campaigns, setCampaigns] = useState(() => gameDataCache.peek<CampaignOption[]>('campaigns'));
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export function CampaignSelection({ onBack, onSessionExpired, onSelectCampaign }
   useEffect(() => {
     let active = true;
     setError('');
-    setCampaigns(null);
+    setCampaigns(gameDataCache.peek('campaigns'));
     api.campaigns().then((items) => { if (active) setCampaigns(items); })
       .catch((cause: unknown) => {
         if (!active) return;

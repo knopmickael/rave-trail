@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { GameCatalog } from '@game/contracts';
-import { api, ApiError } from '../../api';
+import type { GameCatalog, PlayerProgress } from '@game/contracts';
+import { api, ApiError, gameDataCache } from '../../api';
 import { CharacterArt } from '../characters/CharacterArt';
 import { CharacterDetails } from '../characters/CharacterList';
 import { useI18n } from '../../i18n/LanguageProvider';
@@ -17,8 +17,8 @@ interface StoreProps {
 
 export function Store({ onBack, onSessionExpired }: StoreProps) {
   const { t, text, currency } = useI18n();
-  const [catalog, setCatalog] = useState<GameCatalog | null>(null);
-  const [unlockedUnitIds, setUnlockedUnitIds] = useState<Set<string>>(new Set());
+  const [catalog, setCatalog] = useState(() => gameDataCache.peek<GameCatalog>('catalog'));
+  const [unlockedUnitIds, setUnlockedUnitIds] = useState(() => new Set(gameDataCache.peek<PlayerProgress>('progress')?.unlockedUnitIds));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [charactersOpen, setCharactersOpen] = useState(false);
   const [error, setError] = useState('');
@@ -27,8 +27,8 @@ export function Store({ onBack, onSessionExpired }: StoreProps) {
   useEffect(() => {
     let active = true;
     setError('');
-    setCatalog(null);
-    setUnlockedUnitIds(new Set());
+    setCatalog(gameDataCache.peek('catalog'));
+    setUnlockedUnitIds(new Set(gameDataCache.peek<PlayerProgress>('progress')?.unlockedUnitIds));
     Promise.all([api.catalog(), api.progress()])
       .then(([content, progress]) => {
         if (!active) return;

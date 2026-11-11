@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { GameCatalog, PlayerProgress } from '@game/contracts';
 import type { UnitDefinition } from '@game/content/units';
 import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
-import { api, ApiError } from '../../api';
+import { api, ApiError, gameDataCache } from '../../api';
 import { CharacterArt } from './CharacterArt';
 import { AbilityIcon } from './AbilityIcon';
 import { TeamSlotDialog } from './TeamSlotDialog';
@@ -19,8 +19,8 @@ interface CharacterListProps {
 
 export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao menu principal' }: CharacterListProps) {
   const { t, text } = useI18n();
-  const [progress, setProgress] = useState<PlayerProgress | null>(null);
-  const [catalog, setCatalog] = useState<GameCatalog | null>(null);
+  const [progress, setProgress] = useState(() => gameDataCache.peek<PlayerProgress>('progress'));
+  const [catalog, setCatalog] = useState(() => gameDataCache.peek<GameCatalog>('catalog'));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -32,8 +32,8 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
   useEffect(() => {
     let active = true;
     setError('');
-    setProgress(null);
-    setCatalog(null);
+    setProgress(gameDataCache.peek('progress'));
+    setCatalog(gameDataCache.peek('catalog'));
     Promise.all([api.progress(), api.catalog()]).then(([saved, content]) => {
       if (active) { setProgress(saved); setCatalog(content); }
     })

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { GameCatalog, PlayerProgress, QuickBattleData } from '@game/contracts';
 import type { BattleRecord } from '@game/core/battle';
-import { api, ApiError } from '../../api';
+import { api, ApiError, gameDataCache } from '../../api';
 import { CharacterArt } from '../characters/CharacterArt';
 import { useI18n } from '../../i18n/LanguageProvider';
 import '../characters/characters.css';
@@ -13,9 +13,9 @@ export function QuickBattle({ onBack, onSessionExpired, onBattleStarted }: {
   onBattleStarted: (battle: BattleRecord) => void;
 }) {
   const { t, text } = useI18n();
-  const [data, setData] = useState<QuickBattleData | null>(null);
-  const [catalog, setCatalog] = useState<GameCatalog | null>(null);
-  const [progress, setProgress] = useState<PlayerProgress | null>(null);
+  const [data, setData] = useState(() => gameDataCache.peek<QuickBattleData>('quick-battle'));
+  const [catalog, setCatalog] = useState(() => gameDataCache.peek<GameCatalog>('catalog'));
+  const [progress, setProgress] = useState(() => gameDataCache.peek<PlayerProgress>('progress'));
   const [error, setError] = useState('');
   const [startError, setStartError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -24,9 +24,9 @@ export function QuickBattle({ onBack, onSessionExpired, onBattleStarted }: {
   useEffect(() => {
     let active = true;
     setError('');
-    setData(null);
-    setCatalog(null);
-    setProgress(null);
+    setData(gameDataCache.peek('quick-battle'));
+    setCatalog(gameDataCache.peek('catalog'));
+    setProgress(gameDataCache.peek('progress'));
     Promise.all([api.quickBattle(), api.catalog(), api.progress()]).then(([available, content, saved]) => {
       if (active) { setData(available); setCatalog(content); setProgress(saved); }
     }).catch((cause: unknown) => {

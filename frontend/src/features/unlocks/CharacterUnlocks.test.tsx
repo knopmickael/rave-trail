@@ -97,17 +97,17 @@ it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado'
   expect(document.querySelectorAll('.unlock-card')).toHaveLength(16);
 });
 
-it('atualiza o progresso ao retornar à janela e reflete a disponibilidade sem notificações', async () => {
+it('mantém os dados carregados ao retornar à janela sem repetir a consulta', async () => {
   const victories = Array.from({ length: 4 }, () => ({ mode: 'quick' as const, playerUnitIds: ['protagonist-main-base'], enemyUnitIds: ['road-raider-1-base'] }));
   vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, [], victories, {}, undefined, ['path-1-encounter-1']));
   render(<CharacterUnlocks {...props()} />);
   const card = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
   expect(within(card).getAllByRole('progressbar')[0]).toHaveAttribute('aria-valuenow', '4');
-  vi.mocked(api.characterUnlocks).mockResolvedValueOnce(characterUnlockProgress(units, ['road-raider-1-base'], [...victories, victories[0]], {}, undefined, ['path-1-encounter-1']));
   fireEvent.focus(window);
-  await vi.waitFor(() => expect(within(card).getAllByRole('progressbar')[0]).toHaveAttribute('aria-valuenow', '5'));
+  expect(api.characterUnlocks).toHaveBeenCalledTimes(1);
+  expect(within(card).getAllByRole('progressbar')[0]).toHaveAttribute('aria-valuenow', '4');
   expect(within(card).queryByText('Finalize a batalha 1')).not.toBeInTheDocument();
-  expect(within(card).getByText('Disponível')).toBeInTheDocument();
+  expect(within(card).getByText('Em progresso')).toBeInTheDocument();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.queryByText(/desbloqueado com sucesso/i)).not.toBeInTheDocument();
 });

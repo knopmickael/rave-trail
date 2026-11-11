@@ -123,13 +123,10 @@ it('abre a lista pelo menu e retorna pelo botão de seta', async () => {
   expect(screen.getByRole('heading', { name: 'Menu principal' })).toBeInTheDocument();
 });
 
-it('retorna ao login quando o servidor informa sessão expirada ao abrir personagens', async () => {
+it('retorna ao login quando o servidor informa sessão expirada no preload de progresso', async () => {
   vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
   vi.mocked(api.progress).mockRejectedValue(new ApiError('Sessão expirada.', 401));
-  const user = userEvent.setup();
   render(<App />);
-  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
-  await user.click(screen.getByRole('button', { name: 'Lista de personagens' }));
   expect(await screen.findByLabelText('Senha')).toBeInTheDocument();
   expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou');
 });
@@ -243,13 +240,10 @@ it('abre a seleção de campanha pelo menu e retorna pela seta', async () => {
   expect(screen.getByRole('heading', { name: 'Menu principal' })).toBeInTheDocument();
 });
 
-it('solicita novo login se a sessão expirar ao abrir campanhas', async () => {
+it('solicita novo login se a sessão expirar no preload das campanhas', async () => {
   vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
   vi.mocked(api.campaigns).mockRejectedValueOnce(new ApiError('Sessão expirada.', 401));
-  const user = userEvent.setup();
   render(<App />);
-  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
-  await user.click(screen.getByRole('button', { name: 'Campanha' }));
   expect(await screen.findByLabelText('Senha')).toBeInTheDocument();
   expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou');
 });
@@ -266,7 +260,6 @@ it('navega do capítulo 1 ao mapa, abre o encontro e inicia uma batalha funciona
   expect(await screen.findByRole('region', { name: 'Minha equipe' })).toBeInTheDocument();
   await user.click(await screen.findByRole('button', { name: 'Batalha 1: Saqueadores da estrada' }));
   await user.click(screen.getByRole('button', { name: 'Iniciar batalha' }));
-  expect(screen.getByRole('status')).toHaveTextContent('Carregando batalha...');
   expect(await screen.findByRole('button', { name: /^Encerrar turno \d+s$/ }, { timeout: 3000 })).toBeInTheDocument();
   expect(screen.queryByRole('region', { name: 'Minha equipe' })).not.toBeInTheDocument();
   expect(api.startBattle).toHaveBeenCalledWith('path-1-encounter-1');
@@ -313,11 +306,10 @@ it('abre Batalha rápida pelo menu, entra no combate e retorna à página corret
   expect(screen.getByRole('heading', { name: 'Batalha rápida' })).toBeInTheDocument();
   expect(await screen.findByRole('region', { name: 'Minha equipe' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Entrar na batalha' }));
-  expect(screen.getByRole('status')).toHaveTextContent('Carregando batalha...');
   expect(await screen.findByRole('button', { name: /^Encerrar turno \d+s$/ }, { timeout: 3000 })).toBeInTheDocument();
   expect(screen.queryByRole('region', { name: 'Minha equipe' })).not.toBeInTheDocument();
   expect(api.startQuickBattle).toHaveBeenCalledTimes(1);
-  expect(api.campaignMap).not.toHaveBeenCalled();
+  expect(api.campaignMap).toHaveBeenCalledExactlyOnceWith('path-1');
   expect(api.startBattle).not.toHaveBeenCalled();
   await user.click(screen.getByRole('button', { name: 'Desistir' }));
   await user.click(within(screen.getByRole('dialog', { name: 'Desistir da batalha?' })).getByRole('button', { name: 'Confirmar desistência' }));

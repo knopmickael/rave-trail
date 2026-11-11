@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { User } from '@game/contracts';
-import { api, ApiError } from './api';
+import { api, ApiError, clearGameData, preloadGameData } from './api';
+import { preloadGameAssets } from './asset-preloader';
 import { assets } from './assets';
 import { CharacterList } from './features/characters/CharacterList';
 import { MainMenu } from './features/menu/MainMenu';
@@ -20,7 +21,6 @@ import { version } from '../../package.json';
 import { LanguageProvider, useI18n } from './i18n/LanguageProvider';
 import { LanguageSelector } from './i18n/LanguageSelector';
 
-const BATTLE_LOADING_MS = 700;
 const battleScreenImport = () => import('./features/battle/BattleScreen');
 const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default: module.BattleScreen })));
 
@@ -40,7 +40,6 @@ function GameApp() {
   const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map'>('menu');
   const [battle, setBattle] = useState<BattleRecord | null>(null);
   const [battleTitle, setBattleTitle] = useState('Batalha');
-  const [battleReady, setBattleReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -53,6 +52,7 @@ function GameApp() {
     volume: audio.volume, muted: audio.muted });
 
   const handleSessionExpired = useCallback(() => {
+    clearGameData();
     setUser(null);
     setPassword('');
     setMode('login');
@@ -85,12 +85,13 @@ function GameApp() {
   function openBattle(record: BattleRecord, title: string) {
     setBattle(record);
     setBattleTitle(title);
-    setBattleReady(false);
     setScreen('battle');
   }
 
   useEffect(() => {
     let active = true;
+    preloadGameAssets();
+    void battleScreenImport().catch(() => {});
     api.session().then((session) => { if (active) setUser(session); })
       .catch((cause: Error) => { if (active) setError(cause.message); })
       .finally(() => { if (active) setChecking(false); });
@@ -98,11 +99,15 @@ function GameApp() {
   }, []);
 
   useEffect(() => {
-    if (screen !== 'battle' || battleReady) return;
-    void battleScreenImport();
-    const timer = window.setTimeout(() => setBattleReady(true), BATTLE_LOADING_MS);
-    return () => window.clearTimeout(timer);
-  }, [screen, battleReady]);
+    if (!user) return;
+    let active = true;
+    // Screens share the same pending requests and cached results. A preload failure
+    // is retried by the affected screen using its normal error/retry interface.
+    void preloadGameData(api).catch((cause: unknown) => {
+      if (active && cause instanceof ApiError && cause.status === 401) handleSessionExpired();
+    });
+    return () => { active = false; };
+  }, [user?.id, handleSessionExpired]);
 
   async function authenticate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -163,7 +168,6 @@ function GameApp() {
   }
 
   if (screen === 'battle' && user && battle) {
-    if (!battleReady) return <BattleLoading />;
     return <Suspense fallback={<BattleLoading />}>
       <BattleScreen initialBattle={battle} title={battleTitle} onBack={() => setScreen(battle.encounterId === null ? 'quick-battle' : 'map')} onSessionExpired={handleSessionExpired} />
     </Suspense>;

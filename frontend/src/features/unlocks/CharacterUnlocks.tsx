@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { CharacterUnlockData } from '@game/contracts';
 import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
-import { api, ApiError } from '../../api';
+import { api, ApiError, gameDataCache } from '../../api';
 import { useI18n } from '../../i18n/LanguageProvider';
 import '../characters/characters.css';
 import './unlocks.css';
@@ -13,7 +13,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
   onSessionExpired: () => void;
 }) {
   const { t, text, currency } = useI18n();
-  const [data, setData] = useState<CharacterUnlockData | null>(null);
+  const [data, setData] = useState(() => gameDataCache.peek<CharacterUnlockData>('unlocks'));
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
 
@@ -27,12 +27,6 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
     });
     return () => { active = false; };
   }, [attempt, onSessionExpired]);
-
-  useEffect(() => {
-    const refresh = () => setAttempt((value) => value + 1);
-    window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
-  }, []);
 
   const missions = data?.characters.filter((unit) => !hiddenUnitIds.has(unit.id) && unit.kind !== 'premium') ?? [];
 

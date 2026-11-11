@@ -3,7 +3,7 @@ import type { CampaignMapData, GameCatalog, PlayerProgress } from '@game/contrac
 import type { BattleRecord } from '@game/core/battle';
 import { FINAL_BATTLE_REQUIREMENT, FINAL_ENCOUNTER_ID, SECOND_FINAL_ENCOUNTER_ID,
   OSIRIS_BATTLE_REQUIREMENT } from '@game/content/campaign-rules';
-import { api, ApiError } from '../../api';
+import { api, ApiError, gameDataCache } from '../../api';
 import { assets } from '../../assets';
 import { CharacterArt } from '../characters/CharacterArt';
 import { TeamSlotDialog } from '../characters/TeamSlotDialog';
@@ -22,9 +22,9 @@ interface CampaignMapProps {
 
 export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStarted }: CampaignMapProps) {
   const { t, text } = useI18n();
-  const [map, setMap] = useState<CampaignMapData | null>(null);
-  const [catalog, setCatalog] = useState<GameCatalog | null>(null);
-  const [progress, setProgress] = useState<PlayerProgress | null>(null);
+  const [map, setMap] = useState(() => gameDataCache.peek<CampaignMapData>(`map:${campaignId}`));
+  const [catalog, setCatalog] = useState(() => gameDataCache.peek<GameCatalog>('catalog'));
+  const [progress, setProgress] = useState(() => gameDataCache.peek<PlayerProgress>('progress'));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [startError, setStartError] = useState('');
@@ -36,7 +36,7 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
   useEffect(() => {
     let active = true;
     setError('');
-    setMap(null);
+    setMap(gameDataCache.peek(`map:${campaignId}`));
     Promise.all([api.campaignMap(campaignId), api.catalog(), api.progress()]).then(([data, content, saved]) => {
       if (active) { setMap(data); setCatalog(content); setProgress(saved); }
     }).catch((cause: unknown) => {
