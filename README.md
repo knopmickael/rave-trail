@@ -133,6 +133,10 @@ O modo rápido sorteia adversários no servidor: protagonistas desde o início e
 
 Configurações controla volume/silêncio global. Há faixas de menu, batalha comum e batalha final; efeitos de clique, mudança de turno e personagem derrotado. `battle-win.wav` e `battle-lose.mp3` tocam uma vez no resultado oficial. Prévia do combo e releitura do histórico não disparam resultados sonoros.
 
+### Idiomas
+
+A interface e o conteúdo do jogo estão disponíveis em **português e inglês**. O idioma inicial segue as preferências do navegador, com fallback para inglês. É possível escolher **Automático**, **Português** ou **English** na entrada do jogo e em **Configurações**; a escolha é aplicada imediatamente e salva localmente, sem alterações no banco. Detalhes do mapper, manutenção das traduções e testes: [docs/i18n.md](docs/i18n.md).
+
 ## Testes e publicação
 
 Para PostgreSQL de testes:

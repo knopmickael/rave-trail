@@ -6,11 +6,13 @@ import { assets } from '../../assets';
 import { isFinalEncounter } from '@game/content/campaign-rules';
 import { playSoundEffect } from '../../audio/soundEffects';
 import { AbilityTooltip } from './AbilityTooltip';
+import { useI18n } from '../../i18n/LanguageProvider';
 import './battle.css';
 
 export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }: {
   initialBattle: BattleRecord; title: string; onBack: () => void; onSessionExpired: () => void;
 }) {
+  const { t, text } = useI18n();
   const [battle, setBattle] = useState(initialBattle);
   const [queue, setQueue] = useState<BattleAction[]>([]);
   const [pending, setPending] = useState<{ actorId: string; abilityId: string } | null>(null);
@@ -19,7 +21,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [revealedEnemyActions, setRevealedEnemyActions] = useState(0);
-  const [dependencyWarning, setDependencyWarning] = useState<{ removed: string; dependents: string[] } | null>(null);
+  const [dependencyWarning, setDependencyWarning] = useState<{ removed: string; dependents: BattleAction[] } | null>(null);
   const inFlight = useRef(false);
   const pendingRequest = useRef<{ signature: string; id: string } | null>(null);
   const logDialog = useRef<HTMLDialogElement>(null);
@@ -65,7 +67,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
   function actionLabel(action: BattleAction) {
     const actor = state.teams.player.units.find((unit) => unit.id === action.actorId);
     const ability = state.abilities[action.abilityId];
-    return `${actor?.name ?? 'Personagem'}: ${ability?.name ?? 'Habilidade'}`;
+    return `${actor ? text(actor.name) : t('Personagem')}: ${ability ? text(ability.name) : t('Habilidade')}`;
   }
 
   function requestRemoveAction(actorId: string) {
@@ -80,7 +82,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
     if (dependent) {
       setDependencyWarning({
         removed: state.abilities[action.abilityId]?.name ?? 'Ação',
-        dependents: [actionLabel(dependent)],
+        dependents: [dependent],
       });
       dependencyDialog.current?.showModal();
       return;
@@ -252,56 +254,56 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
 
   function team(side: 'player' | 'enemy') {
     const player = side === 'player';
-    const label = player ? 'Sua equipe' : 'Equipe inimiga';
+    const label = t(player ? 'Sua equipe' : 'Equipe inimiga');
     return <section className={`battle-team battle-team--${side}`} aria-label={label}>
       <header className="battle-team-header"><h2>{label}</h2>
-        <EnergyGauge value={player ? energy : state.teams.enemy.energy} label={player ? 'Energia prevista da equipe' : 'Energia da equipe inimiga'} />
+        <EnergyGauge value={player ? energy : state.teams.enemy.energy} label={t(player ? 'Energia prevista da equipe' : 'Energia da equipe inimiga')} />
       </header>
       <div className="battle-fighters">
         {state.teams[side].units.map((unit) => {
           const chosen = queue.find((entry) => entry.actorId === unit.id) ?? (pending?.actorId === unit.id ? pending : null);
           const target = validTarget(unit, side);
           return <div key={unit.id} className={`fighter-row ${chosen ? 'fighter-row--chosen' : ''} ${pending?.actorId === unit.id ? 'fighter-row--acting' : ''} ${unit.hp <= 0 ? 'fighter-row--defeated' : ''}`}
-            role="group" aria-label={`${player ? 'Aliado' : 'Inimigo'}: ${unit.name}`}>
+            role="group" aria-label={t(player ? 'Aliado: {name}' : 'Inimigo: {name}', { name: text(unit.name) })}>
             <div className="fighter-abilities">
               <FighterCard unit={unit} target={target} player={player}
                 disabled={busy || !playerTurn || !target}
                 onClick={() => pending && addAction({ ...pending, targetId: unit.id })} />
               <div className="fighter-skill-area">
-                <ul className="fighter-effects" aria-label={`Efeitos ativos de ${unit.name}${player ? '' : ' (inimigo)'}`}>
+                <ul className="fighter-effects" aria-label={t(player ? 'Efeitos ativos de {name}' : 'Efeitos ativos de {name} (inimigo)', { name: text(unit.name) })}>
                   {unit.guardExpiresAt !== null && (() => {
                     const effect = state.abilities[unit.guardAbilityId ?? 'guard'];
                     return effect ? <li><AbilityTooltip ability={effect} resetKey={tooltipReset} focusable
-                      extra={`${Math.max(0, unit.guardExpiresAt - state.teams[side].turns)} turnos da equipe restantes.`}>
-                      <img src={effect.icon} alt={`Efeito ativo: ${effect.name}`} />
+                      extra={t('{count} turnos da equipe restantes.', { count: Math.max(0, unit.guardExpiresAt - state.teams[side].turns) })}>
+                      <img src={effect.icon} alt={t('Efeito ativo: {name}', { name: text(effect.name) })} />
                     </AbilityTooltip></li> : null;
                   })()}
                   {unit.invulnerableExpiresAt != null && state.abilities['fast-move'] && <li>
                     <AbilityTooltip ability={state.abilities['fast-move']} resetKey={tooltipReset} focusable
-                      extra="Invulnerável no próximo turno da equipe inimiga.">
-                      <img src={state.abilities['fast-move'].icon} alt="Efeito ativo: Invulnerabilidade" />
+                      extra={t('Invulnerável no próximo turno da equipe inimiga.')}>
+                      <img src={state.abilities['fast-move'].icon} alt={t('Efeito ativo: Invulnerabilidade')} />
                     </AbilityTooltip>
                   </li>}
                   {unit.attackBlockedExpiresAt != null && state.abilities['dark-vortex'] && <li>
                     <AbilityTooltip ability={state.abilities['dark-vortex']} resetKey={tooltipReset} focusable
-                      extra={`Impedido de atacar por ${Math.max(0, unit.attackBlockedExpiresAt - state.teams[side].turns)} turno(s) da equipe.`}>
-                      <img src={state.abilities['dark-vortex'].icon} alt="Efeito ativo: ataques bloqueados" />
+                      extra={t('Impedido de atacar por {count} turno(s) da equipe.', { count: Math.max(0, unit.attackBlockedExpiresAt - state.teams[side].turns) })}>
+                      <img src={state.abilities['dark-vortex'].icon} alt={t('Efeito ativo: ataques bloqueados')} />
                     </AbilityTooltip>
                   </li>}
                   {(unit.bleedTurns ?? 0) > 0 && state.abilities['quick-slash'] && <li>
                     <AbilityTooltip ability={state.abilities['quick-slash']} resetKey={tooltipReset} focusable
-                      extra={`Sangramento: ${unit.bleedAmount ?? 0} de dano por ${unit.bleedTurns} turno(s) restantes.`}>
-                      <img src={state.abilities['quick-slash'].icon} alt="Efeito ativo: sangramento" />
+                      extra={t('Sangramento: {damage} de dano por {count} turno(s) restantes.', { damage: unit.bleedAmount ?? 0, count: unit.bleedTurns ?? 0 })}>
+                      <img src={state.abilities['quick-slash'].icon} alt={t('Efeito ativo: sangramento')} />
                     </AbilityTooltip>
                   </li>}
                   {unit.damageBoostExpiresAt != null && state.abilities['internal-strength'] && <li>
                     <AbilityTooltip ability={state.abilities['internal-strength']} resetKey={tooltipReset} focusable
-                      extra={`+${unit.damageBoostAmount ?? 0} de dano ${state.teams[side].turns < (unit.damageBoostStartsAt ?? 0) ? 'no próximo turno da equipe' : 'neste turno da equipe'}.`}>
-                      <img src={state.abilities['internal-strength'].icon} alt="Efeito ativo: Força interna" />
+                      extra={t(state.teams[side].turns < (unit.damageBoostStartsAt ?? 0) ? '+{damage} de dano no próximo turno da equipe.' : '+{damage} de dano neste turno da equipe.', { damage: unit.damageBoostAmount ?? 0 })}>
+                      <img src={state.abilities['internal-strength'].icon} alt={t('Efeito ativo: Força interna')} />
                     </AbilityTooltip>
                   </li>}
                 </ul>
-                <div className="fighter-primary-abilities" aria-label={`Habilidades de ${unit.name}`}>
+                <div className="fighter-primary-abilities" aria-label={t('Habilidades de {name}', { name: text(unit.name) })}>
               {unit.abilityIds.map((id) => {
                 const ability = state.abilities[id];
                 if (!ability) return null;
@@ -314,7 +316,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
                   || (!selected && (ability.energyCost > energy || noTarget));
                 return <AbilityTooltip key={id} ability={ability} resetKey={tooltipReset} focusable={disabled}>
                   <button type="button" className="battle-skill" disabled={disabled}
-                  aria-label={`${ability.name} — ${unit.name}${player ? '' : ' (inimigo)'}`}
+                  aria-label={t(player ? '{ability} — {name}' : '{ability} — {name} (inimigo)', { ability: text(ability.name), name: text(unit.name) })}
                   aria-pressed={player ? selected : undefined} onClick={() => chooseAbility(unit, ability)}>
                     <img src={ability.icon} alt="" />
                   </button>
@@ -331,20 +333,20 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
 
   return <main className={`battle-page${targetingEnemy ? ' battle-page--targeting' : ''}`} style={{ backgroundImage: `linear-gradient(#12312918, #12312945), url("${finalBattle ? assets.finalBattle : assets.battle}")` }}>
     <header className="battle-header">
-      <div className="battle-heading"><h1>{title}</h1><p>Turno {state.turn} · {active ? state.activeSide === 'player' ? 'Sua vez' : battle.botActsAt ? 'Turno do BOT COM' : 'Turno do adversário' : state.status === 'victory' ? 'Vitória' : state.status === 'abandoned' ? 'Desistência' : 'Derrota'}</p></div>
+      <div className="battle-heading"><h1>{text(title)}</h1><p>{t('Turno {number} · {status}', { number: state.turn, status: t(active ? state.activeSide === 'player' ? 'Sua vez' : battle.botActsAt ? 'Turno do BOT COM' : 'Turno do adversário' : state.status === 'victory' ? 'Vitória' : state.status === 'abandoned' ? 'Desistência' : 'Derrota') })}</p></div>
       {active && <div className="battle-turn-controls">
         <button type="button" className="fantasy-button battle-end-turn" disabled={busy || !playerTurn || !!pending || !!queueError}
-          aria-label={`${busy ? 'Aguarde' : turnLabel} ${remaining}s`} onClick={confirmTurn}>
-          {busy ? 'Aguarde…' : turnLabel}{' '}
-          <span className="battle-turn-clock" role="timer" aria-label="Tempo restante do turno">{remaining}s</span>
+          aria-label={t('{label} {seconds}s', { label: t(busy ? 'Aguarde' : turnLabel), seconds: remaining })} onClick={confirmTurn}>
+          {t(busy ? 'Aguarde…' : turnLabel)}{' '}
+          <span className="battle-turn-clock" role="timer" aria-label={t('Tempo restante do turno')}>{remaining}s</span>
         </button>
       </div>}
     </header>
-    <button type="button" className="battle-log-toggle" onClick={() => logDialog.current?.showModal()}>Registro do combate</button>
+    <button type="button" className="battle-log-toggle" onClick={() => logDialog.current?.showModal()}>{t('Registro do combate')}</button>
 
-    <div className="battle-arena" aria-label="Campo de batalha">
+    <div className="battle-arena" aria-label={t('Campo de batalha')}>
       {team('player')}
-      <section className="battle-combo" aria-label="Combo do turno"><h2>Combo do turno</h2>
+      <section className="battle-combo" aria-label={t('Combo do turno')}><h2>{t('Combo do turno')}</h2>
         {comboActions.length > 0 && <ol>{comboActions.map((action, index) => {
           const actor = state.teams.player.units.find((unit) => unit.id === action.actorId)
             ?? state.teams.enemy.units.find((unit) => unit.id === action.actorId);
@@ -353,67 +355,67 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
           const removable = queue.some((entry) => entry.actorId === action.actorId);
           return <ActionRow key={action.actorId} actor={actor} ability={ability} targets={targets}
             className={state.activeSide === 'enemy' ? 'battle-combo-entry--enemy' : undefined}
-            remove={removable ? { label: `Remover ação ${index + 1}`, disabled: busy || !playerTurn, onClick: () => requestRemoveAction(action.actorId) } : undefined} />;
+            remove={removable ? { label: t('Remover ação {number}', { number: index + 1 }), disabled: busy || !playerTurn, onClick: () => requestRemoveAction(action.actorId) } : undefined} />;
         })}</ol>}
         {comboActions.length === 0 && finalComboEntries.length > 0 && <ol>
           {finalComboEntries.map((entry) => <ActionRow key={entry.actionId} actor={entry.actor} ability={entry.ability} targets={entry.targets}
             className={entry.side === 'enemy' ? 'battle-combo-entry--enemy' : undefined} />)}
         </ol>}
         {comboActions.length === 0 && finalComboEntries.length === 0 &&
-          <p>{!active ? 'Batalha encerrada.' : enemyTurn ? 'Aguardando ações do inimigo…' : 'Nenhuma ação selecionada.'}</p>}
+          <p>{t(!active ? 'Batalha encerrada.' : enemyTurn ? 'Aguardando ações do inimigo…' : 'Nenhuma ação selecionada.')}</p>}
       </section>
       {team('enemy')}
     </div>
 
     {active && <>
-      {playerTurn && pending && targetAbility && <p className="battle-target-hint" role="status">Escolha {targetAbility.target === 'defeated-ally' ? 'um aliado derrotado' : 'um aliado'} para {targetAbility.name}.</p>}
-      <button type="button" className="battle-surrender" disabled={busy} onClick={openSurrender}>Desistir</button>
+      {playerTurn && pending && targetAbility && <p className="battle-target-hint" role="status">{t(targetAbility.target === 'defeated-ally' ? 'Escolha um aliado derrotado para {ability}.' : targetAbility.target === 'enemy' ? 'Escolha um inimigo para {ability}.' : 'Escolha um aliado para {ability}.', { ability: text(targetAbility.name) })}</p>}
+      <button type="button" className="battle-surrender" disabled={busy} onClick={openSurrender}>{t('Desistir')}</button>
     </>}
-    {queueError && <p className="battle-feedback feedback" role="alert">{queueError}</p>}
-    {error && <p className="battle-feedback feedback" role="alert">{error}</p>}
-    {!active && <section className="battle-result" aria-label="Resultado da batalha">
-      <h2>{state.status === 'victory' ? 'Vitória!' : state.status === 'abandoned' ? 'Batalha encerrada' : 'Derrota'}</h2>
-      <p>{state.status === 'abandoned' ? 'A batalha foi encerrada. A próxima tentativa começará do zero.'
+    {queueError && <p className="battle-feedback feedback" role="alert">{text(queueError)}</p>}
+    {error && <p className="battle-feedback feedback" role="alert">{text(error)}</p>}
+    {!active && <section className="battle-result" aria-label={t('Resultado da batalha')}>
+      <h2>{t(state.status === 'victory' ? 'Vitória!' : state.status === 'abandoned' ? 'Batalha encerrada' : 'Derrota')}</h2>
+      <p>{t(state.status === 'abandoned' ? 'A batalha foi encerrada. A próxima tentativa começará do zero.'
         : quickBattle ? 'O resultado da Batalha rápida foi salvo. Prepare-se para um novo confronto.'
-          : state.status === 'victory' ? 'O resultado foi salvo. Continue a jornada pelo mapa.' : 'Reorganize sua equipe e tente novamente pelo mapa.'}</p>
-      <button className="fantasy-button compact" onClick={onBack}>{quickBattle ? 'Voltar à Batalha rápida' : 'Continuar no mapa'}</button>
+          : state.status === 'victory' ? 'O resultado foi salvo. Continue a jornada pelo mapa.' : 'Reorganize sua equipe e tente novamente pelo mapa.')}</p>
+      <button className="fantasy-button compact" onClick={onBack}>{t(quickBattle ? 'Voltar à Batalha rápida' : 'Continuar no mapa')}</button>
     </section>}
 
     <dialog ref={logDialog} className="battle-log-dialog" aria-labelledby="battle-log-title">
-      <header><h2 id="battle-log-title">Registro do combate</h2>
-        <button type="button" onClick={() => logDialog.current?.close()} aria-label="Fechar registro do combate">×</button>
+      <header><h2 id="battle-log-title">{t('Registro do combate')}</h2>
+        <button type="button" onClick={() => logDialog.current?.close()} aria-label={t('Fechar registro do combate')}>×</button>
       </header>
-      <div className="battle-log-scroll" tabIndex={0} role="region" aria-label="Eventos da batalha">
-        {events.filter((event) => event.kind === 'transform').map((event, index) => <p className="battle-transformation" key={index}>{event.message}</p>)}
+      <div className="battle-log-scroll" tabIndex={0} role="region" aria-label={t('Eventos da batalha')}>
+        {events.filter((event) => event.kind === 'transform').map((event, index) => <p className="battle-transformation" key={index}>{text(event.message)}</p>)}
         {logGroups.length ? logGroups.map((group) => <section className="battle-log-turn" key={group.turn ?? 'other'}>
-          <h3>{group.turn === null ? 'Ações anteriores' : `Turno ${group.turn}`}</h3>
+          <h3>{group.turn === null ? t('Ações anteriores') : t('Turno {number}', { number: group.turn })}</h3>
           <ol>{group.entries.map((entry) => <ActionRow key={entry.actionId}
             className={entry.side === 'enemy' ? 'battle-log-entry--enemy' : undefined}
             actor={entry.actor} ability={entry.ability} targets={entry.targets} />)}</ol>
         </section>)
-          : <p>A batalha começou. As ações resolvidas aparecerão aqui.</p>}
+          : <p>{t('A batalha começou. As ações resolvidas aparecerão aqui.')}</p>}
       </div>
     </dialog>
 
     <dialog ref={surrenderDialog} className="battle-confirm-dialog" aria-labelledby="surrender-title" aria-describedby="surrender-description">
-      <h2 id="surrender-title">Desistir da batalha?</h2>
-      <p id="surrender-description">A batalha será encerrada e a próxima tentativa começará do zero.</p>
+      <h2 id="surrender-title">{t('Desistir da batalha?')}</h2>
+      <p id="surrender-description">{t('A batalha será encerrada e a próxima tentativa começará do zero.')}</p>
       <div className="battle-confirm-actions">
-        <button type="button" onClick={() => surrenderDialog.current?.close()}>Continuar na batalha</button>
-        <button type="button" className="battle-confirm-danger" disabled={busy} onClick={confirmSurrender}>Confirmar desistência</button>
+        <button type="button" onClick={() => surrenderDialog.current?.close()}>{t('Continuar na batalha')}</button>
+        <button type="button" className="battle-confirm-danger" disabled={busy} onClick={confirmSurrender}>{t('Confirmar desistência')}</button>
       </div>
     </dialog>
 
     <dialog ref={dependencyDialog} className="battle-confirm-dialog" aria-labelledby="dependency-title" aria-describedby="dependency-description">
-      <h2 id="dependency-title">Não é possível remover a ação</h2>
+      <h2 id="dependency-title">{t('Não é possível remover a ação')}</h2>
       <p id="dependency-description">
-        {dependencyWarning ? `Remover "${dependencyWarning.removed}" deixaria estas habilidades sem energia. Remova primeiro as ações dependentes:` : 'Remova primeiro as ações dependentes.'}
+        {dependencyWarning ? t('Remover "{ability}" deixaria estas habilidades sem energia. Remova primeiro as ações dependentes:', { ability: text(dependencyWarning.removed) }) : t('Remova primeiro as ações dependentes.')}
       </p>
       {dependencyWarning && dependencyWarning.dependents.length > 0 && <ul className="battle-dependency-list">
-        {dependencyWarning.dependents.map((dependent) => <li key={dependent}>{dependent}</li>)}
+        {dependencyWarning.dependents.map((dependent) => <li key={dependent.actorId}>{actionLabel(dependent)}</li>)}
       </ul>}
       <div className="battle-confirm-actions">
-        <button type="button" onClick={() => dependencyDialog.current?.close()}>Entendi</button>
+        <button type="button" onClick={() => dependencyDialog.current?.close()}>{t('Entendi')}</button>
       </div>
     </dialog>
   </main>;
@@ -461,13 +463,14 @@ function ActionRow({ actor, ability, targets, remove, className }: {
   actor?: Fighter; ability?: AbilityDefinition; targets: Fighter[]; className?: string;
   remove?: { label: string; disabled: boolean; onClick: () => void };
 }) {
+  const { t, text } = useI18n();
   return <li className={className}>
-    <img className="combo-actor" src={actor?.portrait} alt={actor?.name} />
-    <img className="combo-ability" src={ability?.icon} alt={ability?.name} />
+    <img className="combo-actor" src={actor?.portrait} alt={text(actor?.name)} />
+    <img className="combo-ability" src={ability?.icon} alt={text(ability?.name)} />
     {targets.length > 0 && <>
       <span className="combo-arrow" aria-hidden="true">→</span>
       <span className="combo-targets">
-        {targets.map((target) => <img key={target.id} src={target.portrait} alt={`Alvo: ${target.name}`} />)}
+        {targets.map((target) => <img key={target.id} src={target.portrait} alt={t('Alvo: {name}', { name: text(target.name) })} />)}
       </span>
     </>}
     {remove && <button type="button" disabled={remove.disabled} onClick={remove.onClick} aria-label={remove.label}>×</button>}
@@ -475,7 +478,8 @@ function ActionRow({ actor, ability, targets, remove, className }: {
 }
 
 function EnergyGauge({ value, label }: { value: number; label: string }) {
-  return <div className="battle-energy"><span>Energia <strong>{value} / 100</strong></span>
+  const { t } = useI18n();
+  return <div className="battle-energy"><span>{t('Energia')} <strong>{value} / 100</strong></span>
     <div className="energy-track" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}>
       <span style={{ width: `${value}%` }} />
     </div>
@@ -483,8 +487,9 @@ function EnergyGauge({ value, label }: { value: number; label: string }) {
 }
 
 function FighterCard({ unit, target, player, disabled, onClick }: { unit: Fighter; target: boolean; player: boolean; disabled: boolean; onClick: () => void }) {
+  const { t, text } = useI18n();
   return <button type="button" className={`fighter-card ${target ? 'fighter-card--target' : ''} ${unit.hp <= 0 ? 'fighter-card--defeated' : ''}`}
-    disabled={disabled} aria-label={`${target ? 'Alvo' : player ? 'Personagem' : 'Adversário'}: ${unit.name}`} onClick={onClick}>
+    disabled={disabled} aria-label={t(target ? 'Alvo: {name}' : player ? 'Personagem: {name}' : 'Adversário: {name}', { name: text(unit.name) })} onClick={onClick}>
     <span className="fighter-portrait">
       <img src={unit.portrait} alt="" />
       {unit.hp <= 0 && <svg className="fighter-defeated-mark" viewBox="0 0 100 100" aria-hidden="true">
@@ -492,7 +497,7 @@ function FighterCard({ unit, target, player, disabled, onClick }: { unit: Fighte
         <path d="M18 18 82 82M82 18 18 82" />
       </svg>}
     </span>
-    <span className={`hp-track${unit.hp <= 30 ? ' hp-track--critical' : unit.hp <= 65 ? ' hp-track--warning' : ''}`} role="progressbar" aria-label={`HP de ${unit.name}${player ? '' : ' (inimigo)'}`} aria-valuemin={0} aria-valuemax={unit.maxHp} aria-valuenow={unit.hp}>
+    <span className={`hp-track${unit.hp <= 30 ? ' hp-track--critical' : unit.hp <= 65 ? ' hp-track--warning' : ''}`} role="progressbar" aria-label={t(player ? 'HP de {name}' : 'HP de {name} (inimigo)', { name: text(unit.name) })} aria-valuemin={0} aria-valuemax={unit.maxHp} aria-valuenow={unit.hp}>
       <span style={{ width: `${100 * unit.hp / unit.maxHp}%` }} /><b>{unit.hp} / {unit.maxHp}</b>
     </span>
   </button>;

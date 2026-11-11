@@ -28,6 +28,7 @@ beforeAll(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
+  vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
   vi.mocked(api.session).mockResolvedValue(null);
   vi.mocked(api.logout).mockResolvedValue(undefined);
   vi.mocked(api.progress).mockResolvedValue(createInitialProgress());
@@ -325,4 +326,56 @@ it('abre Batalha rápida pelo menu, entra no combate e retorna à página corret
   expect(await screen.findByRole('region', { name: 'Minha equipe' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
   expect(screen.getByRole('heading', { name: 'Menu principal' })).toBeInTheDocument();
+});
+
+it('detecta inglês no navegador e troca o idioma do formulário e do erro sem perder os dados digitados', async () => {
+  vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-GB']);
+  vi.mocked(api.authenticate).mockRejectedValue(new ApiError('E-mail ou senha incorretos.', 401));
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(await screen.findByRole('button', { name: 'Start game' }));
+  await user.type(screen.getByLabelText('Email'), 'player@example.com');
+  await user.type(screen.getByLabelText('Password'), 'incorrect password');
+  await user.click(screen.getByRole('button', { name: 'Sign in' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect email or password.');
+  await user.selectOptions(screen.getByLabelText('Language'), 'pt-BR');
+  expect(screen.getByRole('heading', { name: 'Continue sua jornada' })).toBeInTheDocument();
+  expect(screen.getByLabelText('E-mail')).toHaveValue('player@example.com');
+  expect(screen.getByLabelText('Senha')).toHaveValue('incorrect password');
+  expect(screen.getByRole('alert')).toHaveTextContent('E-mail ou senha incorretos.');
+  expect(api.session).toHaveBeenCalledTimes(1);
+});
+
+it('troca para inglês nas configurações e localiza personagens, missões e campanha preservando nomes do jogador e IDs', async () => {
+  vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'player@example.com', name: 'Guarda' });
+  vi.mocked(api.setTeamSlot).mockResolvedValue(['protagonist-main-base', null, null]);
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  await user.click(screen.getByRole('button', { name: 'Configurações' }));
+  await user.selectOptions(screen.getByLabelText('Idioma'), 'en');
+  expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Open Guarda’s profile' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Close settings' }));
+  await user.click(screen.getByRole('button', { name: 'Character roster' }));
+  await user.click(await screen.findByRole('button', { name: 'Select Ravi de Berdal' }));
+  expect(screen.getByRole('heading', { name: 'Simple Strike' })).toBeInTheDocument();
+  expect(screen.getByText('Deals 20 damage to one enemy.')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Add to team' }));
+  await user.click(screen.getByRole('button', { name: 'Use slot 1 — empty' }));
+  expect(api.setTeamSlot).toHaveBeenCalledWith(0, 'protagonist-main-base');
+  await user.click(screen.getByRole('button', { name: 'Back to main menu' }));
+  await user.click(screen.getByRole('button', { name: 'Mission board' }));
+  expect(await screen.findByRole('heading', { name: 'Road Raider I' })).toBeInTheDocument();
+  expect(screen.getAllByText('Win 3 Quick battles.')).toHaveLength(2);
+  await user.click(screen.getByRole('button', { name: 'Back to main menu' }));
+  await user.click(screen.getByRole('button', { name: 'Campaign' }));
+  await user.click(await screen.findByRole('button', { name: 'Chapter 1: Setting Out on the Road' }));
+  await user.click(await screen.findByRole('button', { name: 'Read the story of Rave Trail' }));
+  expect(screen.getByText(/On a mystical continent/)).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Close story' }));
+  await user.click(screen.getByRole('button', { name: 'Battle 1: Road Raiders' }));
+  expect(screen.getByText(/protecting the traveler will be the first real challenge/)).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Portrait of Road Raider I' })).toHaveAttribute('src', '/media/characters/saqueador-da-estrada-i-face.png');
+  expect(api.session).toHaveBeenCalledTimes(1);
 });

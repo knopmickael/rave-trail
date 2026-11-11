@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { AbilityDefinition } from '@game/content/abilities';
+import { useI18n } from '../../i18n/LanguageProvider';
 
 export function AbilityTooltip({ ability, children, focusable = false, extra, resetKey }: {
   ability: AbilityDefinition; children: ReactNode; focusable?: boolean; extra?: string; resetKey: string;
 }) {
+  const { t, text } = useI18n();
   const id = useId();
   const anchor = useRef<HTMLSpanElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,13 +42,13 @@ export function AbilityTooltip({ ability, children, focusable = false, extra, re
   }, [position]);
 
   return <span ref={anchor} className="ability-tooltip-anchor" tabIndex={focusable ? 0 : undefined}
-    aria-label={focusable ? ability.name : undefined} aria-describedby={position ? id : undefined}
+    aria-label={focusable ? text(ability.name) : undefined} aria-describedby={position ? id : undefined}
     onMouseEnter={start} onMouseLeave={leave} onFocus={start} onBlur={leave}
     onPointerDownCapture={clicked} onClickCapture={clicked}
     onKeyDown={(event) => { if (event.key === 'Escape') clicked(); }}>
     {children}
     {position && <span id={id} role="tooltip" className="ability-tooltip" style={position}>
-      <strong>{ability.name}</strong><span>{ability.description}</span><span>Custo: {ability.energyCost} de energia</span>
+      <strong>{text(ability.name)}</strong><span>{text(ability.description)}</span><span>{t('Custo: {cost} de energia', { cost: ability.energyCost })}</span>
       {extra && <span>{extra}</span>}
     </span>}
   </span>;

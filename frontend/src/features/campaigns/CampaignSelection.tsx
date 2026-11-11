@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { CampaignOption } from '@game/content/campaigns';
 import { api, ApiError } from '../../api';
+import { useI18n } from '../../i18n/LanguageProvider';
 import './campaigns.css';
 
 interface CampaignSelectionProps {
@@ -10,6 +11,7 @@ interface CampaignSelectionProps {
 }
 
 export function CampaignSelection({ onBack, onSessionExpired, onSelectCampaign }: CampaignSelectionProps) {
+  const { t, text } = useI18n();
   const [campaigns, setCampaigns] = useState<CampaignOption[] | null>(null);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -33,40 +35,40 @@ export function CampaignSelection({ onBack, onSessionExpired, onSelectCampaign }
   return (
     <main className="campaign-page">
       <header className="campaign-header">
-        <button type="button" className="campaign-back" onClick={onBack} aria-label="Voltar ao menu principal">
+        <button type="button" className="campaign-back" onClick={onBack} aria-label={t('Voltar ao menu principal')}>
           <Arrow direction="left" />
         </button>
-        <h1>Selecionar campanha</h1>
+        <h1>{t('Selecionar campanha')}</h1>
       </header>
 
       {error ? <section className="campaign-state">
-        <p role="alert">{error}</p>
-        <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button>
-      </section> : !campaigns ? <p className="campaign-state" role="status">Carregando campanhas…</p>
-        : campaigns.length === 0 ? <p className="campaign-state" role="status">Nenhuma campanha cadastrada.</p> : (
-          <section className="campaign-carousel" aria-label="Capítulos da campanha">
-            <div className="campaign-track" tabIndex={0} aria-label="Lista de campanhas" role="region">
+        <p role="alert">{text(error)}</p>
+        <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button>
+      </section> : !campaigns ? <p className="campaign-state" role="status">{t('Carregando campanhas…')}</p>
+        : campaigns.length === 0 ? <p className="campaign-state" role="status">{t('Nenhuma campanha cadastrada.')}</p> : (
+          <section className="campaign-carousel" aria-label={t('Capítulos da campanha')}>
+            <div className="campaign-track" tabIndex={0} aria-label={t('Lista de campanhas')} role="region">
               {campaigns.map((campaign) => (
                 <button type="button" key={campaign.id}
                   className={`campaign-card ${campaign.available ? 'campaign-card--available' : 'campaign-card--locked'}`}
                   disabled={!campaign.available} aria-pressed={selectedId === campaign.id}
-                  aria-label={`Capítulo ${campaign.chapterNumber}: ${campaign.title}${campaign.available ? '' : ' — bloqueado'}`}
-                  title={campaign.available ? campaign.description : 'Capítulo bloqueado'}
+                  aria-label={t(campaign.available ? 'Capítulo {number}: {title}' : 'Capítulo {number}: {title} — bloqueado', { number: campaign.chapterNumber, title: text(campaign.title) })}
+                  title={campaign.available ? text(campaign.description) : t('Capítulo bloqueado')}
                   onClick={() => { if (campaign.available) { setSelectedId(campaign.id); onSelectCampaign(campaign.id); } }}>
                   <img className="campaign-card-image" src={campaign.background} alt="" draggable={false} />
                   <span className="campaign-card-shade" aria-hidden="true" />
                   <span className="campaign-card-caption">
-                    <span className="campaign-chapter-number">Capítulo {campaign.chapterNumber}</span>
-                    <span className="campaign-chapter-title">{campaign.title}</span>
+                    <span className="campaign-chapter-number">{t('Capítulo {number}', { number: campaign.chapterNumber })}</span>
+                    <span className="campaign-chapter-title">{text(campaign.title)}</span>
                   </span>
                 </button>
               ))}
             </div>
             <button className="campaign-scroll campaign-scroll--next" disabled
-              aria-label="Ver próximos capítulos"><Arrow direction="right" /></button>
+              aria-label={t('Ver próximos capítulos')}><Arrow direction="right" /></button>
           </section>
         )}
-      <p className="campaign-selection-status" role="status">{selected ? `Capítulo ${selected.chapterNumber} selecionado: ${selected.title}.` : ''}</p>
+      <p className="campaign-selection-status" role="status">{selected ? t('Capítulo {number} selecionado: {title}.', { number: selected.chapterNumber, title: text(selected.title) }) : ''}</p>
     </main>
   );
 }

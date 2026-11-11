@@ -3,6 +3,8 @@ import type { GameCatalog } from '@game/contracts';
 import { api, ApiError } from '../../api';
 import { CharacterArt } from '../characters/CharacterArt';
 import { CharacterDetails } from '../characters/CharacterList';
+import { useI18n } from '../../i18n/LanguageProvider';
+import { premiumUnitPrices } from '@game/content/unlocks';
 import '../characters/characters.css';
 import './store.css';
 
@@ -14,6 +16,7 @@ interface StoreProps {
 }
 
 export function Store({ onBack, onSessionExpired }: StoreProps) {
+  const { t, text, currency } = useI18n();
   const [catalog, setCatalog] = useState<GameCatalog | null>(null);
   const [unlockedUnitIds, setUnlockedUnitIds] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -49,31 +52,31 @@ export function Store({ onBack, onSessionExpired }: StoreProps) {
   return (
     <main className="roster-page store-page">
       <header className="roster-header">
-        <button type="button" className="back-arrow" onClick={onBack} aria-label="Voltar ao menu principal">
+        <button type="button" className="back-arrow" onClick={onBack} aria-label={t('Voltar ao menu principal')}>
           <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
             <path d="M14 6 4 16l10 10M5 16h23" />
           </svg>
         </button>
-        <h1>Loja</h1>
+        <h1>{t('Loja')}</h1>
       </header>
 
       {error ? (
         <section className="roster-state">
-          <p role="alert">{error}</p>
-          <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button>
+          <p role="alert">{text(error)}</p>
+          <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button>
         </section>
-      ) : !catalog ? <p className="roster-state" role="status">Carregando loja.</p> : (
+      ) : !catalog ? <p className="roster-state" role="status">{t('Carregando loja.')}</p> : (
         <div className="store-layout">
-          <nav className="store-menu" aria-label="Categorias da loja">
+          <nav className="store-menu" aria-label={t('Categorias da loja')}>
             <button type="button" className="menu-option" aria-expanded={charactersOpen}
-              onClick={() => setCharactersOpen((open) => !open)}>Personagens</button>
+              onClick={() => setCharactersOpen((open) => !open)}>{t('Personagens')}</button>
             {charactersOpen && (
-              <div className="store-submenu" role="group" aria-label="Personagens disponíveis">
+              <div className="store-submenu" role="group" aria-label={t('Personagens disponíveis')}>
                 {items.map((unit) => (
                   <button type="button" className={`menu-option store-item ${selectedId === unit.id ? 'store-item--selected' : ''}`}
                     key={unit.id} aria-pressed={selectedId === unit.id} onClick={() => setSelectedId(unit.id)}>
                     <CharacterArt unit={unit} face />
-                    <span>{unit.name}</span>
+                    <span>{text(unit.name)}</span>
                   </button>
                 ))}
               </div>
@@ -81,7 +84,7 @@ export function Store({ onBack, onSessionExpired }: StoreProps) {
           </nav>
 
           {selected && <CharacterDetails unit={selected} catalog={catalog} unlocked={selectedUnlocked} showLock={false} busy={false}
-            onAdd={() => {}} purchaseLabel={selectedUnlocked ? 'Personagem adquirido' : 'Adquirir por 9.90 USD'} />}
+            onAdd={() => {}} purchaseLabel={selectedUnlocked ? t('Personagem adquirido') : t('Adquirir por {price}', { price: currency(premiumUnitPrices[selected.id]) })} />}
         </div>
       )}
     </main>

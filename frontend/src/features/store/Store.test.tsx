@@ -35,7 +35,7 @@ it('mostra a arte original da Loja sem cadeado e mantém a compra desabilitada',
   expect(within(details).queryByRole('img', { name: /bloqueada/ })).not.toBeInTheDocument();
   expect(details.querySelector('.character-lock')).toBeNull();
   expect(details.querySelector('.character-illustration--locked')).toBeNull();
-  expect(within(details).getByRole('button', { name: 'Adquirir por 9.90 USD' })).toBeDisabled();
+  expect(within(details).getByRole('button', { name: /Adquirir por US\$\s*9,90/ })).toBeDisabled();
 });
 
 it('marca a unidade premium como adquirida quando ela já está desbloqueada na conta', async () => {
@@ -44,5 +44,5 @@ it('marca a unidade premium como adquirida quando ela já está desbloqueada na 
   vi.mocked(api.progress).mockResolvedValue(progress);
   const details = await openBeast();
   expect(within(details).getByRole('button', { name: 'Personagem adquirido' })).toBeDisabled();
-  expect(within(details).queryByRole('button', { name: 'Adquirir por 9.90 USD' })).not.toBeInTheDocument();
+  expect(within(details).queryByRole('button', { name: /Adquirir por/ })).not.toBeInTheDocument();
 });

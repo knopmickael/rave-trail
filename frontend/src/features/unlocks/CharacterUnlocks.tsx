@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react';
 import type { CharacterUnlockData } from '@game/contracts';
 import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
 import { api, ApiError } from '../../api';
+import { useI18n } from '../../i18n/LanguageProvider';
 import '../characters/characters.css';
 import './unlocks.css';
 
-const price = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'USD' });
 const hiddenUnitIds = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
 
 export function CharacterUnlocks({ onBack, onSessionExpired }: {
   onBack: () => void;
   onSessionExpired: () => void;
 }) {
+  const { t, text, currency } = useI18n();
   const [data, setData] = useState<CharacterUnlockData | null>(null);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -37,20 +38,20 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
 
   return <main className="unlocks-page">
     <header className="roster-header">
-      <button type="button" className="back-arrow" onClick={onBack} aria-label="Voltar ao menu principal">
+      <button type="button" className="back-arrow" onClick={onBack} aria-label={t('Voltar ao menu principal')}>
         <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
           <path d="M14 6 4 16l10 10M5 16h23" />
         </svg>
       </button>
-      <h1>Tabela de missões</h1>
+      <h1>{t('Tabela de missões')}</h1>
     </header>
-    {error && <section className="unlocks-state"><p className="feedback" role="alert">{error}</p>
-      <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button>
+    {error && <section className="unlocks-state"><p className="feedback" role="alert">{text(error)}</p>
+      <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button>
     </section>}
-    {!data && !error && <p className="unlocks-state" role="status">Carregando desbloqueios…</p>}
+    {!data && !error && <p className="unlocks-state" role="status">{t('Carregando desbloqueios…')}</p>}
     {data && (missions.length === 0
-      ? <p className="unlocks-state" role="status">Nenhuma missão disponível no catálogo.</p>
-      : <div className="unlocks-container" role="region" aria-label="Lista de missões" tabIndex={0}>
+      ? <p className="unlocks-state" role="status">{t('Nenhuma missão disponível no catálogo.')}</p>
+      : <div className="unlocks-container" role="region" aria-label={t('Lista de missões')} tabIndex={0}>
         <div className="unlocks-grid">
           {missions.map((unit) => {
             const locked = !unit.unlocked && !unit.campaignAvailable;
@@ -65,23 +66,23 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
               aria-labelledby={`unlock-${unit.id}`} aria-disabled={locked}>
               <div className="unlock-card-content" inert={locked}>
               <header className="unlock-card-header">
-                <img src={unit.portrait} alt={`Retrato de ${unit.name}`} draggable={false} />
-                <div><h2 id={`unlock-${unit.id}`}>{unit.name}</h2>
-                  <span className="unlock-status">{locked ? 'Bloqueada na campanha' : unit.unlocked ? 'Disponível' : unit.kind === 'premium' ? 'Premium' : 'Em progresso'}</span>
+                <img src={unit.portrait} alt={t('Retrato de {name}', { name: text(unit.name) })} draggable={false} />
+                <div><h2 id={`unlock-${unit.id}`}>{text(unit.name)}</h2>
+                  <span className="unlock-status">{t(locked ? 'Bloqueada na campanha' : unit.unlocked ? 'Disponível' : unit.kind === 'premium' ? 'Premium' : 'Em progresso')}</span>
                 </div>
               </header>
               {unit.kind === 'premium' ? <>
-                <div className="unlock-card-body unlock-premium"><p className="unlock-price">{price.format(unit.priceUsd)}</p></div>
-                <button type="button" className="fantasy-button compact" disabled>{unit.unlocked ? 'Personagem adquirido' : 'Adquirir personagem'}</button>
-              </> : <ul className="unlock-requirements" tabIndex={locked ? -1 : 0} aria-label={`Requisitos de ${unit.name}`}>
+                <div className="unlock-card-body unlock-premium"><p className="unlock-price">{currency(unit.priceUsd)}</p></div>
+                <button type="button" className="fantasy-button compact" disabled>{t(unit.unlocked ? 'Personagem adquirido' : 'Adquirir personagem')}</button>
+              </> : <ul className="unlock-requirements" tabIndex={locked ? -1 : 0} aria-label={t('Requisitos de {name}', { name: text(unit.name) })}>
                 {requirements.map((requirement, index) => <li key={index}>
-                  <p id={`unlock-${unit.id}-${index}`}>{requirement.description}</p>
+                  <p id={`unlock-${unit.id}-${index}`}>{text(requirement.description)}</p>
                   <RequirementProgress requirement={requirement} labelId={`unlock-${unit.id}-${index}`} />
                 </li>)}
               </ul>}
               </div>
               {locked && <div className="unlock-mission-lock" role="img"
-                aria-label={`Missão de ${unit.name} bloqueada. ${campaignRequirement?.description ?? 'Derrote este personagem na campanha para habilitá-la.'}`}>
+                aria-label={t('Missão de {name} bloqueada. {requirement}', { name: text(unit.name), requirement: campaignRequirement ? text(campaignRequirement.description) : t('Derrote este personagem na campanha para habilitá-la.') })}>
                 <span className="unlock-mission-lock-icon" aria-hidden="true">
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3">
                     <rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" />
@@ -98,6 +99,8 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
 }
 
 function CampaignRequirementLines({ description }: { description: string }) {
+  const { text, locale } = useI18n();
+  if (locale === 'en') return <p aria-hidden="true">{text(description)}</p>;
   const [battleLine, campaignLine] = description.split(' da campanha ');
   return <p aria-hidden="true">
     <span>{battleLine}</span>

@@ -16,16 +16,25 @@ import type { BattleRecord } from '@game/core/battle';
 import { isFinalEncounter } from '@game/content/campaign-rules';
 import { DesktopAccess } from './components/DesktopAccess';
 import { TitleScreen } from './components/TitleScreen';
+import { version } from '../../package.json';
+import { LanguageProvider, useI18n } from './i18n/LanguageProvider';
+import { LanguageSelector } from './i18n/LanguageSelector';
 
 const BATTLE_LOADING_MS = 700;
 const battleScreenImport = () => import('./features/battle/BattleScreen');
 const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default: module.BattleScreen })));
 
 export function App() {
-  return <DesktopAccess><GameApp /></DesktopAccess>;
+  return <LanguageProvider><DesktopAccess><GameApp /></DesktopAccess><AppVersion /></LanguageProvider>;
+}
+
+function AppVersion() {
+  const { t } = useI18n();
+  return <span className="app-version" aria-label={t('Versão do aplicativo {version}', { version })}>v{version}</span>;
 }
 
 function GameApp() {
+  const { t, text } = useI18n();
   const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
   const [campaignId, setCampaignId] = useState('path-1');
   const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map'>('menu');
@@ -180,34 +189,35 @@ function GameApp() {
 
   return (
     <main className="title-screen with-panel">
+      <div className="entry-language"><LanguageSelector /></div>
       <img className="game-logo" src={assets.logo} alt="Rave Trail" />
       {screen === 'auth' && (
         <section className="panel" aria-labelledby="auth-title">
-          <h1 id="auth-title">{mode === 'login' ? 'Continue sua jornada' : 'Comece sua jornada'}</h1>
-          <p>{mode === 'login' ? 'Entre na sua conta Rave Trail.' : 'Crie sua conta com e-mail e senha.'}</p>
+          <h1 id="auth-title">{t(mode === 'login' ? 'Continue sua jornada' : 'Comece sua jornada')}</h1>
+          <p>{t(mode === 'login' ? 'Entre na sua conta Rave Trail.' : 'Crie sua conta com e-mail e senha.')}</p>
           <form onSubmit={authenticate} aria-busy={busy}>
             <fieldset disabled={busy}>
-              <label htmlFor="email">E-mail</label>
+              <label htmlFor="email">{t('E-mail')}</label>
               <input id="email" name="email" type="email" autoComplete="email" maxLength={254}
                 required value={email} onChange={(event) => setEmail(event.target.value)} />
-              <label htmlFor="password">Senha</label>
+              <label htmlFor="password">{t('Senha')}</label>
               <input id="password" name="password" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 minLength={mode === 'register' ? 10 : 1} maxLength={128} required value={password}
                 aria-describedby={mode === 'register' ? 'password-help' : undefined}
                 onChange={(event) => setPassword(event.target.value)} />
-              {mode === 'register' && <small id="password-help">Use de 10 a 128 caracteres.</small>}
-              <button type="submit" className="fantasy-button compact">{busy ? 'Aguarde…' : mode === 'login' ? 'Entrar' : 'Criar conta'}</button>
+              {mode === 'register' && <small id="password-help">{t('Use de 10 a 128 caracteres.')}</small>}
+              <button type="submit" className="fantasy-button compact">{t(busy ? 'Aguarde…' : mode === 'login' ? 'Entrar' : 'Criar conta')}</button>
             </fieldset>
           </form>
           <button className="text-button" disabled={busy} onClick={() => {
             setMode(mode === 'login' ? 'register' : 'login');
             setPassword('');
             setError('');
-          }}>{mode === 'login' ? 'Ainda não tem conta? Criar conta' : 'Já tem conta? Entrar'}</button>
-          <button className="text-button" disabled={busy} onClick={() => { setError(''); setScreen('title'); }}>Voltar</button>
+          }}>{t(mode === 'login' ? 'Ainda não tem conta? Criar conta' : 'Já tem conta? Entrar')}</button>
+          <button className="text-button" disabled={busy} onClick={() => { setError(''); setScreen('title'); }}>{t('Voltar')}</button>
         </section>
       )}
-      {error && <p className="feedback" role="alert">{error}</p>}
+      {error && <p className="feedback" role="alert">{text(error)}</p>}
     </main>
   );
 }

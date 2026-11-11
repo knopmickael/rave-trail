@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react';
 import type { User } from '@game/contracts';
 import { assets } from '../../assets';
+import { useI18n } from '../../i18n/LanguageProvider';
+import { LanguageSelector } from '../../i18n/LanguageSelector';
 import './menu.css';
 
 interface MainMenuProps {
@@ -22,6 +24,7 @@ interface MainMenuProps {
 }
 
 export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onOpenCampaigns, onOpenQuickBattle, onOpenUnlocks, onOpenProfile, onLogout, onSaveName, audioVolume, audioMuted, onAudioVolumeChange, onAudioMutedChange }: MainMenuProps) {
+  const { t, text } = useI18n();
   const profileDialog = useRef<HTMLDialogElement>(null);
   const settingsDialog = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState(user.name);
@@ -43,20 +46,20 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
 
   return (
     <main className="main-menu-screen">
-      <h1 className="visually-hidden">Menu principal</h1>
-      <nav className="menu-options" aria-label="Opções do menu principal">
+      <h1 className="visually-hidden">{t('Menu principal')}</h1>
+      <nav className="menu-options" aria-label={t('Opções do menu principal')}>
         <img className="main-menu-logo" src={assets.logo} alt="Rave Trail" />
-        <button className="menu-option" onClick={onOpenCampaigns}>Campanha</button>
-        <button className="menu-option" onClick={onOpenQuickBattle}>Batalha rápida</button>
-        <button className="menu-option" onClick={onOpenCharacters}>Lista de personagens</button>
-        <button className="menu-option" onClick={onOpenUnlocks}>Tabela de missões</button>
-        <button className="menu-option" onClick={onOpenStore}>Loja</button>
-        <button className="menu-option" disabled>Multiplayer</button>
+        <button className="menu-option" onClick={onOpenCampaigns}>{t('Campanha')}</button>
+        <button className="menu-option" onClick={onOpenQuickBattle}>{t('Batalha rápida')}</button>
+        <button className="menu-option" onClick={onOpenCharacters}>{t('Lista de personagens')}</button>
+        <button className="menu-option" onClick={onOpenUnlocks}>{t('Tabela de missões')}</button>
+        <button className="menu-option" onClick={onOpenStore}>{t('Loja')}</button>
+        <button className="menu-option" disabled>{t('Multiplayer')}</button>
         <button className="menu-option" aria-haspopup="dialog" aria-controls="audio-settings-dialog"
-          onClick={() => settingsDialog.current?.showModal()}>Configurações</button>
+          onClick={() => settingsDialog.current?.showModal()}>{t('Configurações')}</button>
       </nav>
 
-      <button className="profile-card" aria-label={`Abrir perfil de ${user.name}`}
+      <button className="profile-card" aria-label={t('Abrir perfil de {name}', { name: user.name })}
         aria-haspopup="dialog" aria-controls="user-profile-dialog"
         onClick={() => { onOpenProfile(); setName(user.name); setNameError(''); setSaved(false); profileDialog.current?.showModal(); }}>
         <ProfilePicture />
@@ -73,29 +76,29 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
           if (event.target === event.currentTarget && !profileBusy) profileDialog.current?.close();
         }}>
         <div className="profile-dialog-content">
-          <button className="profile-close" aria-label="Fechar perfil" disabled={profileBusy}
+          <button className="profile-close" aria-label={t('Fechar perfil')} disabled={profileBusy}
             onClick={() => profileDialog.current?.close()}>
             <span aria-hidden="true">×</span>
           </button>
           <ProfilePicture large />
-          <h2 id="profile-title">Meu perfil</h2>
+          <h2 id="profile-title">{t('Meu perfil')}</h2>
           <dl className="profile-fields">
-            <div><dt>Nome atual</dt><dd>{user.name}</dd></div>
-            <div><dt>E-mail</dt><dd>{user.email}</dd></div>
+            <div><dt>{t('Nome atual')}</dt><dd>{user.name}</dd></div>
+            <div><dt>{t('E-mail')}</dt><dd>{user.email}</dd></div>
           </dl>
           <form className="profile-name-form" onSubmit={saveName} aria-busy={saving}>
-            <label htmlFor="profile-name">Nome</label>
+            <label htmlFor="profile-name">{t('Nome')}</label>
             <input id="profile-name" name="name" autoComplete="nickname" required maxLength={40}
               value={name} disabled={profileBusy} onChange={(event) => { setName(event.target.value); setSaved(false); }} />
             <button type="submit" className="fantasy-button compact" disabled={profileBusy || !name.trim() || name.trim() === user.name}>
-              {saving ? 'Salvando…' : 'Salvar nome'}
+              {t(saving ? 'Salvando…' : 'Salvar nome')}
             </button>
-            {nameError && <p className="feedback" role="alert">{nameError}</p>}
-            {saved && <p className="profile-save-status" role="status">Nome salvo.</p>}
+            {nameError && <p className="feedback" role="alert">{text(nameError)}</p>}
+            {saved && <p className="profile-save-status" role="status">{t('Nome salvo.')}</p>}
           </form>
-          {error && <p className="feedback" role="alert">{error}</p>}
+          {error && <p className="feedback" role="alert">{text(error)}</p>}
           <button className="fantasy-button compact" disabled={profileBusy} onClick={onLogout}>
-            {busy ? 'Desconectando…' : 'Desconectar'}
+            {t(busy ? 'Desconectando…' : 'Desconectar')}
           </button>
         </div>
       </dialog>
@@ -106,16 +109,17 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
           if (event.target === event.currentTarget) settingsDialog.current?.close();
         }}>
         <div className="profile-dialog-content">
-          <button className="profile-close" aria-label="Fechar configurações"
+          <button className="profile-close" aria-label={t('Fechar configurações')}
             onClick={() => settingsDialog.current?.close()}>
             <span aria-hidden="true">×</span>
           </button>
-          <h2 id="settings-title">Configurações</h2>
+          <h2 id="settings-title">{t('Configurações')}</h2>
+          <LanguageSelector details />
           <div className="audio-settings">
             <div className="audio-setting-heading">
-              <label htmlFor="audio-volume">Volume do áudio</label>
+              <label htmlFor="audio-volume">{t('Volume do áudio')}</label>
               <output htmlFor="audio-volume" aria-live="polite">
-                {audioMuted ? 'Silenciado' : `${audioVolume}%`}
+                {audioMuted ? t('Silenciado') : `${audioVolume}%`}
               </output>
             </div>
             <input id="audio-volume" type="range" min="0" max="100" step="1" value={audioVolume}
@@ -123,7 +127,7 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
             <label className="audio-mute-toggle">
               <input type="checkbox" checked={audioMuted}
                 onChange={(event) => onAudioMutedChange(event.target.checked)} />
-              Silenciar áudio
+              {t('Silenciar áudio')}
             </label>
           </div>
         </div>
@@ -133,8 +137,9 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
 }
 
 function ProfilePicture({ large = false }: { large?: boolean }) {
+  const { t } = useI18n();
   return (
-    <span className={`profile-picture ${large ? 'profile-picture--large' : ''}`} role="img" aria-label="Foto de perfil">
+    <span className={`profile-picture ${large ? 'profile-picture--large' : ''}`} role="img" aria-label={t('Foto de perfil')}>
       <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" focusable="false">
         <circle cx="32" cy="23" r="11" fill="currentColor" />
         <path d="M12 55c0-12 8-19 20-19s20 7 20 19" fill="currentColor" />

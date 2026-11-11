@@ -10,6 +10,8 @@ import { api, ApiError } from '../../api';
 import { BattleScreen } from './BattleScreen';
 import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
 import { SOUND_EFFECT_EVENT } from '../../audio/soundEffects';
+import { LanguageProvider, LANGUAGE_STORAGE_KEY } from '../../i18n/LanguageProvider';
+import { LanguageSelector } from '../../i18n/LanguageSelector';
 
 vi.mock('../../api', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../api')>();
@@ -38,6 +40,28 @@ beforeEach(() => {
   vi.mocked(api.abandonBattle).mockResolvedValue({ ...initial(), state: { ...initial().state, status: 'abandoned' }, revision: 1 });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+it('troca o idioma durante o combo sem alterar ações, estado canônico ou comandos enviados ao servidor', async () => {
+  window.localStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
+  const record = initial();
+  record.state.teams.player.energy = 100;
+  const original = structuredClone(record);
+  const user = userEvent.setup();
+  const view = render(<LanguageProvider><LanguageSelector /><BattleScreen initialBattle={record} title="Saqueadores da estrada" {...handlers()} /></LanguageProvider>);
+  expect(screen.getByRole('heading', { name: 'Road Raiders' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Simple Strike — Ravi de Berdal' }));
+  expect(screen.getByRole('status')).toHaveTextContent('Choose an enemy for Simple Strike.');
+  await user.click(screen.getByRole('button', { name: 'Target: Road Raider I' }));
+  expect(screen.getByRole('button', { name: 'Remove action 1' })).toBeInTheDocument();
+  await user.selectOptions(screen.getByLabelText('Language'), 'pt-BR');
+  expect(screen.getByRole('button', { name: 'Remover ação 1' })).toBeInTheDocument();
+  expect(record).toEqual(original);
+  await user.click(endTurn());
+  expect(api.turn).toHaveBeenCalledWith(record.id, 0, expect.any(String), [{ actorId: record.state.teams.player.units[0].id,
+    abilityId: 'simple-strike', targetId: record.state.teams.enemy.units[0].id }]);
+  view.unmount();
+  window.localStorage.removeItem(LANGUAGE_STORAGE_KEY);
+});
 
 it('apresenta todos os personagens com suas quatro habilidades e a energia de cada trio', () => {
   render(<BattleScreen initialBattle={initial()} title="Saqueadores da estrada" {...handlers()} />);

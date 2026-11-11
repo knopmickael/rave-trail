@@ -6,6 +6,7 @@ import { api, ApiError } from '../../api';
 import { CharacterArt } from './CharacterArt';
 import { AbilityIcon } from './AbilityIcon';
 import { TeamSlotDialog } from './TeamSlotDialog';
+import { useI18n } from '../../i18n/LanguageProvider';
 import './characters.css';
 
 const hiddenUnitIds = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
@@ -17,6 +18,7 @@ interface CharacterListProps {
 }
 
 export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao menu principal' }: CharacterListProps) {
+  const { t, text } = useI18n();
   const [progress, setProgress] = useState<PlayerProgress | null>(null);
   const [catalog, setCatalog] = useState<GameCatalog | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -80,31 +82,31 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
   return (
     <main className="roster-page">
       <header className="roster-header">
-        <button type="button" className="back-arrow" onClick={onBack} aria-label={backLabel}>
+        <button type="button" className="back-arrow" onClick={onBack} aria-label={text(backLabel)}>
           <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
             <path d="M14 6 4 16l10 10M5 16h23" />
           </svg>
         </button>
-        <h1>Lista de personagens</h1>
+        <h1>{t('Lista de personagens')}</h1>
       </header>
 
       {error ? (
         <section className="roster-state">
-          <p role="alert">{error}</p>
-          <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>Tentar novamente</button>
+          <p role="alert">{text(error)}</p>
+          <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button>
         </section>
-      ) : !progress || !catalog ? <p className="roster-state" role="status">Carregando personagens…</p> : (
+      ) : !progress || !catalog ? <p className="roster-state" role="status">{t('Carregando personagens…')}</p> : (
         <div className="roster-layout">
-          <section className="roster-library" aria-label="Catálogo de personagens">
+          <section className="roster-library" aria-label={t('Catálogo de personagens')}>
             <div>
               <div className="face-grid">
                 {rosterUnits.map((unit) => {
                   const available = unlocked.has(unit.id);
-                  const name = unit.name;
+                  const name = text(unit.name);
                   return (
                     <div className={`face-wrap ${!available ? 'face-wrap--locked' : ''} ${selectedId === unit.id ? 'face-wrap--selected' : ''}`} key={unit.id}>
                       <button type="button" className="face-thumb"
-                        aria-label={`Selecionar ${name}${available ? '' : ' — bloqueado'}`}
+                        aria-label={t(available ? 'Selecionar {name}' : 'Selecionar {name} — bloqueado', { name })}
                         aria-pressed={selectedId === unit.id}
                         onClick={() => setSelectedId(unit.id)}>
                         <CharacterArt unit={unit} face />
@@ -118,19 +120,19 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
 
           <section className="roster-team" aria-labelledby="team-title">
             <div className="team-panel">
-              <h2 id="team-title">Minha equipe</h2>
+              <h2 id="team-title">{t('Minha equipe')}</h2>
               <div className="team-slots">
                 {Array.from({ length: 3 }, (_, index) => {
                   const member = units.find((unit) => unit.id === progress.selectedTeam[index] && unlocked.has(unit.id));
                   return <div className={`team-slot ${!member ? 'team-slot--empty' : ''}`} key={index}
-                    role={member ? 'group' : 'img'} aria-label={member ? `Slot ${index + 1}: ${member.name}` : `Slot ${index + 1} vazio`}>
+                    role={member ? 'group' : 'img'} aria-label={member ? t('Slot {slot}: {name}', { slot: index + 1, name: text(member.name) }) : t('Slot {slot} vazio', { slot: index + 1 })}>
                     {member ? <><CharacterArt unit={member} face /><button type="button" className="team-remove" disabled={busy}
-                      aria-label={`Remover ${member.name} do slot ${index + 1}`} onClick={() => saveSlot(index, null)}>×</button></>
+                      aria-label={t('Remover {name} do slot {slot}', { name: text(member.name), slot: index + 1 })} onClick={() => saveSlot(index, null)}>×</button></>
                       : <span className="empty-slot-cross" aria-hidden="true">×</span>}
                   </div>;
                 })}
               </div>
-              {teamError && !pendingUnit && <p className="feedback" role="alert">{teamError}</p>}
+              {teamError && !pendingUnit && <p className="feedback" role="alert">{text(teamError)}</p>}
             </div>
           </section>
 
@@ -148,12 +150,13 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
 export function CharacterDetails({ unit, catalog, unlocked, busy, onAdd, purchaseLabel, showLock = true }: {
   unit: UnitDefinition; catalog: GameCatalog; unlocked: boolean; busy: boolean; onAdd: () => void; purchaseLabel?: string; showLock?: boolean;
 }) {
-  const name = unit.name;
+  const { t, text } = useI18n();
+  const name = text(unit.name);
   const locked = !unlocked && showLock;
   return (
-    <section className="character-details" aria-label={`Detalhes de ${name}`}>
+    <section className="character-details" aria-label={t('Detalhes de {name}', { name })}>
       <div className="character-display">
-        <div className={`character-illustration ${locked ? 'character-illustration--locked' : ''}`} role="img" aria-label={`Ilustração de corpo inteiro de ${name}${locked ? ' - bloqueada' : ''}`}>
+        <div className={`character-illustration ${locked ? 'character-illustration--locked' : ''}`} role="img" aria-label={t(locked ? 'Ilustração de corpo inteiro de {name} - bloqueada' : 'Ilustração de corpo inteiro de {name}', { name })}>
           <CharacterArt unit={unit} />
           {locked && <span className="character-lock" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3"><rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" /></svg></span>}
         </div>
@@ -164,7 +167,7 @@ export function CharacterDetails({ unit, catalog, unlocked, busy, onAdd, purchas
 
       <div className="character-information">
         <div className="character-skills">
-          <ul className="ability-list" aria-label={`Habilidades de ${name}`}>
+          <ul className="ability-list" aria-label={t('Habilidades de {name}', { name })}>
             {unit.abilityIds.map((id) => {
               const ability = catalog.abilities.find((entry) => entry.id === id);
               if (!ability) return null;
@@ -172,9 +175,9 @@ export function CharacterDetails({ unit, catalog, unlocked, busy, onAdd, purchas
                 <li className="ability-row" key={id}>
                   <AbilityIcon ability={ability} />
                   <div>
-                    <h3>{ability.name}</h3>
-                    <p>{ability.description}</p>
-                    <span className="ability-cost">Custo: {ability.energyCost} de energia</span>
+                    <h3>{text(ability.name)}</h3>
+                    <p>{text(ability.description)}</p>
+                    <span className="ability-cost">{t('Custo: {cost} de energia', { cost: ability.energyCost })}</span>
                   </div>
                 </li>
               );
@@ -182,12 +185,12 @@ export function CharacterDetails({ unit, catalog, unlocked, busy, onAdd, purchas
           </ul>
         </div>
         <section className="character-description" aria-labelledby="description-title">
-          <h3 id="description-title">Descrição</h3>
-          <div className="description-copy"><p>{unit.description}</p></div>
+          <h3 id="description-title">{t('Descrição')}</h3>
+          <div className="description-copy"><p>{text(unit.description)}</p></div>
           {purchaseLabel
             ? <button type="button" className="fantasy-button compact team-add" disabled>{purchaseLabel}</button>
             : <button type="button" className="fantasy-button compact team-add" disabled={!unlocked || busy}
-              title={!unlocked ? unit.unlock.description : undefined} onClick={onAdd}>Adicionar à equipe</button>}
+              title={!unlocked ? text(unit.unlock.description) : undefined} onClick={onAdd}>{t('Adicionar à equipe')}</button>}
         </section>
       </div>
     </section>
