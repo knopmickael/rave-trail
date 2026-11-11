@@ -16,11 +16,12 @@ import './campaign-map.css';
 interface CampaignMapProps {
   campaignId: string;
   onBack: () => void;
+  onOpenCharacters: () => void;
   onSessionExpired: () => void;
   onBattleStarted: (battle: BattleRecord, title: string) => void;
 }
 
-export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStarted }: CampaignMapProps) {
+export function CampaignMap({ campaignId, onBack, onOpenCharacters, onSessionExpired, onBattleStarted }: CampaignMapProps) {
   const { t, text } = useI18n();
   const [map, setMap] = useState(() => gameDataCache.peek<CampaignMapData>(`map:${campaignId}`));
   const [catalog, setCatalog] = useState(() => gameDataCache.peek<GameCatalog>('catalog'));
@@ -110,7 +111,9 @@ export function CampaignMap({ campaignId, onBack, onSessionExpired, onBattleStar
       {error && <section className="map-message"><p role="alert">{text(error)}</p><button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button></section>}
       {!map && !error && <p className="map-message" role="status">{t('Carregando mapa…')}</p>}
       {progress && catalog && <section className="roster-team map-team" aria-labelledby="map-team-title">
-        <div className="team-panel">
+        <div className="team-panel team-panel--navigation">
+          <button type="button" className="team-panel-open" aria-label={t('Abrir Lista de personagens')}
+            disabled={busy} onClick={onOpenCharacters} />
           <h2 id="map-team-title">{t('Minha equipe')}</h2>
           <div className="team-slots">
             {Array.from({ length: 3 }, (_, index) => {

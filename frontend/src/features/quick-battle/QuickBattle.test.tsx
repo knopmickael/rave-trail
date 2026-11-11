@@ -18,7 +18,7 @@ vi.mock('../../api', async (importOriginal) => {
 const enemies = units.filter((unit) => encounters[0].enemyUnitIds.includes(unit.id));
 const battle = (): BattleRecord => ({ id: '00000000-0000-4000-8000-000000000001', encounterId: null, revision: 0,
   state: createBattle(STARTER_UNIT_IDS.map((id) => units.find((unit) => unit.id === id)!), enemies, Object.values(abilities)) });
-const props = () => ({ onBack: vi.fn(), onSessionExpired: vi.fn(), onBattleStarted: vi.fn() });
+const props = () => ({ onBack: vi.fn(), onOpenCharacters: vi.fn(), onSessionExpired: vi.fn(), onBattleStarted: vi.fn() });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -46,6 +46,14 @@ it('mostra a explicação, somente os adversários retornados e a equipe nos slo
   expect(screen.getByRole('button', { name: 'Entrar na batalha' })).toBeEnabled();
   await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
   expect(handlers.onBack).toHaveBeenCalledTimes(1);
+});
+
+it('abre a Lista de personagens pelo bloco Minha equipe', async () => {
+  const handlers = props(); const user = userEvent.setup();
+  render(<QuickBattle {...handlers} />);
+  const team = await screen.findByRole('region', { name: 'Minha equipe' });
+  await user.click(within(team).getByRole('button', { name: 'Abrir Lista de personagens' }));
+  expect(handlers.onOpenCharacters).toHaveBeenCalledTimes(1);
 });
 
 it('impede iniciar se o catálogo não retornar adversários', async () => {

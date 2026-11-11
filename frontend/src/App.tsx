@@ -37,7 +37,7 @@ function GameApp() {
   const { t, text } = useI18n();
   const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
   const [campaignId, setCampaignId] = useState('path-1');
-  const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map'>('menu');
+  const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map' | 'quick-battle'>('menu');
   const [battle, setBattle] = useState<BattleRecord | null>(null);
   const [battleTitle, setBattleTitle] = useState('Batalha');
   const [user, setUser] = useState<User | null>(null);
@@ -141,7 +141,7 @@ function GameApp() {
 
   if (screen === 'characters' && user) {
     return <CharacterList onBack={() => setScreen(charactersReturn)} onSessionExpired={handleSessionExpired}
-      backLabel={charactersReturn === 'map' ? 'Voltar ao mapa' : 'Voltar ao menu principal'} />;
+      backLabel={charactersReturn === 'map' ? 'Voltar ao mapa' : charactersReturn === 'quick-battle' ? 'Voltar à Batalha rápida' : 'Voltar ao menu principal'} />;
   }
 
   if (screen === 'store' && user) {
@@ -155,11 +155,13 @@ function GameApp() {
 
   if (screen === 'map' && user) {
     return <CampaignMap campaignId={campaignId} onBack={() => setScreen('campaigns')} onSessionExpired={handleSessionExpired}
+      onOpenCharacters={() => { setCharactersReturn('map'); setScreen('characters'); }}
       onBattleStarted={openBattle} />;
   }
 
   if (screen === 'quick-battle' && user) {
     return <QuickBattle onBack={() => setScreen('menu')} onSessionExpired={handleSessionExpired}
+      onOpenCharacters={() => { setCharactersReturn('quick-battle'); setScreen('characters'); }}
       onBattleStarted={(record) => openBattle(record, 'Batalha rápida')} />;
   }
 

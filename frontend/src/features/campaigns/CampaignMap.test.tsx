@@ -36,7 +36,7 @@ beforeEach(() => {
   vi.mocked(api.startBattle).mockResolvedValue(battle);
 });
 afterEach(cleanup);
-const props = () => ({ campaignId: 'path-1', onBack: vi.fn(), onSessionExpired: vi.fn(), onBattleStarted: vi.fn() });
+const props = () => ({ campaignId: 'path-1', onBack: vi.fn(), onOpenCharacters: vi.fn(), onSessionExpired: vi.fn(), onBattleStarted: vi.fn() });
 
 it('mostra sete pontos e abre título, três rostos e história somente no encontro liberado', async () => {
   const user = userEvent.setup();
@@ -67,6 +67,14 @@ it('mostra sete pontos e abre título, três rostos e história somente no encon
   await user.click(within(drawer).getByRole('button', { name: 'Fechar detalhes da batalha' }));
   await user.click(screen.getByRole('button', { name: 'Voltar às campanhas' }));
   expect(handlers.onBack).toHaveBeenCalledTimes(1);
+});
+
+it('abre a Lista de personagens pelo bloco Minha equipe do mapa', async () => {
+  const handlers = props(); const user = userEvent.setup();
+  render(<CampaignMap {...handlers} />);
+  const team = await screen.findByRole('region', { name: 'Minha equipe' });
+  await user.click(within(team).getByRole('button', { name: 'Abrir Lista de personagens' }));
+  expect(handlers.onOpenCharacters).toHaveBeenCalledTimes(1);
 });
 
 it('inicia a batalha no servidor e entrega o estado retornado para a navegação', async () => {

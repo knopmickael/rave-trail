@@ -320,6 +320,30 @@ it('abre Batalha rápida pelo menu, entra no combate e retorna à página corret
   expect(screen.getByRole('heading', { name: 'Menu principal' })).toBeInTheDocument();
 });
 
+it('abre a Lista de personagens pelo bloco Minha equipe e retorna ao mapa ou à Batalha rápida', async () => {
+  vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
+  const progress = createInitialProgress(); progress.selectedTeam = [...STARTER_UNIT_IDS];
+  vi.mocked(api.progress).mockResolvedValue(progress);
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  await user.click(screen.getByRole('button', { name: 'Campanha' }));
+  await user.click(await screen.findByRole('button', { name: 'Capítulo 1: Pondo o pé na estrada' }));
+  const mapTeam = await screen.findByRole('region', { name: 'Minha equipe' });
+  await user.click(within(mapTeam).getByRole('button', { name: 'Abrir Lista de personagens' }));
+  expect(screen.getByRole('heading', { name: 'Lista de personagens' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Voltar ao mapa' }));
+  expect(await screen.findByRole('button', { name: 'Batalha 1: Saqueadores da estrada' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Voltar às campanhas' }));
+  await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
+  await user.click(screen.getByRole('button', { name: 'Batalha rápida' }));
+  const quickTeam = await screen.findByRole('region', { name: 'Minha equipe' });
+  await user.click(within(quickTeam).getByRole('button', { name: 'Abrir Lista de personagens' }));
+  expect(screen.getByRole('heading', { name: 'Lista de personagens' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Voltar à Batalha rápida' }));
+  expect(await screen.findByRole('heading', { name: 'Batalha rápida' })).toBeInTheDocument();
+});
+
 it('detecta inglês no navegador e troca o idioma do formulário e do erro sem perder os dados digitados', async () => {
   vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-GB']);
   vi.mocked(api.authenticate).mockRejectedValue(new ApiError('E-mail ou senha incorretos.', 401));

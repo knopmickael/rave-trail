@@ -59,6 +59,7 @@ export const messages = {
   'Selecionar {name}': 'Select {name}',
   'Selecionar {name} — bloqueado': 'Select {name} — locked',
   'Minha equipe': 'My team',
+  'Abrir Lista de personagens': 'Open Character roster',
   'Slot {slot}: {name}': 'Slot {slot}: {name}',
   'Slot {slot} vazio': 'Slot {slot} empty',
   'Remover {name} do slot {slot}': 'Remove {name} from slot {slot}',

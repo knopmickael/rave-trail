@@ -7,8 +7,9 @@ import { useI18n } from '../../i18n/LanguageProvider';
 import '../characters/characters.css';
 import './quick-battle.css';
 
-export function QuickBattle({ onBack, onSessionExpired, onBattleStarted }: {
+export function QuickBattle({ onBack, onOpenCharacters, onSessionExpired, onBattleStarted }: {
   onBack: () => void;
+  onOpenCharacters: () => void;
   onSessionExpired: () => void;
   onBattleStarted: (battle: BattleRecord) => void;
 }) {
@@ -85,7 +86,9 @@ export function QuickBattle({ onBack, onSessionExpired, onBattleStarted }: {
     </div>
 
     {progress && catalog && <section className="roster-team quick-battle-team" aria-labelledby="quick-team-title">
-      <div className="team-panel">
+      <div className="team-panel team-panel--navigation">
+        <button type="button" className="team-panel-open" aria-label={t('Abrir Lista de personagens')}
+          disabled={busy} onClick={onOpenCharacters} />
         <h2 id="quick-team-title">{t('Minha equipe')}</h2>
         <div className="team-slots">
           {Array.from({ length: 3 }, (_, index) => {
