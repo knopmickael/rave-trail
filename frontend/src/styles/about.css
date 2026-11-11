@@ -1,4 +1,4 @@
-:root { color-scheme: light; color: #233b38; font-family: "Segoe UI", system-ui, sans-serif; background: #eaf2f0; }
+:root { --font-ui: "Segoe UI", system-ui, sans-serif; --focus-ring: #9a3d0b; color-scheme: light; color: #233b38; font-family: var(--font-ui); background: #eaf2f0; }
 * { box-sizing: border-box; }
 html { scroll-padding-top: 24px; }
 body { margin: 0; line-height: 1.7; }
@@ -8,6 +8,8 @@ a:focus-visible, summary:focus-visible { outline: 3px solid #9a3d0b; outline-off
 .public-header img { display: block; width: 160px; height: auto; }
 .public-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; }
 .public-header nav > a:not(.play-link) { color: #fff9ef; }
+.public-language { width: min(100%, 220px); }
+.public-language .language-selector label { color: #fff9ef; }
 .about-game { width: min(100%, 1080px); margin: auto; padding: clamp(24px, 5vw, 56px) 24px; }
 article { padding: clamp(24px, 5vw, 56px); border: 1px solid #d8c9af; border-radius: 16px; background: #fff9ef; }
 h1, h2, h3 { line-height: 1.25; color: #48210e; }

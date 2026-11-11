@@ -51,7 +51,8 @@ it('mantém a página Sobre inteiramente legível e navegável sem carregar a SP
   expect(document.querySelector('main')?.textContent).toContain('ravetrail');
   expect(document.querySelector('#como-jogar')).not.toBeNull();
   expect(document.querySelector('a[href="/"]')).not.toBeNull();
-  expect(document.querySelector('script[type="module"]')).toBeNull();
+  expect(document.querySelector('#about-root main')).not.toBeNull();
+  expect(document.querySelector('script[type="module"]')?.getAttribute('src')).toMatch(/\/assets\/about-/);
 });
 
 it('mantém o sitemap limitado a URLs públicas canônicas e as imagens de descoberta disponíveis', async () => {

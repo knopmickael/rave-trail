@@ -1,5 +1,8 @@
+import { aboutMessages } from './about-messages';
+
 // Portuguese is the source language. Keys are checked at every UI call site.
 export const messages = {
+  ...aboutMessages,
   'Idioma': 'Language',
   'Automático (navegador)': 'Automatic (browser)',
   'Idioma atual: {language}. Sua escolha é salva neste navegador.': 'Current language: {language}. Your choice is saved in this browser.',

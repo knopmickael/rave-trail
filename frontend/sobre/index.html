@@ -5,61 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#233B38" />
     <title>Rave Trail</title>
-    <link rel="stylesheet" href="/src/styles/about.css" />
   </head>
   <body>
-    <header class="public-header">
-      <a href="/" aria-label="Rave Trail — início"><img src="/media/images/logo-rave-trail.png" alt="Rave Trail" width="772" height="518" fetchpriority="high" /></a>
-      <nav aria-label="Navegação"><a href="#como-jogar">Como jogar</a><a href="#perguntas">Perguntas frequentes</a><a href="/" class="play-link">Jogar Rave Trail</a></nav>
-    </header>
-    <main class="about-game">
-      <article>
-        <header class="about-intro">
-          <p class="eyebrow">RPG de fantasia no navegador</p>
-          <h1>Conheça Rave Trail</h1>
-          <p>Rave Trail é um RPG online de fantasia com batalhas estratégicas por turnos. Monte uma equipe de personagens, explore campanhas e escolha suas habilidades para superar cada confronto.</p>
-          <p>Também conhecido como <strong>rave-trail</strong> ou <strong>ravetrail</strong>, o jogo está disponível em <a href="https://rave-trail.com.br/">rave-trail.com.br</a>. A interface está disponível em português e inglês, com seleção automática pelo navegador e troca de idioma nas configurações. O jogo roda diretamente no navegador do computador, sem instalar um aplicativo.</p>
-          <a class="play-link" href="/">Começar a jogar</a>
-        </header>
-
-        <section aria-labelledby="aventura">
-          <h2 id="aventura">Uma jornada de fantasia e estratégia</h2>
-          <p>Acompanhe Ravi, Doko e Anna, que deixam Berdal em uma missão de reconhecimento pelas rotas comerciais. No caminho, a equipe enfrenta saqueadores, conhece novos adversários e descobre desafios que vão além de seu vilarejo.</p>
-          <p>Avance pelos encontros da campanha, conheça personagens de diferentes regiões e encontre a combinação de habilidades certa para cada batalha.</p>
-        </section>
-
-        <section aria-labelledby="recursos">
-          <h2 id="recursos">O que você encontra em Rave Trail</h2>
-          <ul class="features">
-            <li><h3>Combate por turnos</h3><p>Escolha ataques, proteção e cura. Planeje a ordem das ações e administre a energia da equipe.</p></li>
-            <li><h3>Sua própria equipe</h3><p>Combine até três personagens e suas habilidades para criar uma estratégia.</p></li>
-            <li><h3>Campanhas de fantasia</h3><p>Explore o mapa, enfrente encontros sequenciais e acompanhe a jornada dos protagonistas.</p></li>
-            <li><h3>Batalhas rápidas e missões</h3><p>Enfrente equipes sorteadas, complete objetivos e avance no desbloqueio de personagens.</p></li>
-          </ul>
-        </section>
-
-        <section aria-labelledby="como-jogar">
-          <h2 id="como-jogar">Como jogar Rave Trail</h2>
-          <ol class="steps">
-            <li>Acesse <a href="/">a página inicial do Rave Trail</a> pelo navegador de um computador.</li>
-            <li>Selecione <strong>Começar jogo</strong> e crie sua conta com e-mail e senha, ou entre em uma conta existente.</li>
-            <li>Abra a <strong>Lista de personagens</strong> e monte sua equipe com os personagens disponíveis.</li>
-            <li>Escolha <strong>Campanha</strong> para avançar pela história ou <strong>Batalha rápida</strong> para enfrentar uma equipe sorteada.</li>
-            <li>Durante o combate, escolha as habilidades e os alvos, confira o combo do turno e encerre o turno para executar sua estratégia.</li>
-          </ol>
-        </section>
-
-        <section aria-labelledby="perguntas">
-          <h2 id="perguntas">Perguntas frequentes</h2>
-          <details open><summary>Rave Trail, rave-trail e ravetrail são o mesmo jogo?</summary><p>Sim. Essas são variações do nome Rave Trail. O endereço do jogo é <a href="https://rave-trail.com.br/">https://rave-trail.com.br/</a>.</p></details>
-          <details><summary>Preciso instalar alguma coisa para jogar?</summary><p>Não é necessário instalar um aplicativo. O jogo funciona no navegador, com JavaScript ativado e conexão à internet.</p></details>
-          <details><summary>Posso jogar pelo celular?</summary><p>A interface do jogo foi projetada para computadores. Abaixo de 720 pixels de largura, uma página recomenda acessar o jogo por um computador. Esta apresentação pode ser lida em qualquer tamanho de tela.</p></details>
-          <details><summary>Preciso criar uma conta?</summary><p>Sim. A conta permite salvar sua equipe, o progresso na campanha, os desbloqueios e os resultados das batalhas.</p></details>
-          <details><summary>Rave Trail tem combate em tempo real?</summary><p>O combate é por turnos. Cada turno tem um limite de tempo para você selecionar habilidades, escolher alvos e confirmar as ações da equipe.</p></details>
-        </section>
-
-        <footer class="about-footer"><a class="play-link" href="/">Jogar Rave Trail no computador</a><p>Rave Trail — RPG de fantasia e estratégia por turnos.</p></footer>
-      </article>
-    </main>
+    <div id="about-root"><!--about-html--></div>
+    <script type="module" src="/src/about-main.tsx"></script>
   </body>
 </html>

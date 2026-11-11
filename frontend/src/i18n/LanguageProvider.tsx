@@ -40,9 +40,12 @@ export function createI18n(locale: Locale) {
 const LanguageContext = createContext({ ...createI18n('pt-BR'), preference: 'auto' as LanguagePreference,
   setPreference: (_preference: LanguagePreference) => {} });
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [preference, updatePreference] = useState<LanguagePreference>(readPreference);
-  const [detected, setDetected] = useState(browserLanguage);
+export function LanguageProvider({ children, pageTitle = site.title, deferDetection = false }: {
+  children: ReactNode; pageTitle?: string; deferDetection?: boolean;
+}) {
+  // Hydrated public pages first match their Portuguese build-time HTML.
+  const [preference, updatePreference] = useState<LanguagePreference>(() => deferDetection ? 'auto' : readPreference());
+  const [detected, setDetected] = useState<Locale>(() => deferDetection ? 'pt-BR' : browserLanguage());
   const locale = preference === 'auto' ? detected : preference;
   const value = useMemo(() => ({ ...createI18n(locale), preference,
     setPreference(next: LanguagePreference) {
@@ -52,6 +55,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       catch { /* The selection still works when browser storage is unavailable. */ }
     },
   }), [locale, preference]);
+
+  useEffect(() => {
+    if (deferDetection) {
+      updatePreference(readPreference());
+      setDetected(browserLanguage());
+    }
+  }, [deferDetection]);
 
   useEffect(() => {
     const languageChanged = () => setDetected(browserLanguage());
@@ -71,8 +81,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = locale;
-    document.title = translateText(locale, site.title);
-  }, [locale]);
+    document.title = translateText(locale, pageTitle);
+  }, [locale, pageTitle]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

@@ -1,8 +1,9 @@
 import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { renderToStaticMarkup, renderToString } from 'react-dom/server';
 import type { HtmlTagDescriptor, Plugin } from 'vite';
 import { TitleScreen } from './src/components/TitleScreen';
 import { site } from './src/seo';
+import { AboutApp, ABOUT_TITLE } from './src/components/AboutPage';
 
 const absolute = (path: string) => new URL(path, site.url).href;
 
@@ -14,7 +15,7 @@ export function seo(): Plugin {
       handler(html, context) {
         const about = context.path === '/sobre/index.html' || context.path === '/sobre/';
         const url = about ? absolute('/sobre/') : site.url;
-        const title = about ? 'Sobre Rave Trail | Conheça o RPG e saiba como jogar' : site.title;
+        const title = about ? ABOUT_TITLE : site.title;
         const description = about
           ? 'Conheça Rave Trail (rave-trail ou ravetrail): um RPG de navegador com campanhas de fantasia, equipes de personagens e combate estratégico por turnos.'
           : site.description;
@@ -56,6 +57,7 @@ export function seo(): Plugin {
         ];
         return {
           html: html.replace('<title>Rave Trail</title>', `<title>${title}</title>`)
+            .replace('<!--about-html-->', about ? renderToString(createElement(AboutApp)) : '')
             .replace('<!--app-html-->', about ? '' : renderToStaticMarkup(createElement(TitleScreen, { checking: true }))),
           tags,
         };
