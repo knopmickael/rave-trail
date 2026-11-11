@@ -32,6 +32,9 @@ input:focus-visible, .text-button:focus-visible { outline: 3px solid var(--focus
 .game-introduction a { color: #9a3d0b; font-size: 14px; text-underline-offset: 3px; }
 .game-introduction a:focus-visible, .desktop-access a:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 4px; }
 .javascript-notice { margin: 0; padding: 16px; background: #fff9ef; color: #233b38; text-align: center; }
+.indieradar-badge { display: block; width: min(100%, 320px); border-radius: 8px; }
+.indieradar-badge img { display: block; width: 100%; height: auto; }
+.indieradar-badge:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 4px; }
 @media (min-width: 720px) and (max-height: 900px) {
   :root { --page-inset: clamp(16px, 2vw, 32px); }
   .title-screen { min-height: 100svh; padding-block: var(--page-block-inset); gap: 20px; }

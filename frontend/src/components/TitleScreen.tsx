@@ -1,5 +1,6 @@
 import { assets } from '../assets';
 import { GameIntroduction } from './GameIntroduction';
+import { IndieRadarBadge } from './IndieRadarBadge';
 
 export function TitleScreen({ checking = false, onStart, error }: {
   checking?: boolean;
@@ -13,5 +14,6 @@ export function TitleScreen({ checking = false, onStart, error }: {
       {checking ? 'Carregando sessão…' : 'Começar jogo'}
     </button>
     {error && <p className="feedback" role="alert">{error}</p>}
+    <IndieRadarBadge />
   </main>;
 }

@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { assets } from '../assets';
 import { site } from '../seo';
+import { IndieRadarBadge } from './IndieRadarBadge';
 import './desktop-access.css';
 
 const noticePath = '/acesse-pelo-computador';
@@ -30,6 +31,7 @@ export function DesktopAccess({ children }: { children: ReactNode }) {
       <h1 id="desktop-access-message">Para ter uma melhor experiência com o jogo, por favor acesse-o através de um computador.</h1>
       <p>{site.introduction}</p>
       <a href="/sobre/">Conheça o Rave Trail e saiba como jogar</a>
+      <IndieRadarBadge />
     </section>
   </main>;
 }
