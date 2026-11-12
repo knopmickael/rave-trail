@@ -5,7 +5,6 @@ import type { EncounterDefinition } from '@game/content/encounters.js';
 import { FINAL_ENCOUNTER_ID, FINAL_BATTLE_REQUIREMENT, SECOND_FINAL_ENCOUNTER_ID, OSIRIS_UNIT_ID,
   OSIRIS_BATTLE_REQUIREMENT, withOsiris } from '@game/content/campaign-rules.js';
 import { QUICK_BATTLE_ALWAYS_UNIT_IDS, QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS, type UnitDefinition } from '@game/content/units.js';
-import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import { BOT_THINK_MS, TURN_DURATION_MS, createBattle, executeTurn, planEnemyTurn, type BattleAction, type BattleCombo, type BattleRecord, type BattleTurnResult, type BattleEvent } from '@game/core/battle.js';
 import type { BattleRepository } from '../game/battle-repository.js';
 import { GameError } from '../game/repository.js';
@@ -14,9 +13,8 @@ import { synchronizeCharacterUnlocks } from './character-unlocks.js';
 import type { UnlockBattleMode } from '@game/content/unlocks.js';
 
 const encounterQuery = `SELECT e.id, e.campaign_id AS "campaignId", e.position, e.title, e.story,
-  e.map_x::float AS "mapX", e.map_y::float AS "mapY", e.provisional,
-  ARRAY(SELECT unit_id FROM encounter_enemies WHERE encounter_id = e.id ORDER BY slot_index) AS "enemyUnitIds",
-  ARRAY(SELECT unit_id FROM encounter_rewards WHERE encounter_id = e.id ORDER BY unit_id) AS "rewardUnitIds" FROM encounters e`;
+  e.map_x::float AS "mapX", e.map_y::float AS "mapY",
+  ARRAY(SELECT unit_id FROM encounter_enemies WHERE encounter_id = e.id ORDER BY slot_index) AS "enemyUnitIds" FROM encounters e`;
 const initialLog = (): BattleEvent[] => [{ kind: 'turn', message: 'Batalha iniciada. Sua equipe começa o turno 1 com 15 de energia.' }];
 const recordColumns = `id, encounter_id AS "encounterId", revision, state, log, combo,
   to_char(turn_deadline_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "turnDeadlineAt",
@@ -81,12 +79,10 @@ export class PostgresBattleRepository implements BattleRepository {
         updated.combo ? JSON.stringify(updated.combo) : null, updated.turnDeadlineAt, updated.botActsAt]);
     let savedProgress = progress;
     if (updated.state.status === 'victory' && battle.encounterId !== null) {
-      const rewards = await client.query<{ unit_id: string }>('SELECT unit_id FROM encounter_rewards WHERE encounter_id = $1', [battle.encounterId]);
       const data = { ...progress,
         completedEncounters: [...new Set([...progress.completedEncounters, battle.encounterId])],
         availablePathIds: battle.encounterId === FINAL_ENCOUNTER_ID
           ? [...new Set([...progress.availablePathIds, 'path-2'])] : progress.availablePathIds,
-        unlockedUnitIds: [...new Set([...progress.unlockedUnitIds, ...rewards.rows.map((reward) => reward.unit_id)])],
       };
       savedProgress = data;
       await client.query('UPDATE player_progress SET data = $2, revision = revision + 1, updated_at = now() WHERE user_id = $1', [userId, JSON.stringify(data)]);
@@ -162,11 +158,10 @@ export class PostgresBattleRepository implements BattleRepository {
     unlockedUnitIds: readonly string[]) {
     const missionOpponents = QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS.filter((id) => unlockedUnitIds.includes(id));
     const opponents = await client.query<QuickBattleData['opponents'][number]>(`SELECT u.id, u.name, u.portrait_path AS portrait
-      FROM units u WHERE NOT (u.id = ANY($3::text[]))
-        AND (u.id = ANY($2::text[]) OR u.id = ANY($4::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
+      FROM units u WHERE (u.id = ANY($2::text[]) OR u.id = ANY($3::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
           WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[])))
       ORDER BY u.roster_order NULLS LAST, u.id`, [completedEncounters, QUICK_BATTLE_ALWAYS_UNIT_IDS,
-        SECOND_CAMPAIGN_UNIT_IDS, missionOpponents]);
+        missionOpponents]);
     return opponents.rows;
   }
 
@@ -215,8 +210,10 @@ export class PostgresBattleRepository implements BattleRepository {
       const result = await client.query<EncounterDefinition>(`${encounterQuery} WHERE e.id = $1`, [encounterId]);
       const encounter = result.rows[0];
       if (!encounter) throw new GameError(404, 'Encontro não encontrado.');
-      const campaign = await client.query<{ released: boolean }>('SELECT released FROM campaigns WHERE id = $1', [encounter.campaignId]);
-      if (!campaign.rows[0]?.released || !progress.availablePathIds.includes(encounter.campaignId)) throw new GameError(403, 'Esta campanha está bloqueada.');
+      const campaign = await client.query<{ released: boolean; prerequisite: string | null }>('SELECT released, prerequisite_encounter_id AS prerequisite FROM campaigns WHERE id = $1', [encounter.campaignId]);
+      const gate = campaign.rows[0]?.prerequisite;
+      const available = !gate || progress.completedEncounters.includes(gate);
+      if (!campaign.rows[0]?.released || !available) throw new GameError(403, 'Esta campanha está bloqueada.');
       const previous = await client.query<{ id: string }>('SELECT id FROM encounters WHERE campaign_id = $1 AND position < $2', [encounter.campaignId, encounter.position]);
       if (previous.rows.some((entry) => !progress.completedEncounters.includes(entry.id))) throw new GameError(403, 'Vença as batalhas anteriores para liberar este encontro.');
       const osirisBattle = encounter.id === SECOND_FINAL_ENCOUNTER_ID;

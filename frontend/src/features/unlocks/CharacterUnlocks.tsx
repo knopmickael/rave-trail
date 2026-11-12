@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { CharacterUnlockData } from '@game/contracts';
-import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
 import { api, ApiError, gameDataCache } from '../../api';
 import { useI18n } from '../../i18n/LanguageProvider';
 import '../characters/characters.css';
 import './unlocks.css';
 
-const hiddenUnitIds = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
-
 export function CharacterUnlocks({ onBack, onSessionExpired }: {
   onBack: () => void;
   onSessionExpired: () => void;
 }) {
-  const { t, text, currency } = useI18n();
+  const { t, text } = useI18n();
   const [data, setData] = useState(() => gameDataCache.peek<CharacterUnlockData>('unlocks'));
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
@@ -28,7 +25,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
     return () => { active = false; };
   }, [attempt, onSessionExpired]);
 
-  const missions = data?.characters.filter((unit) => !hiddenUnitIds.has(unit.id) && unit.kind !== 'premium') ?? [];
+  const missions = data?.characters.filter((unit) => unit.kind !== 'premium') ?? [];
 
   return <main className="unlocks-page">
     <header className="roster-header">
@@ -52,6 +49,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
             const campaignRequirement = unit.kind === 'battle-wins'
               ? unit.requirements.find((requirement) => requirement.description.startsWith('Finalize a batalha '))
               : undefined;
+            const revealDescription = unit.kind === 'battle-wins' ? unit.revealRequirement ?? campaignRequirement?.description : undefined;
             const requirements = unit.kind === 'battle-wins'
               ? unit.requirements.filter((requirement) => requirement !== campaignRequirement
                 || (!locked && requirement.current < requirement.target))
@@ -62,27 +60,24 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
               <header className="unlock-card-header">
                 <img src={unit.portrait} alt={t('Retrato de {name}', { name: text(unit.name) })} draggable={false} />
                 <div><h2 id={`unlock-${unit.id}`}>{text(unit.name)}</h2>
-                  <span className="unlock-status">{t(locked ? 'Bloqueada na campanha' : unit.unlocked ? 'Disponível' : unit.kind === 'premium' ? 'Premium' : 'Em progresso')}</span>
+                  <span className="unlock-status">{t(locked ? 'Bloqueada na campanha' : unit.unlocked ? 'Disponível' : 'Em progresso')}</span>
                 </div>
               </header>
-              {unit.kind === 'premium' ? <>
-                <div className="unlock-card-body unlock-premium"><p className="unlock-price">{currency(unit.priceUsd)}</p></div>
-                <button type="button" className="fantasy-button compact" disabled>{t(unit.unlocked ? 'Personagem adquirido' : 'Adquirir personagem')}</button>
-              </> : <ul className="unlock-requirements" tabIndex={locked ? -1 : 0} aria-label={t('Requisitos de {name}', { name: text(unit.name) })}>
+              <ul className="unlock-requirements" tabIndex={locked ? -1 : 0} aria-label={t('Requisitos de {name}', { name: text(unit.name) })}>
                 {requirements.map((requirement, index) => <li key={index}>
                   <p id={`unlock-${unit.id}-${index}`}>{text(requirement.description)}</p>
                   <RequirementProgress requirement={requirement} labelId={`unlock-${unit.id}-${index}`} />
                 </li>)}
-              </ul>}
+              </ul>
               </div>
               {locked && <div className="unlock-mission-lock" role="img"
-                aria-label={t('Missão de {name} bloqueada. {requirement}', { name: text(unit.name), requirement: campaignRequirement ? text(campaignRequirement.description) : t('Derrote este personagem na campanha para habilitá-la.') })}>
+                aria-label={t('Missão de {name} bloqueada. {requirement}', { name: text(unit.name), requirement: revealDescription ? text(revealDescription) : t('Derrote este personagem na campanha para habilitá-la.') })}>
                 <span className="unlock-mission-lock-icon" aria-hidden="true">
                   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="3">
                     <rect x="10" y="21" width="28" height="21" rx="4" /><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6" />
                   </svg>
                 </span>
-                {campaignRequirement && <CampaignRequirementLines description={campaignRequirement.description} />}
+                {revealDescription && <CampaignRequirementLines description={revealDescription} />}
               </div>}
             </section>;
           })}

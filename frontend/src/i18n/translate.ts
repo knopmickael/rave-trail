@@ -61,6 +61,7 @@ export function translateText(locale: Locale, source: string | null | undefined)
   if (!source || locale === 'pt-BR') return source ?? '';
   const exact = lookup(source) ?? (Object.hasOwn(historicalMessages, source) ? historicalMessages[source] : undefined);
   if (exact !== undefined) return exact;
+  if (source.includes('\n')) return source.split(/(\r?\n+)/).map((part) => /^\r?\n/.test(part) ? part : translateText(locale, part)).join('');
   // Unlock tooltips join requirements, including campaign requirements without
   // a trailing period. Split before matching the variable opponent names.
   if (/^(?:Finalize a batalha |Vença \d+ |Derrote )/u.test(source)) {

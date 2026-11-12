@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { createInitialProgress, type PlayerProgress, type User } from '@game/contracts.js';
 import { EmailAlreadyUsedError, type AuthRepository, type Credentials, type SessionInput } from '../auth/repository.js';
 import { readTeam } from './game-repository.js';
+import { synchronizeCharacterUnlocks } from './character-unlocks.js';
 
 export class PostgresAuthRepository implements AuthRepository {
   constructor(private readonly pool: Pool) {}
@@ -14,6 +15,8 @@ export class PostgresAuthRepository implements AuthRepository {
       await client.query('BEGIN');
       await client.query('INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)', [user.id, email, passwordHash]);
       const { selectedTeam: _team, ...progress } = createInitialProgress();
+      const starters = await client.query<{ id: string }>("SELECT id FROM units WHERE unlock_condition->>'kind'='starter' ORDER BY roster_order NULLS LAST, id");
+      progress.unlockedUnitIds = starters.rows.map((unit) => unit.id);
       await client.query('INSERT INTO player_progress (user_id, data) VALUES ($1, $2)', [user.id, JSON.stringify(progress)]);
       await client.query('INSERT INTO player_team_slots (user_id, slot_index) SELECT $1, generate_series(0, 2)', [user.id]);
       await client.query('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)', [session.tokenHash, user.id, session.expiresAt]);
@@ -60,7 +63,17 @@ export class PostgresAuthRepository implements AuthRepository {
   }
 
   async getProgress(userId: string): Promise<PlayerProgress | null> {
-    const result = await this.pool.query<{ data: PlayerProgress }>('SELECT data FROM player_progress WHERE user_id = $1', [userId]);
-    return result.rows[0] ? { ...result.rows[0].data, selectedTeam: await readTeam(this.pool, userId) } : null;
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const found = await client.query<{ data: PlayerProgress }>('SELECT data FROM player_progress WHERE user_id=$1 FOR UPDATE', [userId]);
+      if (!found.rows[0]) { await client.query('COMMIT'); return null; }
+      await synchronizeCharacterUnlocks(client, userId, found.rows[0].data);
+      const result = await client.query<{ data: PlayerProgress }>('SELECT data FROM player_progress WHERE user_id=$1', [userId]);
+      const selectedTeam = await readTeam(client, userId);
+      await client.query('COMMIT');
+      return { ...result.rows[0].data, selectedTeam };
+    } catch (error) { await client.query('ROLLBACK'); throw error; }
+    finally { client.release(); }
   }
 }

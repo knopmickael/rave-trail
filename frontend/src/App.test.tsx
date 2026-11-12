@@ -387,7 +387,7 @@ it('troca para inglês nas configurações e localiza personagens, missões e ca
   await user.click(screen.getByRole('button', { name: 'Back to main menu' }));
   await user.click(screen.getByRole('button', { name: 'Campaign' }));
   await user.click(await screen.findByRole('button', { name: 'Chapter 1: Setting Out on the Road' }));
-  await user.click(await screen.findByRole('button', { name: 'Read the story of Rave Trail' }));
+  await user.click(await screen.findByRole('button', { name: 'Read the story of Setting Out on the Road' }));
   expect(screen.getByText(/On a mystical continent/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Close story' }));
   await user.click(screen.getByRole('button', { name: 'Battle 1: Road Raiders' }));

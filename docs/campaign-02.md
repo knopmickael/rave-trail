@@ -1,6 +1,6 @@
 # Campanha 02 — Além das Fronteiras
 
-**Conteúdo provisório para auditoria:** título, narrativa, habilidades e missões.
+Título, narrativa, habilidades e missões são editáveis pelo CMS.
 
 ## Contexto
 
@@ -19,14 +19,14 @@ Os textos completos exibidos no jogo estão em `shared/src/content/encounters.ts
 
 ## Regras implementadas
 
-- A vitória final da Campanha 01 libera a Campanha 02. A migration também libera o capítulo para contas que já completaram os sete encontros anteriores.
+- A disponibilidade segue a publicação no CMS e o confronto necessário configurado. Sem pré-requisito explícito, publicar a Campanha 02 a disponibiliza também para contas novas.
 - São seis batalhas sequenciais, usando a mesma imagem de mapa da primeira campanha.
 - As 17 artes em `frontend/public/media/characters/02/` são usadas no catálogo. Maga Ártemis participa da narrativa da corte e é Premium, por US$ 9,90.
 - Todos os novos personagens começam com Golpe simples, Guarda, Reter energia e Golpe forte e 100 HP. Os 16 personagens gratuitos têm a missão **“Vença 100 batalhas na batalha rápida.”** As missões dos adversários são habilitadas ao vencer seus encontros na campanha. Personagens já liberados e Premium sempre têm seus cartões acessíveis.
 - Na batalha 6, clicar em **Iniciar batalha** abre o mesmo modal de slots da Lista de personagens, com o fundo escurecido. A escolha do slot inicia a partida com Osiris como aliado convidado, mesmo bloqueado no catálogo. A composição é exclusiva da partida e não altera a equipe salva ou desbloqueia Osiris permanentemente.
 - Se Osiris já estiver na equipe salva, ele é movido para o slot escolhido sem duplicação. Slots vazios são aceitos, incluindo uma batalha com apenas Osiris.
 - A conta Game Master solicitada é criada diretamente no banco da aplicação; suas credenciais não fazem parte das fontes ou do seed.
-- O pergaminho junto ao título abre o prólogo da Campanha 02. Seu texto está em `SECOND_CAMPAIGN_INTRODUCTION`, em `shared/src/content/second-campaign.ts`.
+- O pergaminho junto ao título usa a descrição da campanha salva no CMS. O texto inicial vem de `SECOND_CAMPAIGN_INTRODUCTION`, em `shared/src/content/second-campaign.ts`.
 - A final da Campanha 01 mantém a equipe inteira: Ravi de Berdal é convertido em Ravi Berserk no próprio slot ao iniciar a partida, sem conceder a versão permanentemente.
 - Combatente Demônio e Lorde demônio Rakin têm suas posições trocadas somente na Lista de personagens; a formação da batalha 5 permanece a mesma.
 - Notas editoriais sobre a fase de desenvolvimento não são exibidas aos jogadores.

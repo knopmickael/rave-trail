@@ -170,7 +170,7 @@ it('persiste os quatro inimigos posteriores a Drak sem duplicar registros ao rea
   const enemies = catalog.units.filter((unit) => ids.includes(unit.id));
   expect(enemies).toHaveLength(4);
   for (const enemy of enemies) {
-    expect(enemy.provisional).toBe(true);
+    expect(enemy).not.toHaveProperty('provisional');
     expect(enemy.rosterOrder).toBeGreaterThanOrEqual(0);
     expect(enemy.abilityIds).toHaveLength(4);
     const definition = units.find((unit) => unit.id === enemy.id)!;
@@ -226,7 +226,7 @@ it('persiste duas campanhas e mantém o capítulo 02 bloqueado no seed', async (
   expect(initial.map((campaign) => [campaign.id, campaign.chapterNumber, campaign.available])).toEqual([['path-1', 1, true], ['path-2', 2, false]]);
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{availablePathIds}', '[\"path-2\"]'::jsonb) WHERE user_id = $1", [user.id]);
   await seedDatabase(pool);
-  expect((await gameRepository.getCampaigns(user.id)).map((campaign) => campaign.available)).toEqual([false, false]);
+  expect((await gameRepository.getCampaigns(user.id)).map((campaign) => campaign.available)).toEqual([true, false]);
   expect((await pool.query('SELECT count(*)::int AS count FROM campaigns')).rows[0].count).toBe(2);
 });
 

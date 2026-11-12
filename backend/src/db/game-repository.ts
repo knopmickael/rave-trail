@@ -31,8 +31,9 @@ export class PostgresGameRepository implements GameRepository {
 
   async getCampaigns(userId: string): Promise<CampaignOption[]> {
     const result = await this.pool.query<CampaignOption>(`SELECT c.id, c.chapter_number AS "chapterNumber", c.title, c.description,
-      c.background_path AS background, c.sort_order AS "sortOrder", c.released,
-      (c.released AND COALESCE((p.data->'availablePathIds') ? c.id, false)) AS available
+      c.background_path AS background, c.map_background_path AS "mapBackground", c.prerequisite_encounter_id AS "prerequisiteEncounterId", c.sort_order AS "sortOrder", c.released,
+      (c.released AND CASE WHEN c.prerequisite_encounter_id IS NOT NULL THEN COALESCE((p.data->'completedEncounters') ? c.prerequisite_encounter_id, false)
+        ELSE true END) AS available
       FROM campaigns c JOIN player_progress p ON p.user_id = $1 ORDER BY c.sort_order, c.chapter_number`, [userId]);
     return result.rows;
   }
@@ -42,7 +43,7 @@ export class PostgresGameRepository implements GameRepository {
     const abilities = await client.query<GameCatalog['abilities'][number]>('SELECT id, name, description, energy_cost AS "energyCost", target, effects, icon_path AS icon FROM abilities ORDER BY id');
     const units = await client.query<UnitDefinition>(`SELECT u.id, u.character_id AS "characterId", u.name, u.version, u.description,
         u.max_hp AS "maxHp", u.portrait_path AS portrait, u.illustration_path AS illustration,
-        u.unlock_condition AS unlock, u.provisional, u.roster_order AS "rosterOrder",
+        u.unlock_condition AS unlock, u.roster_order AS "rosterOrder",
         array_agg(ua.ability_id ORDER BY ua.slot_index) AS "abilityIds"
         FROM units u JOIN unit_abilities ua ON ua.unit_id = u.id GROUP BY u.id ORDER BY u.roster_order NULLS LAST, u.id`);
     if (!units.rowCount || units.rows.some((unit) => unit.abilityIds.length !== 4)) {

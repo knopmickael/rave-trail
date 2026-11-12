@@ -45,7 +45,7 @@ it('mostra sete pontos e abre título, três rostos e história somente no encon
   const first = await screen.findByRole('button', { name: 'Batalha 1: Saqueadores da estrada' });
   expect(screen.getAllByRole('button', { name: /^Batalha \d:/ })).toHaveLength(7);
   expect(document.querySelector('.map-world video')).toBeNull();
-  expect(screen.getByRole('img', { name: 'Mapa de Berdal e das rotas da primeira jornada' })).toHaveAttribute('src', '/media/images/mapa-campanha-01.png');
+  expect(screen.getByRole('img', { name: 'Mapa da campanha' })).toHaveAttribute('src', '/media/campaigns/mapa-campanha-01.png');
   expect(screen.queryByRole('navigation', { name: 'Mover o mapa' })).not.toBeInTheDocument();
   const team = screen.getByRole('region', { name: 'Minha equipe' });
   expect(team.querySelector('.team-panel')).toBeInTheDocument();
@@ -90,11 +90,11 @@ it('abre o prólogo pelo pergaminho ao lado do título e fecha a história sem i
   const user = userEvent.setup();
   render(<CampaignMap {...props()} />);
   const title = await screen.findByRole('heading', { name: 'Pondo o pé na estrada' });
-  const scroll = within(title.parentElement!).getByRole('button', { name: 'Ler história de Rave Trail' });
+  const scroll = within(title.parentElement!).getByRole('button', { name: 'Ler história de Pondo o pé na estrada' });
   expect(scroll).toHaveAttribute('aria-haspopup', 'dialog');
-  expect(screen.queryByRole('dialog', { name: 'História de Rave Trail' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('dialog', { name: 'História de Pondo o pé na estrada' })).not.toBeInTheDocument();
   await user.click(scroll);
-  const dialog = screen.getByRole('dialog', { name: 'História de Rave Trail' });
+  const dialog = screen.getByRole('dialog', { name: 'História de Pondo o pé na estrada' });
   expect(within(dialog).getByText(/três jovens camponeses vivem pacificamente/)).toBeInTheDocument();
   expect(within(dialog).getByText(/ataques coordenados destroem estruturas comerciais/)).toBeInTheDocument();
   expect(within(dialog).getByText(/a missão de investigar os responsáveis pelos ataques/)).toBeInTheDocument();
@@ -120,6 +120,16 @@ it('mostra o pergaminho com a história anterior à batalha 01 da segunda campan
   expect(within(dialog).getByText(/o grupo precisa atravessar uma fronteira sob vigilância/)).toBeInTheDocument();
   await user.click(within(dialog).getByRole('button', { name: 'Fechar história' }));
   expect(dialog).not.toHaveAttribute('open');
+});
+
+it('usa título, descrição e mapa retornados pelo CMS também em campanhas adicionais', async () => {
+  vi.mocked(api.campaignMap).mockResolvedValue({ campaign: { ...campaigns[0], id: 'new-campaign', title: 'Jornada editada', description: 'Primeiro parágrafo do CMS.\n\nSegundo parágrafo do CMS.', mapBackground: '/media/campaigns/path-2.webp', available: true }, encounters: [] });
+  const user = userEvent.setup(); render(<CampaignMap {...props()} campaignId="new-campaign" />);
+  await user.click(await screen.findByRole('button', { name: 'Ler história de Jornada editada' }));
+  const dialog = screen.getByRole('dialog', { name: 'História de Jornada editada' });
+  expect(within(dialog).getByText('Primeiro parágrafo do CMS.')).toBeInTheDocument();
+  expect(within(dialog).getByText('Segundo parágrafo do CMS.')).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Mapa da campanha' })).toHaveAttribute('src', '/media/campaigns/path-2.webp');
 });
 
 it('exibe os slots vazios e orienta escolher personagens sem oferecer montagem no modal', async () => {
@@ -203,7 +213,7 @@ it.each([true, false])('abre o mesmo modal de slots da lista de personagens some
   render(<CampaignMap {...props()} campaignId="path-2" />);
   await user.click(await screen.findByRole('button', { name: 'Batalha 6: O verdadeiro rei demônio' }));
   expect(screen.getAllByRole('button', { name: /^Batalha \d:/ })).toHaveLength(6);
-  expect(screen.getByRole('img', { name: 'Mapa da campanha' })).toHaveAttribute('src', '/media/images/mapa-campanha-01.png');
+  expect(screen.getByRole('img', { name: 'Mapa da campanha' })).toHaveAttribute('src', '/media/campaigns/mapa-campanha-01.png');
   const dialog = screen.getByRole('dialog', { name: 'O verdadeiro rei demônio' });
   expect(within(dialog).queryByText(OSIRIS_BATTLE_REQUIREMENT)).not.toBeInTheDocument();
   expect(within(dialog).queryByRole('radio')).not.toBeInTheDocument();

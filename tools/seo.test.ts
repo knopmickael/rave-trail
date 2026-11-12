@@ -33,6 +33,7 @@ it('gera metadados e dados estruturados coerentes para as duas páginas pública
     expect(document.title).toContain(site.name);
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toContain('ravetrail');
     expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
+    expect(document.querySelector('link[rel="icon"]')?.getAttribute('href')).toBe('/media/images/logo-rave-trail.png');
     expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(url);
     expect(document.querySelector('meta[property="og:image"]')?.getAttribute('content')).toBe(new URL(site.socialImage, site.url).href);
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).not.toContain('noindex');
@@ -64,7 +65,7 @@ it('mantém o sitemap limitado a URLs públicas canônicas e as imagens de desco
   expect(robots).toContain(`Sitemap: ${new URL('sitemap.xml', site.url).href}`);
   expect(robots).toContain('Disallow: /api/');
   expect(robots).not.toMatch(/Disallow:\s*\/(?:\s|$)/);
-  for (const file of ['favicon.svg', 'favicon.png', 'apple-touch-icon.png', site.socialImage.slice(1)]) {
+  for (const file of ['media/images/logo-rave-trail.png', site.socialImage.slice(1)]) {
     expect((await stat(new URL(`frontend/public/${file}`, root))).size, file).toBeGreaterThan(0);
   }
 });

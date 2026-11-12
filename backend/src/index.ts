@@ -7,6 +7,7 @@ import { PostgresAuthRepository } from './db/auth-repository.js';
 import { PostgresGameRepository } from './db/game-repository.js';
 import { PostgresBattleRepository } from './db/battle-repository.js';
 import { environmentPath, frontendDistPath } from './paths.js';
+import { readMedia } from './db/media.js';
 
 loadEnvironment({ path: environmentPath });
 const config = loadConfig();
@@ -22,6 +23,7 @@ const app = await createApp({
   production: config.NODE_ENV === 'production',
   logger: true,
   checkDatabase: async () => { await pool.query('SELECT 1'); },
+  readMedia: (id) => readMedia(pool, id),
 });
 
 if (config.NODE_ENV === 'production') {

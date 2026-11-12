@@ -25,15 +25,22 @@ interface AppOptions {
   // Verificação de saúde do banco para o endpoint /api/health. Opcional para
   // manter o app desacoplado do driver; o index.ts a fornece com um SELECT 1.
   checkDatabase?: () => Promise<void>;
+  readMedia?: (id: string) => Promise<{ mimeType: string; content: Buffer } | null>;
 }
 
-export async function createApp({ repository, gameRepository, battleRepository, origin, production = false, logger = false, checkDatabase }: AppOptions) {
+export async function createApp({ repository, gameRepository, battleRepository, origin, production = false, logger = false, checkDatabase, readMedia }: AppOptions) {
   const app = Fastify({
     logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers.set-cookie'] } : false,
     bodyLimit: 16 * 1024,
   });
   await app.register(cookie);
   await app.register(rateLimit, { global: false });
+  if (readMedia) app.get<{ Params: { id: string } }>('/media/cms/:id', async (request, reply) => {
+    if (!z.uuid().safeParse(request.params.id).success) return reply.code(404).send();
+    const image = await readMedia(request.params.id);
+    if (!image) return reply.code(404).send();
+    return reply.type(image.mimeType).header('Cache-Control', 'public, max-age=31536000, immutable').send(image.content);
+  });
   const cookieOptions = { httpOnly: true, secure: production, sameSite: 'lax' as const, path: '/' };
   // Verificar uma senha mesmo quando a conta não existe reduz diferenças de tempo no login.
   const dummyPasswordHash = await hashPassword(randomBytes(32).toString('hex'));

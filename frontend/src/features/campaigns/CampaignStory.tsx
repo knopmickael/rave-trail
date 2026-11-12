@@ -1,16 +1,12 @@
 import { useRef } from 'react';
-import gameHistory from '../../../../game-history.txt?raw';
-import { SECOND_CAMPAIGN_INTRODUCTION } from '@game/content/second-campaign';
+import type { CampaignDefinition } from '@game/content/campaigns';
 import { useI18n } from '../../i18n/LanguageProvider';
 
-// O prólogo antecede as seções de planejamento da narrativa no arquivo original.
-const [, ...introduction] = gameHistory.replace(/\r\n?/g, '\n').split('\nDesenvolvimento da narrativa')[0].trim().split(/\n+/);
-
-export function CampaignStory({ campaignId = 'path-1' }: { campaignId?: string }) {
+export function CampaignStory({ campaign }: { campaign: CampaignDefinition }) {
   const { t, text } = useI18n();
   const dialog = useRef<HTMLDialogElement>(null);
-  const name = campaignId === 'path-2' ? text('Além das Fronteiras') : 'Rave Trail';
-  const paragraphs = campaignId === 'path-2' ? SECOND_CAMPAIGN_INTRODUCTION : introduction;
+  const name = text(campaign.title);
+  const paragraphs = campaign.description.replace(/\r\n?/g, '\n').split(/\n+/).filter(Boolean);
 
   return <>
     <button type="button" className="campaign-story-button" aria-label={t('Ler história de {name}', { name })}

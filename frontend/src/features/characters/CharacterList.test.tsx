@@ -6,7 +6,6 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createInitialProgress } from '@game/contracts';
 import { abilities } from '@game/content/abilities';
 import { narrativeCharacters, units } from '@game/content/units';
-import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
 import { api } from '../../api';
 import { CharacterList } from './CharacterList';
 
@@ -68,7 +67,8 @@ it('exibe todo o catálogo do banco sem textos auxiliares e com os novos inimigo
   renderList();
   await screen.findByRole('button', { name: 'Selecionar Ravi de Berdal' });
   const catalog = screen.getByRole('region', { name: 'Catálogo de personagens' });
-  expect(within(catalog).getAllByRole('button')).toHaveLength(units.filter((unit) => !(SECOND_CAMPAIGN_UNIT_IDS as readonly string[]).includes(unit.id)).length);
+  expect(within(catalog).getAllByRole('button')).toHaveLength(units.length);
+  expect(within(catalog).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(units.map((unit) => `Selecionar ${unit.name}${unit.unlock.kind === 'starter' ? '' : ' — bloqueado'}`));
   expect(within(catalog).getByRole('button', { name: 'Selecionar Doko de Berdal' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Anna de Berdal' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Drak de Pontes — bloqueado' })).toBeEnabled();

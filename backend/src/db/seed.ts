@@ -7,16 +7,22 @@ import { synchronizeCharacterUnlocks } from './character-unlocks.js';
 import type { PlayerProgress } from '@game/contracts.js';
 
 export async function seedCatalog(client: PoolClient): Promise<void> {
+  const overrides = await client.query<{ entity: string; id: string }>('SELECT entity, id FROM cms_content_overrides');
+  const managed = new Set(overrides.rows.map((row) => `${row.entity}:${row.id}`));
   for (const campaign of campaigns) {
-    await client.query(`INSERT INTO campaigns (id, chapter_number, title, description, background_path, sort_order, released)
-      VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (id) DO UPDATE SET
-      title = EXCLUDED.title, description = EXCLUDED.description, background_path = EXCLUDED.background_path`,
-    [campaign.id, campaign.chapterNumber, campaign.title, campaign.description, campaign.background, campaign.sortOrder, campaign.released]);
+    if (managed.has(`campaigns:${campaign.id}`)) continue;
+    await client.query(`INSERT INTO campaigns (id, chapter_number, title, description, background_path, sort_order, released, map_background_path)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO UPDATE SET
+      title = EXCLUDED.title, description = EXCLUDED.description, background_path = EXCLUDED.background_path,
+      map_background_path = COALESCE(campaigns.map_background_path, EXCLUDED.map_background_path)`,
+    [campaign.id, campaign.chapterNumber, campaign.title, campaign.description, campaign.background, campaign.sortOrder, campaign.released, campaign.mapBackground]);
   }
   for (const character of Object.values(narrativeCharacters)) {
+    if (managed.has(`narrative:${character.id}`)) continue;
     await client.query('INSERT INTO narrative_characters (id, name) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name', [character.id, character.name]);
   }
   for (const ability of Object.values(abilities)) {
+    if (managed.has(`abilities:${ability.id}`)) continue;
     // Reexecução atualiza apresentação, mas não reescreve custos/efeitos aprovados.
     await client.query(`INSERT INTO abilities (id, name, description, energy_cost, target, effects, icon_path)
       VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (id) DO UPDATE SET
@@ -25,29 +31,28 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
   }
   // Libera somente as posições do catálogo gerenciado antes de reordená-lo.
   // A transação do seed impede estados intermediários visíveis e conflitos UNIQUE em trocas de posição.
-  await client.query('UPDATE units SET roster_order = NULL WHERE id = ANY($1::text[])', [units.map((unit) => unit.id)]);
+  await client.query('UPDATE units SET roster_order = NULL WHERE id = ANY($1::text[])', [units.filter((unit) => !managed.has(`characters:${unit.id}`)).map((unit) => unit.id)]);
   for (const unit of units) {
-    await client.query(`INSERT INTO units (id, character_id, name, version, description, max_hp, portrait_path, illustration_path, unlock_condition, provisional, roster_order)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (id) DO UPDATE SET
+    if (managed.has(`characters:${unit.id}`)) continue;
+    await client.query(`INSERT INTO units (id, character_id, name, version, description, max_hp, portrait_path, illustration_path, unlock_condition, roster_order)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name, version = EXCLUDED.version, description = EXCLUDED.description,
       portrait_path = EXCLUDED.portrait_path, illustration_path = EXCLUDED.illustration_path, roster_order = EXCLUDED.roster_order,
       unlock_condition = EXCLUDED.unlock_condition`,
-    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), !!unit.provisional, unit.rosterOrder]);
+    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), unit.rosterOrder]);
     for (const [slot, abilityId] of unit.abilityIds.entries()) {
       await client.query('INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING', [unit.id, slot, abilityId]);
     }
   }
   for (const encounter of encounters) {
-    await client.query(`INSERT INTO encounters (id, campaign_id, position, title, story, map_x, map_y, provisional)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title,
-      story = EXCLUDED.story, map_x = EXCLUDED.map_x, map_y = EXCLUDED.map_y, provisional = EXCLUDED.provisional`,
-    [encounter.id, encounter.campaignId, encounter.position, encounter.title, encounter.story, encounter.mapX, encounter.mapY, encounter.provisional]);
+    if (managed.has(`encounters:${encounter.id}`)) continue;
+    await client.query(`INSERT INTO encounters (id, campaign_id, position, title, story, map_x, map_y)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title,
+      story = EXCLUDED.story, map_x = EXCLUDED.map_x, map_y = EXCLUDED.map_y`,
+    [encounter.id, encounter.campaignId, encounter.position, encounter.title, encounter.story, encounter.mapX, encounter.mapY]);
     await client.query('DELETE FROM encounter_enemies WHERE encounter_id = $1', [encounter.id]);
     for (const [slot, unitId] of encounter.enemyUnitIds.entries()) {
       await client.query('INSERT INTO encounter_enemies (encounter_id, slot_index, unit_id) VALUES ($1,$2,$3)', [encounter.id, slot, unitId]);
-    }
-    for (const unitId of encounter.rewardUnitIds) {
-      await client.query('INSERT INTO encounter_rewards (encounter_id, unit_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [encounter.id, unitId]);
     }
   }
 }

@@ -59,21 +59,19 @@ export const narrativeCharacters = {
 export type CharacterId = keyof typeof narrativeCharacters;
 export type UnlockCondition =
   | { readonly kind: 'starter'; readonly description: string }
-  | { readonly kind: 'encounter'; readonly encounterId: string; readonly description: string }
-  | { readonly kind: 'unavailable' | 'premium' | 'battle-wins'; readonly description: string };
+  | { readonly kind: 'premium' | 'battle-wins'; readonly description: string };
 
 export interface UnitDefinition {
   readonly id: string;
-  readonly characterId: CharacterId;
+  readonly characterId: string;
   readonly name: string;
   readonly version: string;
   readonly description: string;
   readonly maxHp: number;
   readonly portrait: string;
   readonly illustration: string;
-  readonly abilityIds: readonly [AbilityId, AbilityId, AbilityId, AbilityId];
+  readonly abilityIds: readonly [string, string, string, string];
   readonly unlock: UnlockCondition;
-  readonly provisional?: boolean;
   readonly rosterOrder: number | null;
 }
 
@@ -91,7 +89,8 @@ const unitAssetOverrides: Readonly<Record<string, { portrait: string; illustrati
   },
 };
 
-function defineUnit(unit: Omit<UnitDefinition, 'name' | 'maxHp' | 'portrait' | 'illustration' | 'rosterOrder'>): UnitDefinition {
+function defineUnit(unit: Omit<UnitDefinition, 'name' | 'maxHp' | 'portrait' | 'illustration' | 'rosterOrder' | 'characterId' | 'abilityIds'>
+  & { characterId: CharacterId; abilityIds: readonly [AbilityId, AbilityId, AbilityId, AbilityId] }): UnitDefinition {
   const rosterOrder = (ROSTER_UNIT_IDS as readonly string[]).indexOf(unit.id);
   const name = unitNameOverrides[unit.id] ?? narrativeCharacters[unit.characterId].name;
   const assetName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -169,24 +168,24 @@ export const units: readonly UnitDefinition[] = [
     description: 'Integrante do trio de guerreiros habilidosos encontrado após o confronto com Drak de Pontes.',
     abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['main-special', 'fast-move', 'retain-energy', 'secondary-special']
       : characterId === 'guerreiros-habilidosos-b' ? ['main-special', 'fast-move', 'retain-energy', 'female-special']
-        : ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'secondary-special'], unlock: battleUnlock(characterId), provisional: true,
+        : ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'secondary-special'], unlock: battleUnlock(characterId),
   })),
   defineUnit({
     id: 'rival-b-final-mode', characterId: 'rival-b', version: 'Verdadeiro poder',
     description: 'O verdadeiro poder de Exal de Grimória, o vilão do confronto final da primeira jornada.',
     abilityIds: ['dark-vortex', 'fast-move', 'retain-energy-plus', 'soul-drain-plus'],
-    unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' }, provisional: true,
+    unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' },
   }),
   defineUnit({
     id: 'protagonist-main-transformed', characterId: 'protagonist-main', version: 'Despertar',
     description: 'O despertar de Ravi durante a jornada revela uma força que ele ainda precisa compreender e aprender a controlar.',
-    abilityIds: ['simple-strike-ii', 'female-special', 'retain-energy-plus', 'fury-scream'], provisional: true,
+    abilityIds: ['simple-strike-ii', 'female-special', 'retain-energy-plus', 'fury-scream'],
     unlock: battleUnlock('protagonist-main-transformed'),
   }),
   defineUnit({
     id: 'legendary-beast-premium', characterId: 'legendary-beast', version: 'Lendária',
     description: 'Uma presença rara que sugere forças muito além das conhecidas no vilarejo.',
-    abilityIds: ['heal-plus', 'female-special', 'retain-energy-plus', 'resurrection'], provisional: true,
+    abilityIds: ['heal-plus', 'female-special', 'retain-energy-plus', 'resurrection'],
     unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' },
   }),
   ...SECOND_CAMPAIGN_CHARACTERS.map((character) => ({
@@ -195,7 +194,6 @@ export const units: readonly UnitDefinition[] = [
       description: character.description,
       abilityIds: [...common, 'strong-strike'],
       unlock: character.id === 'maga-artemis' ? { kind: 'premium', description: 'Personagem premium: US$ 9,90.' } : battleUnlock(character.id),
-      provisional: true,
     }),
     portrait: `/media/characters/02/${character.id}-face.png`,
     illustration: `/media/characters/02/${character.id}.png`,

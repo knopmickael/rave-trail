@@ -26,6 +26,7 @@ afterEach(cleanup);
 it('mostra todos os requisitos dentro dos cartões e oculta as unidades premium', async () => {
   render(<CharacterUnlocks {...props()} />);
   const raider = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
+  expect(screen.getByRole('region', { name: 'General Abel' })).toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveClass('unlocks-container');
   expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveAttribute('tabindex', '0');
   expect(within(raider).getAllByRole('progressbar')).toHaveLength(3);
@@ -79,6 +80,16 @@ it('mostra um estado vazio se o catálogo não possuir missões', async () => {
   expect(screen.queryByRole('button', { name: 'Ver próximas missões' })).not.toBeInTheDocument();
 });
 
+it('mostra no cadeado a batalha de revelação configurada, mesmo diferente dos requisitos', async () => {
+  const data = characterUnlockProgress(units, [], [], {}, []);
+  vi.mocked(api.characterUnlocks).mockResolvedValue({ characters: data.characters.map((unit) => unit.id === 'road-raider-1-base' && unit.kind === 'battle-wins'
+    ? { ...unit, revealRequirement: 'Finalize a batalha 4 da campanha 2' } : unit) });
+  render(<CharacterUnlocks {...props()} />);
+  const card = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
+  expect(within(card).getByRole('img', { name: /Missão de Saqueador da estrada I bloqueada\. Finalize a batalha 4 da campanha 2/ })).toBeInTheDocument();
+  expect(within(card).getByText('Finalize a batalha 4')).toBeInTheDocument();
+});
+
 it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado', async () => {
   vi.mocked(api.characterUnlocks).mockResolvedValue(characterUnlockProgress(units, [], [], {}, ['road-raider-1-base']));
   render(<CharacterUnlocks {...props()} />);
@@ -94,7 +105,7 @@ it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado'
   expect(within(within(locked).getByRole('list', { name: 'Requisitos de Ravi Berserk' }))
     .queryByText('Finalize a batalha 7')).not.toBeInTheDocument();
   expect(within(locked).getAllByRole('progressbar')).toHaveLength(3);
-  expect(document.querySelectorAll('.unlock-card')).toHaveLength(16);
+  expect(document.querySelectorAll('.unlock-card')).toHaveLength(units.filter((unit) => unit.unlock.kind === 'battle-wins').length);
 });
 
 it('mantém os dados carregados ao retornar à janela sem repetir a consulta', async () => {

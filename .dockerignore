@@ -11,6 +11,7 @@ coverage
 .idea
 docs
 tools/automation/logs
+cms
 *.dump
 *.sql.gz
 .env

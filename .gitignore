@@ -39,6 +39,7 @@ test-results/
 playwright-report/
 blob-report/
 .playwright/
+.playwright-mcp/
 /reports/
 junit.xml
 junit-*.xml
@@ -53,6 +54,9 @@ test-report.xml
 !.env.*.sample
 !.env.template
 !.env.*.template
+# Perfis privados do CMS (conexões local e Lightsail).
+/.env.cms.local
+/.env.cms.prod
 .envrc.local
 .direnv/
 

@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GameCatalog, PlayerProgress } from '@game/contracts';
 import type { UnitDefinition } from '@game/content/units';
-import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign';
 import { api, ApiError, gameDataCache } from '../../api';
 import { CharacterArt } from './CharacterArt';
 import { AbilityIcon } from './AbilityIcon';
 import { TeamSlotDialog } from './TeamSlotDialog';
 import { useI18n } from '../../i18n/LanguageProvider';
 import './characters.css';
-
-const hiddenUnitIds = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
 
 interface CharacterListProps {
   onBack: () => void;
@@ -47,7 +44,7 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
 
   const unlocked = new Set(progress?.unlockedUnitIds ?? []);
   const units = catalog?.units ?? [];
-  const rosterUnits = units.filter((unit) => !hiddenUnitIds.has(unit.id));
+  const rosterUnits = units;
   const selected = rosterUnits.find((unit) => unit.id === selectedId);
 
   function chooseSlot() {

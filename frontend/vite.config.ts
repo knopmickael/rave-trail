@@ -17,6 +17,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] },
-    proxy: { '/api': 'http://127.0.0.1:3001' },
+    proxy: { '/api': 'http://127.0.0.1:3001', '/media/cms': 'http://127.0.0.1:3001' },
   },
 });

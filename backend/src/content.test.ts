@@ -6,7 +6,7 @@ import { encounters } from '@game/content/encounters.js';
 import { SECOND_CAMPAIGN_CHARACTERS } from '@game/content/second-campaign.js';
 
 describe('catálogo compartilhado', () => {
-  it('define os seis confrontos provisórios da segunda campanha na ordem solicitada', () => {
+  it('define os seis confrontos da segunda campanha na ordem solicitada', () => {
     const second = encounters.filter((entry) => entry.campaignId === 'path-2');
     expect(second.map((entry) => entry.position)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(second.map((entry) => entry.enemyUnitIds)).toEqual([
@@ -17,7 +17,7 @@ describe('catálogo compartilhado', () => {
       ['lorde-demonio-rakin', 'mago-demonio', 'combatente-demonio'],
       ['verdadeiro-rei-demonio'],
     ]);
-    expect(second.every((entry) => entry.provisional && entry.story.length > 100)).toBe(true);
+    expect(second.every((entry) => entry.story.length > 100)).toBe(true);
   });
   it('define as sete equipes aprovadas em ordem, incluindo dois inimigos na sexta e o duelo final', () => {
     expect(encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => entry.position)).toEqual([1, 2, 3, 4, 5, 6, 7]);
@@ -30,25 +30,23 @@ describe('catálogo compartilhado', () => {
       ['jung-de-grimoria-ii', 'rival-b-base'],
       ['rival-b-final-mode'],
     ]);
-    expect(encounters[3].rewardUnitIds).toEqual([]);
-    expect(encounters[5].rewardUnitIds).toEqual([]);
     for (const entry of encounters) {
       expect(entry.enemyUnitIds.length).toBeGreaterThanOrEqual(1);
       expect(entry.enemyUnitIds.length).toBeLessThanOrEqual(3);
       expect(entry.mapX).toBeGreaterThanOrEqual(0); expect(entry.mapX).toBeLessThanOrEqual(100);
       expect(entry.mapY).toBeGreaterThanOrEqual(0); expect(entry.mapY).toBeLessThanOrEqual(100);
-      for (const id of [...entry.enemyUnitIds, ...entry.rewardUnitIds]) expect(units.some((unit) => unit.id === id)).toBe(true);
+      for (const id of entry.enemyUnitIds) expect(units.some((unit) => unit.id === id)).toBe(true);
     }
   });
   it('mantém IDs únicos, referências válidas, quatro habilidades e HP inicial 100', () => {
     expect(new Set(units.map((unit) => unit.id)).size).toBe(units.length);
     for (const unit of units) {
-      expect(narrativeCharacters[unit.characterId]).toBeDefined();
+      expect(narrativeCharacters).toHaveProperty(unit.characterId);
       expect(unit.maxHp).toBe(100);
       expect(unit.description).not.toMatch(/provisóri|temporári/i);
       expect(unit.abilityIds).toHaveLength(4);
       expect(new Set(unit.abilityIds).size).toBe(4);
-      for (const id of unit.abilityIds) expect(abilities[id]).toBeDefined();
+      for (const id of unit.abilityIds) expect(abilities).toHaveProperty(id);
     }
     const starters = units.filter((unit) => unit.unlock.kind === 'starter').map((unit) => unit.id);
     expect(starters).toEqual(createInitialProgress().unlockedUnitIds);
@@ -94,13 +92,11 @@ describe('catálogo compartilhado', () => {
       effects: [{ kind: 'invulnerable', teamTurns: 1 }] });
   });
 
-  it('representa transformação como outra unidade e identifica conteúdo temporário', () => {
+  it('representa transformação como outra unidade do mesmo personagem', () => {
     const base = units.find((unit) => unit.id === 'protagonist-main-base')!;
     const transformed = units.find((unit) => unit.id === 'protagonist-main-transformed')!;
     expect(transformed.id).not.toBe(base.id);
     expect(transformed.characterId).toBe(base.characterId);
-    expect(transformed.provisional).toBe(true);
-    expect(units.find((unit) => unit.unlock.kind === 'premium')?.provisional).toBe(true);
   });
 
   it('cadastra inimigos posteriores a Drak e preserva a versão original do rival B', () => {
@@ -108,7 +104,6 @@ describe('catálogo compartilhado', () => {
     for (const id of ids) {
       const unit = units.find((entry) => entry.id === id)!;
       expect(unit).toBeDefined();
-      expect(unit.provisional).toBe(true);
       expect(unit.rosterOrder).toBeGreaterThanOrEqual(0);
       expect(unit.unlock.kind).toBe(id === 'rival-b-final-mode' ? 'premium' : 'battle-wins');
     }

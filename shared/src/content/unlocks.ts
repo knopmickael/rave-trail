@@ -1,4 +1,5 @@
 import { SECOND_CAMPAIGN_UNIT_IDS } from './second-campaign.js';
+import { encounters } from './encounters.js';
 
 export type UnlockBattleMode = 'quick' | 'multiplayer';
 export interface BattleWinsUnlockRequirement {
@@ -35,8 +36,12 @@ const wins = (opponents: string | readonly string[] | undefined, target: number,
 const encounter = (encounterId: string, battle: number): EncounterUnlockRequirement =>
   ({ kind: 'encounter', encounterId, target: 1, description: `Finalize a batalha ${battle} da campanha 1` });
 const rule = (unitId: string, requirements: readonly UnlockRequirement[],
-  options: Pick<BattleUnlockRule, 'availableAfterEncounterId' | 'availableFromStart'> = {}): BattleUnlockRule =>
-  ({ unitId, description: requirements.map((requirement) => requirement.description).join(' '), requirements, ...options });
+  options: Pick<BattleUnlockRule, 'availableAfterEncounterId' | 'availableFromStart'> = {}): BattleUnlockRule => {
+  const gate = requirements.find((r) => r.kind === 'encounter')?.encounterId
+    ?? encounters.find((e) => e.enemyUnitIds.includes(unitId))?.id;
+  return { unitId, description: requirements.map((requirement) => requirement.description).join(' '), requirements,
+    ...(gate ? { availableAfterEncounterId: gate } : { availableFromStart: true }), ...options };
+};
 const single = (unitId: string, requirement: UnlockRequirement): BattleUnlockRule => rule(unitId, [requirement]);
 
 const quickWins = (target: number) => wins(undefined, target, `Vença ${target} partidas no modo Batalha rápida.`);

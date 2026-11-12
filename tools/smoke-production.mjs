@@ -52,7 +52,7 @@ try {
   assert.equal(missingPage.status, 404);
   assert.equal(missingPage.headers.get('x-robots-tag'), 'noindex, follow');
   for (const path of ['/media/images/logo-rave-trail.png', '/media/images/sky-background.webp',
-    '/media/images/fight-background.png', '/media/images/fight-exal-background.png', '/media/images/mapa-campanha-01.png',
+    '/media/images/fight-background.png', '/media/images/fight-exal-background.png', '/media/campaigns/mapa-campanha-01.png',
     '/media/characters/ravi-de-berdal-face.png', '/media/characters/jung-de-grimoria-ii-face.png', '/media/characters/jung-de-grimoria-ii-body.png',
     '/media/abilities/retain-energy.jpg', '/media/campaigns/path-1.webp',
     '/media/audio/click-menu.wav', '/media/audio/battle-win.wav', '/media/audio/battle-lose.mp3']) {
@@ -75,9 +75,11 @@ try {
   assert.match(rawCookie, /Max-Age=3600/iu);
   const cookie = rawCookie.split(';')[0];
   const headers = { Origin: origin, Cookie: cookie, 'Content-Type': 'application/json' };
+  const catalog = (await (await fetch(address + '/api/catalog', { headers })).json()).catalog;
   const missions = (await (await fetch(address + '/api/character-unlocks', { headers })).json()).unlocks.characters;
-  assert.equal(missions.length, 33);
-  assert(missions.every((mission) => mission.campaignAvailable === (mission.kind === 'premium')));
+  assert.equal(missions.length, catalog.units.filter((unit) => ['premium', 'battle-wins'].includes(unit.unlock.kind)).length);
+  const fromStart = new Set(['capitao-da-guarda-kalis-base', 'capitao-da-guarda-ridan-base']);
+  assert(missions.every((mission) => mission.campaignAvailable === (mission.kind === 'premium' || fromStart.has(mission.id))));
   assert.equal((await fetch(address + '/api/profile', { method: 'PATCH', headers, body: JSON.stringify({ name: 'Guardião do build' }) })).status, 200);
   const session = (await (await fetch(address + '/api/auth/me', { headers })).json()).user;
   assert.equal(session.name, 'Guardião do build');

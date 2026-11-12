@@ -78,17 +78,18 @@ it('mantém a campanha 02 bloqueada mesmo com equipe vazia ou Osiris já desbloq
   expect((await auth.getProgress(user.id))!.selectedTeam).toEqual([OSIRIS_UNIT_ID, STARTER_UNIT_IDS[1], null]);
 });
 
-it('mantém as 17 unidades da campanha 02 no catálogo, mas oculta suas missões e não as libera por vitórias rápidas', async () => {
+it('mantém as missões da campanha 02 bloqueadas antes das batalhas específicas e não as libera só por vitórias rápidas', async () => {
   const user = await player();
   await pool.query('UPDATE player_progress SET data = data || $2::jsonb WHERE user_id = $1', [user.id,
-    JSON.stringify({ completedEncounters: [...first, ...second.slice(0, 2)].map((entry) => entry.id), availablePathIds: ['path-1', 'path-2'] })]);
+    JSON.stringify({ completedEncounters: first.map((entry) => entry.id), availablePathIds: ['path-1', 'path-2'] })]);
   const template = await battles.startQuickBattle(user.id);
   const state = structuredClone(template.state); state.status = 'victory';
   state.teams.enemy.units.forEach((unit) => { unit.hp = 0; });
   await pool.query(`INSERT INTO battles (id, user_id, encounter_id, state, status, mode)
     SELECT gen_random_uuid(), $1, NULL, $2::jsonb, 'victory', 'quick' FROM generate_series(1, 100)`, [user.id, JSON.stringify(state)]);
   const missions = (await game.getCharacterUnlocks(user.id)).characters.filter((unit) => SECOND_CAMPAIGN_UNIT_IDS.includes(unit.id as typeof SECOND_CAMPAIGN_UNIT_IDS[number]));
-  expect(missions).toHaveLength(0);
+  expect(missions).toHaveLength(SECOND_CAMPAIGN_UNIT_IDS.length);
+  expect(missions.filter((unit) => unit.kind === 'battle-wins').every((unit) => !unit.campaignAvailable && !unit.unlocked)).toBe(true);
   const after = (await auth.getProgress(user.id))!;
   for (const id of SECOND_CAMPAIGN_UNIT_IDS) expect(after.unlockedUnitIds).not.toContain(id);
   const catalog = await game.getCatalog();
@@ -98,7 +99,7 @@ it('mantém as 17 unidades da campanha 02 no catálogo, mas oculta suas missões
   expect(catalog.units.some((unit) => unit.id === 'lorde-demonio-rakin')).toBe(true);
   for (const id of SECOND_CAMPAIGN_UNIT_IDS) {
     const unit = catalog.units.find((entry) => entry.id === id)!;
-    expect(unit.provisional).toBe(true);
+    expect(unit).not.toHaveProperty('provisional');
     expect(unit.abilityIds).toEqual(['simple-strike', 'guard', 'retain-energy', 'strong-strike']);
     expect(unit.portrait).toBe(`/media/characters/02/${id}-face.png`);
   }
@@ -114,14 +115,13 @@ it('a conta com todos os personagens liberados acessa as missões de Berserk e d
   expect(data.characters.every((unit) => unit.unlocked && unit.campaignAvailable)).toBe(true);
 });
 
-it('a migration preserva a equipe ao reaplicar o bloqueio da campanha 02', async () => {
+it('executa as migrações e o seed novamente preservando equipe e publicação da campanha 02', async () => {
   const user = await player();
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{completedEncounters}', $2::jsonb) WHERE user_id = $1", [user.id, JSON.stringify(first.map((entry) => entry.id))]);
   const before = (await auth.getProgress(user.id))!;
-  await pool.query('DELETE FROM schema_migrations WHERE name = ANY($1::text[])', [['025_second_campaign.sql', '036_guard_captains_and_store_content.sql']]);
   await migrate(pool); await seedDatabase(pool);
   const after = (await auth.getProgress(user.id))!;
-  expect(after).toEqual({ ...before, availablePathIds: ['path-1', 'path-2'] });
+  expect(after).toEqual(before);
   await migrate(pool); await seedDatabase(pool);
   expect(await auth.getProgress(user.id)).toEqual(after);
   expect((await game.getCatalog()).units).toHaveLength(units.length);

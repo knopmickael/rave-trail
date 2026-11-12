@@ -84,7 +84,8 @@ export function CampaignMap({ campaignId, onBack, onOpenCharacters, onSessionExp
     <main className="campaign-map-page">
       <div className="map-canvas" role="region" aria-label={t(campaignId === 'path-1' ? 'Mapa da primeira campanha' : 'Mapa da segunda campanha')}>
         <div className="map-world">
-          {campaignId === 'path-1' ? <CampaignMapBackground />
+          {map?.campaign.mapBackground ? <img className="campaign-map-image" src={map.campaign.mapBackground} alt={t('Mapa da campanha')} draggable={false} />
+            : campaignId === 'path-1' ? <CampaignMapBackground />
             : <img className="campaign-map-image" src={assets.campaignMap} alt={t('Mapa da campanha')} draggable={false} />}
           {map?.encounters.map((entry) => (
             <button key={entry.id} type="button"
@@ -103,7 +104,7 @@ export function CampaignMap({ campaignId, onBack, onOpenCharacters, onSessionExp
         <button className="campaign-back" onClick={onBack} aria-label={t('Voltar às campanhas')}><span aria-hidden="true">←</span></button>
         <div className="map-heading"><div className="map-title-row">
           <h1>{map ? text(map.campaign.title) : t(campaignId === 'path-1' ? 'Primeira campanha' : 'Segunda campanha')}</h1>
-          {(campaignId === 'path-1' || campaignId === 'path-2') && <CampaignStory campaignId={campaignId} />}
+          {map && <CampaignStory campaign={map.campaign} />}
         </div>
           {map && <p>{t('{count} de {total} batalhas vencidas', { count: map.encounters.filter((entry) => entry.completed).length, total: map.encounters.length })}</p>}
         </div>

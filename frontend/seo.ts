@@ -42,9 +42,8 @@ export function seo(): Plugin {
         const tags: HtmlTagDescriptor[] = [
           meta('description', description), meta('robots', 'index, follow, max-image-preview:large'),
           { tag: 'link', attrs: { rel: 'canonical', href: url } },
-          { tag: 'link', attrs: { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon.png' } },
-          { tag: 'link', attrs: { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' } },
-          { tag: 'link', attrs: { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' } },
+          { tag: 'link', attrs: { rel: 'icon', type: 'image/png', href: '/media/images/logo-rave-trail.png' } },
+          { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/media/images/logo-rave-trail.png' } },
           property('og:type', 'website'), property('og:site_name', site.name), property('og:locale', 'pt_BR'),
           property('og:title', title), property('og:description', description), property('og:url', url),
           property('og:image', absolute(site.socialImage)), property('og:image:type', 'image/jpeg'),

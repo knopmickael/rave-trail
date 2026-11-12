@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: { alias: { '@game': fileURLToPath(new URL('../shared/src', import.meta.url)) } },
   plugins: [react()],
   test: {
-    include: ['backend/src/**/*.test.ts', 'frontend/src/**/*.test.tsx', 'tools/**/*.test.ts'],
+    include: ['backend/src/**/*.test.ts', 'frontend/src/**/*.test.tsx', 'cms/src/**/*.test.tsx', 'tools/**/*.test.ts'],
     exclude: ['backend/src/**/*.db.test.ts'],
     environment: 'node',
     restoreMocks: true,

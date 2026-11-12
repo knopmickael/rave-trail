@@ -8,7 +8,7 @@ export default defineConfig({
   root: fileURLToPath(new URL('..', import.meta.url)),
   resolve: { alias: { '@game': fileURLToPath(new URL('../shared/src', import.meta.url)) } },
   test: {
-    include: ['backend/src/**/*.db.test.ts'],
+    include: ['backend/src/**/*.db.test.ts', 'cms/server/**/*.db.test.ts'],
     environment: 'node',
     fileParallelism: false,
   },

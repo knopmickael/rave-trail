@@ -4,6 +4,6 @@
 .language-selector select:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .language-selector p { margin: 0; font-size: 13px; line-height: 1.5; }
 .entry-language { align-self: end; width: min(100%, 240px); padding: 10px 14px; border-radius: 10px; background: #fff9efed; }
-.with-panel > .entry-language { grid-column: 1 / -1; justify-self: end; }
+.with-panel > .entry-language { position: absolute; top: var(--page-block-inset); right: var(--page-inset); z-index: 2; width: min(240px, calc(100vw - 2 * var(--page-inset))); }
 .settings-dialog .language-selector { margin-bottom: 24px; }
 @media (min-width: 1000px) { .title-screen--landing > .entry-language { position: absolute; top: var(--page-block-inset); right: var(--page-inset); } }

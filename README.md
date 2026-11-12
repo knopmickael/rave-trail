@@ -30,7 +30,13 @@ todo-list.md            Solicitações atuais do projeto
 
 Detalhes das fronteiras e da publicação: [docs/architecture.md](docs/architecture.md).
 
+Autoria de personagens, habilidades e campanhas: [CMS local — Content Studio](docs/cms.md). Use `npm run cms:local` (**http://127.0.0.1:5188**, `.env.cms.local`) ou `npm run cms:prod` (**http://127.0.0.1:5189**, `.env.cms.prod`) para escolher o banco editado.
+
+As alterações de conteúdo do `todo-list.md` usam a migração **039**: publicação e história das campanhas sincronizadas com o CMS, ordenação de personagens pela lista, confirmações de edição/gravação/exclusão e desbloqueios somente iniciais, Premium ou por missão. Prepare o banco de cada perfil com `npm run cms:local:db:setup` ou `npm run cms:prod:db:setup`.
+
 SEO, páginas públicas e envio do site aos buscadores: [docs/seo.md](docs/seo.md).
+
+Propostas de implantação: [analytics de audiência e funil](docs/analytics.md) e [qualidade do frontend com Lighthouse e testes de navegação](docs/frontend-quality.md).
 
 `frontend/public/media/` é a única fonte dos arquivos usados pelo jogo. `frontend/dist/media/` é a cópia **gerada** para publicação. Os templates estão em `docs/design/templates/`.
 
@@ -87,7 +93,7 @@ O `.env` permanece na raiz; somente o backend o carrega. A configuração é enc
 
 ### Personagens, equipe e Missões
 
-- O catálogo contém 19 unidades; unidades bloqueadas podem ser consultadas, mas não escaladas.
+- A lista exibe o catálogo completo do banco, incluindo a campanha 02, na ordem definida pelo CMS; unidades bloqueadas podem ser consultadas, mas não escaladas.
 - Três slots de equipe persistentes, com adição, movimento, substituição e remoção.
 - **Missões** mantém cartões iguais em **duas linhas** e colunas horizontais. As setas aparecem apenas quando existe conteúdo na respectiva direção. A página não usa rolagem nativa.
 - Os requisitos completos ficam **dentro de cada cartão**, com rolagem vertical própria quando necessário.
@@ -95,7 +101,7 @@ O `.env` permanece na raiz; somente o backend o carrega. A configuração é enc
 - A API informa `campaignAvailable`; o servidor também impede conceder missões não habilitadas. Somente os adversários dos encontros já vencidos habilitam as missões correspondentes.
 - O progresso de metas usa vitórias oficiais rápidas/Multiplayer, considerando a equipe registrada na partida e o modo correto. Conclusões são automáticas e sem notificações de resgate.
 - A correção de progresso solicitada para uma conta foi aplicada pela migração 019, com marcos por missão. Partidas e progresso das outras missões não foram apagados; o seed não restaura os contadores zerados.
-- As regras de cada unidade estão em `shared/src/content/unlocks.ts`. Premium têm aquisição desabilitada a US$ 9,90.
+- As regras padrão estão em `shared/src/content/unlocks.ts`; regras editadas no CMS são persistidas e avaliadas a partir do banco. Premium têm aquisição desabilitada; o preço padrão é US$ 9,90.
 - **Jung de Grimória II** é uma unidade independente, com o mesmo HP e habilidades do Jung original. Após vencer a batalha 6, passa a integrar o sorteio da Batalha rápida e sua missão é habilitada. Para escalá-lo, vença **25 batalhas rápidas contra Jung II usando Ravi de Berdal base**. O contador é separado do Jung original; as duas versões contam nas metas gerais de Grimorianos.
 - As imagens usam o nome real da unidade: `<nome>-face.png` e `<nome>-body.png`, em minúsculas e sem acentos. Os IDs de unidades permanecem estáveis. Detalhes em [docs/assets/characters.md](docs/assets/characters.md).
 

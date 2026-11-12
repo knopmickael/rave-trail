@@ -258,7 +258,7 @@ it('expõe progresso somente para a sessão autenticada e a Lista de personagens
     await history(other.id, ['road-raider-1-base'], 5);
     const before = await app.inject({ url: `/api/character-unlocks?userId=${other.id}`, headers: { cookie } });
     const beforeCharacters = before.json().unlocks.characters as { id: string; campaignAvailable: boolean; kind: string }[];
-    expect(beforeCharacters).toHaveLength(18);
+    expect(beforeCharacters).toHaveLength(units.filter((unit) => unit.unlock.kind !== 'starter').length);
     expect(beforeCharacters.every((unit) => unit.campaignAvailable === (unit.kind === 'premium'
       || unit.id === KALIS_UNIT_ID || unit.id === RIDAN_UNIT_ID))).toBe(true);
     await complete(userId, 1);
@@ -287,7 +287,7 @@ it('habilita as metas pelos encontros vencidos e mantém os Premium visíveis', 
   await complete(user.id, 0);
   await history(user.id, ['rival-a-base', 'rival-b-base', 'rival-female-base'], 50);
   const initial = await game.getCharacterUnlocks(user.id);
-  expect(initial.characters).toHaveLength(18);
+  expect(initial.characters).toHaveLength(units.filter((unit) => unit.unlock.kind !== 'starter').length);
   expect(initial.characters.every((unit) => unit.campaignAvailable === (unit.kind === 'premium'
     || unit.id === KALIS_UNIT_ID || unit.id === RIDAN_UNIT_ID))).toBe(true);
   await complete(user.id, 1);

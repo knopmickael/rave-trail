@@ -13,5 +13,5 @@ export const assets = {
   battleLoseAudio: '/media/audio/battle-lose.mp3',
   battle: '/media/images/fight-background.png',
   finalBattle: '/media/images/fight-exal-background.png',
-  campaignMap: '/media/images/mapa-campanha-01.png',
+  campaignMap: '/media/campaigns/mapa-campanha-01.png',
 };

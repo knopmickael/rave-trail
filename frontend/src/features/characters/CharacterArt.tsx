@@ -1,7 +1,7 @@
-import type { CharacterId, UnitDefinition } from '@game/content/units';
+import type { UnitDefinition } from '@game/content/units';
 
 type Palette = { skin: string; hair: string; coat: string; accent: string; longHair?: boolean };
-const palettes: Partial<Record<CharacterId, Palette>> = {
+const palettes: Partial<Record<string, Palette>> = {
   'protagonist-main': { skin: '#e8b48d', hair: '#693c2b', coat: '#a45532', accent: '#e7c578' },
   'protagonist-secondary': { skin: '#d8ac8a', hair: '#263b42', coat: '#3d6371', accent: '#b5d2ce' },
   'protagonist-female': { skin: '#bc8769', hair: '#352b36', coat: '#477769', accent: '#e8c978', longHair: true },

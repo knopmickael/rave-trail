@@ -108,7 +108,7 @@ it('cobre todo o catálogo atual, habilidades, campanhas, encontros, prólogos e
     ...Object.values(narrativeCharacters).map((character) => character.name),
     ...units.flatMap((unit) => [unit.name, unit.description, unit.version]),
     ...Object.values(abilities).flatMap((ability) => [ability.name, ability.description]),
-    ...campaigns.flatMap((campaign) => [campaign.title, campaign.description]),
+    ...campaigns.flatMap((campaign) => [campaign.title, ...campaign.description.split(/\n+/)]),
     ...encounters.flatMap((encounter) => [encounter.title, encounter.story]),
     ...introduction, ...SECOND_CAMPAIGN_INTRODUCTION, FINAL_BATTLE_REQUIREMENT, OSIRIS_BATTLE_REQUIREMENT,
   ];
