@@ -69,7 +69,6 @@ export function Studio() {
   }
   function open(item: Draft, target = entity, isExisting = true) {
     if (!canNavigate()) return;
-    if (isExisting && !window.confirm(`Abrir “${title(item)}” para edição?`)) return;
     setEntity(target); setDraft(structuredClone(item)); setExisting(isExisting); setDirty(false); setError(''); setNotice('');
     setTimeout(() => heading.current?.focus(), 0);
   }
@@ -99,7 +98,6 @@ export function Studio() {
     const index = ids.indexOf(id);
     const target = index + direction;
     if (index < 0 || target < 0 || target >= ids.length) return;
-    if (!window.confirm(`Mover “${catalog.characters[index].name}” para a posição ${target + 1} no catálogo do jogo?`)) return;
     [ids[index], ids[target]] = [ids[target], ids[index]];
     setBusy(true); setError(''); setNotice('');
     try {

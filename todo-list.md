@@ -12,7 +12,7 @@
 
 4. [x] Por algum motivo, a imagem de fundo (mapa) de ambas as campanhas aparece como vazia no form, deveria estar aparecendo o caminho /media/images/mapa-campanha-01.png que inclusive está incorreto, afinal deveria estar em /media/campaigns/ e não /media/images. Pode colocar o mapa-campanha-01.png como imagem de fundo de ambas as campanhas atuais (01 e 02).
 
-5. [x] Lembrando que TODAS opções de Salvamento/Exclusão/Edição precisam de Confirmação do usuário.
+5. [x] Operações de escrita precisam de confirmação do usuário, exceto o reposicionamento de entidades nos catálogos. Abrir personagens, campanhas, habilidades ou confrontos não deve exibir prompt de confirmação.
 
 6. [x] Fica complicado de definir a ordem do Personagem no catálogo dentro do formulário do personagem, seria melhor se a disposição dos personagens fosse em lista e eu pudesse fazer um drag and drop deles ou até mesmo um botão que sobe/desce o personagem de posição na lista (o que reflete diretamente na ordem do personagem na Lista de personagens do jogo/site).
 
@@ -32,4 +32,4 @@
 
 - Migração: `backend/migrations/039_cms_content_requirements.sql`.
 - Detalhes de uso e atualização dos bancos: `docs/cms.md`.
-- Ordenação pela lista com botões Subir/Descer; confirmações nativas do navegador nas ações de edição e persistência.
+- Ordenação pela lista com botões Subir/Descer e abertura de registros sem prompt; confirmações nativas do navegador nas demais ações de escrita.

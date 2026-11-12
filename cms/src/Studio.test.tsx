@@ -38,17 +38,17 @@ it.each([
   ['Habilidades', 'Guarda', 'Nome da habilidade', 'abilities'],
   ['Campanhas', 'Pondo o pé na estrada', 'Título da campanha', 'campaigns'],
   ['Confrontos', 'Confronto de teste', 'Título do confronto', 'encounters'],
-] as const)('exige confirmação para editar, salvar, descartar e excluir em %s', async (section, name, label, entity) => {
+] as const)('abre %s sem confirmação e exige confirmação para salvar, descartar e excluir', async (section, name, label, entity) => {
   const user = userEvent.setup(); render(<Studio />);
   await screen.findByRole('region', { name: 'Lista de personagens' });
   await user.click(screen.getByRole('button', { name: new RegExp(`^${section}`) }));
   const library = screen.getByRole('region', { name: `Lista de ${section.toLowerCase()}` });
   vi.mocked(window.confirm).mockReturnValue(false);
   await user.click(within(library).getByRole('button', { name: new RegExp(`^${name}`) }));
-  expect(screen.queryByRole('button', { name: 'Salvar alterações' })).not.toBeInTheDocument();
-  vi.mocked(window.confirm).mockReturnValue(true);
-  await user.click(within(library).getByRole('button', { name: new RegExp(`^${name}`) }));
+  expect(screen.getByRole('button', { name: 'Salvar alterações' })).toBeInTheDocument();
+  expect(window.confirm).not.toHaveBeenCalled();
   await user.type(screen.getByLabelText(label, { exact: true }), ' editado');
+  expect(window.confirm).not.toHaveBeenCalled();
   vi.mocked(request).mockClear(); vi.mocked(window.confirm).mockReturnValue(false);
   await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
   expect(request).not.toHaveBeenCalled();
@@ -65,18 +65,22 @@ it.each([
   expect(request).toHaveBeenCalledWith(expect.stringContaining(`/api/${entity}/`), 'DELETE');
 });
 
-it('confirma a reordenação pela lista e mantém as posições globais durante a pesquisa', async () => {
+it('reordena pela lista sem confirmação e mantém as posições globais durante a pesquisa', async () => {
   const user = userEvent.setup(); render(<Studio />);
   const down = await screen.findByRole('button', { name: 'Descer Ravi de Berdal' });
   expect(screen.getByRole('button', { name: 'Subir Ravi de Berdal' })).toBeDisabled();
   vi.mocked(request).mockClear(); vi.mocked(window.confirm).mockReturnValue(false);
-  await user.click(down); expect(request).not.toHaveBeenCalled();
-  vi.mocked(window.confirm).mockReturnValue(true);
   await user.click(down); await screen.findByText('Ordem dos personagens atualizada no jogo.');
+  expect(window.confirm).not.toHaveBeenCalled();
   expect(request).toHaveBeenCalledWith('/api/characters/order', 'PUT', { ids: [units[1].id, units[0].id] });
   await user.type(screen.getByRole('searchbox', { name: 'Buscar personagens' }), 'Ravi');
   expect(screen.getByRole('button', { name: 'Subir Ravi de Berdal' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'Descer Ravi de Berdal' })).toBeDisabled();
+  await user.click(screen.getByRole('button', { name: 'Subir Ravi de Berdal' }));
+  await screen.findByText('Ordem dos personagens atualizada no jogo.');
+  expect(request).toHaveBeenLastCalledWith('/api/catalog');
+  expect(request).toHaveBeenCalledWith('/api/characters/order', 'PUT', { ids: [units[0].id, units[1].id] });
+  expect(window.confirm).not.toHaveBeenCalled();
 });
 
 it('pesquisa habilidades e apresenta imagem, custo, alvo e efeitos; oferece somente os desbloqueios solicitados', async () => {

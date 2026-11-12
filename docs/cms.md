@@ -70,7 +70,7 @@ O indicador de conexão mostra o rótulo configurado, a disponibilidade do banco
 ### Personagens
 
 - Criar, consultar, editar e excluir unidades, com ID estável, personagem narrativo, versão, nome, descrição e HP.
-- A lista de personagens tem posições globais e botões **Subir/Descer**, com confirmação. A ordem é salva atomicamente e aparece na Lista de personagens do jogo; o seed preserva a ordenação. Novos personagens entram no fim da lista.
+- A lista de personagens tem posições globais e botões **Subir/Descer**, sem confirmação. A ordem é salva atomicamente e aparece na Lista de personagens do jogo; o seed preserva a ordenação. Novos personagens entram no fim da lista.
 - Rosto e corpo por upload ou caminho/URL. As quatro habilidades devem existir e ser distintas, mantendo a ordem de slots do jogo. Cada slot oferece pesquisa por nome/ID, imagem, descrição, custo, alvo e dados dos efeitos.
 - Somente três formas de desbloqueio: **Disponível desde o início**, **Premium** e **Missão com requisitos**. A descrição interna do desbloqueio é gerada automaticamente.
 - Missões com múltiplas metas: finalizar um confronto de uma campanha; vencer partidas rápidas/Multiplayer; enfrentar adversários específicos; usar personagens específicos na equipe. Nas listas de adversários/equipe, qualquer um dos selecionados satisfaz a condição.
@@ -121,7 +121,8 @@ As batalhas já iniciadas conservam seus snapshots de habilidades/unidades. Alte
 
 ## Persistência e exclusão
 
-- Abrir um registro para edição, salvar/criar, excluir, descartar alterações, subir/descer personagens, enviar imagens, remover requisitos/efeitos e aplicar propostas de IA exigem confirmação. Cancelar mantém o conteúdo e não dispara a gravação.
+- Abrir personagens, campanhas, habilidades e confrontos não exige confirmação. Reposicionar entidades no catálogo pelos botões **Subir/Descer** também não exibe prompt.
+- Salvar/criar, excluir, descartar alterações, enviar imagens, remover requisitos/efeitos e aplicar propostas de IA exigem confirmação. Cancelar mantém o conteúdo e não dispara a gravação.
 - Não existe opção de conteúdo provisório em nenhuma entidade ou contrato do jogo/CMS. Colunas históricas inertes são preservadas apenas para compatibilidade com migrações antigas.
 - O seed consulta `cms_content_overrides` e preserva conteúdo editado pelo CMS, relacionamentos e registros excluídos. Uma exclusão não é revertida pelo próximo seed.
 - IDs de registros existentes não são alterados pelo formulário.
