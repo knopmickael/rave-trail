@@ -38,6 +38,8 @@ SEO, páginas públicas e envio do site aos buscadores: [docs/seo.md](docs/seo.m
 
 Propostas de implantação: [analytics de audiência e funil](docs/analytics.md) e [qualidade do frontend com Lighthouse e testes de navegação](docs/frontend-quality.md).
 
+Planejamento do multiplayer: [regras e arquitetura com WebSocket](docs/multiplayer.md) e [etapas de implementação e critérios de aceite](docs/multiplayer-tasks.md).
+
 `frontend/public/media/` é a única fonte dos arquivos usados pelo jogo. `frontend/dist/media/` é a cópia **gerada** para publicação. Os templates estão em `docs/design/templates/`.
 
 ## Executar localmente
