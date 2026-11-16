@@ -15,6 +15,10 @@ RUN npm ci
 
 # Copia o restante do codigo e gera os dois builds.
 COPY . .
+ARG VITE_ANALYTICS_ENABLED=false
+ARG VITE_GA_MEASUREMENT_ID=G-B68K6N7WP1
+ENV VITE_ANALYTICS_ENABLED=$VITE_ANALYTICS_ENABLED
+ENV VITE_GA_MEASUREMENT_ID=$VITE_GA_MEASUREMENT_ID
 RUN npm run build
 
 # Remove devDependencies, deixando apenas o node_modules de producao

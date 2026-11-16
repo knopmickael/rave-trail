@@ -19,13 +19,15 @@ import { DesktopAccess } from './components/DesktopAccess';
 import { TitleScreen } from './components/TitleScreen';
 import { version } from '../../package.json';
 import { LanguageProvider, useI18n } from './i18n/LanguageProvider';
+import { AnalyticsConsent } from './analytics/AnalyticsConsent';
+import { useAnalyticsScreen } from './analytics/useAnalyticsScreen';
 import { LanguageSelector } from './i18n/LanguageSelector';
 
 const battleScreenImport = () => import('./features/battle/BattleScreen');
 const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default: module.BattleScreen })));
 
 export function App() {
-  return <LanguageProvider><DesktopAccess><GameApp /></DesktopAccess><AppVersion /></LanguageProvider>;
+  return <LanguageProvider><DesktopAccess><GameApp /></DesktopAccess><AppVersion /><AnalyticsConsent /></LanguageProvider>;
 }
 
 function AppVersion() {
@@ -36,6 +38,7 @@ function AppVersion() {
 function GameApp() {
   const { t, text } = useI18n();
   const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
+  useAnalyticsScreen(screen);
   const [campaignId, setCampaignId] = useState('path-1');
   const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map' | 'quick-battle'>('menu');
   const [battle, setBattle] = useState<BattleRecord | null>(null);

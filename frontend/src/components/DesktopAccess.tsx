@@ -5,6 +5,7 @@ import { IndieRadarBadge } from './IndieRadarBadge';
 import { useI18n } from '../i18n/LanguageProvider';
 import { LanguageSelector } from '../i18n/LanguageSelector';
 import './desktop-access.css';
+import { useAnalyticsScreen } from '../analytics/useAnalyticsScreen';
 
 const noticePath = '/acesse-pelo-computador';
 const isNarrow = () => window.innerWidth < 720;
@@ -16,6 +17,7 @@ const subscribe = (update: () => void) => {
 export function DesktopAccess({ children }: { children: ReactNode }) {
   const { t, text } = useI18n();
   const blocked = useSyncExternalStore(subscribe, isNarrow);
+  useAnalyticsScreen(blocked ? 'unsupported-viewport' : null);
   const returnUrl = useRef(window.location.pathname === noticePath ? '/'
     : `${window.location.pathname}${window.location.search}${window.location.hash}`);
 

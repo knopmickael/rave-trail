@@ -1,14 +1,17 @@
 import { LanguageProvider, useI18n } from '../i18n/LanguageProvider';
 import { LanguageSelector } from '../i18n/LanguageSelector';
 import { assets } from '../assets';
+import { AnalyticsConsent } from '../analytics/AnalyticsConsent';
+import { useAnalyticsScreen } from '../analytics/useAnalyticsScreen';
 
 export const ABOUT_TITLE = 'Sobre Rave Trail | Conheça o RPG e saiba como jogar';
 
 export function AboutApp() {
-  return <LanguageProvider pageTitle={ABOUT_TITLE} deferDetection><AboutPage /></LanguageProvider>;
+  return <LanguageProvider pageTitle={ABOUT_TITLE} deferDetection><AboutPage /><AnalyticsConsent /></LanguageProvider>;
 }
 
 export function AboutPage() {
+  useAnalyticsScreen('about');
   const { t } = useI18n();
   return <>
     <header className="public-header">

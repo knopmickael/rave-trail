@@ -1,6 +1,6 @@
 # Analytics: proposta mínima de implantação
 
-**Status:** proposta; a instrumentação e os serviços descritos ainda precisam ser implantados.
+**Status:** configuração, consentimento, carregamento condicionado do GA4 e visualizações manuais de tela implementados. Coleta desabilitada por padrão no build; eventos de ações, relatórios e validação na propriedade GA4 ainda pendentes.
 
 **Escopo escolhido:** audiência e funil agregados, sem acompanhamento por conta.
 
@@ -28,7 +28,7 @@ Essas métricas descrevem a parcela observável dos acessos. Consentimento, bloq
 - `frontend/src/components/DesktopAccess.tsx` impede acesso ao jogo em larguras inferiores a 720 px e altera a URL para `/acesse-pelo-computador`.
 - `/sobre/` possui uma entrada HTML própria e funciona sem carregar a SPA; ver [SEO](seo.md).
 - O resultado oficial das batalhas é mantido pelo servidor. A tela consulta atualizações da batalha por polling, aproximadamente a cada segundo enquanto ativa.
-- Não foi identificada integração atual com GA4 ou CloudWatch RUM no código analisado.
+- A integração GA4 está em `frontend/src/analytics/`, condicionada ao build e à aprovação do visitante. CloudWatch RUM não está integrado.
 
 Instalar apenas uma tag de analytics não basta para acompanhar a jornada entre as telas internas.
 
@@ -101,6 +101,29 @@ Registrar como dimensões personalizadas os parâmetros necessários aos relató
 Padronizar UTMs em todas as divulgações. Exemplo ilustrativo: `?utm_source=instagram&utm_medium=social&utm_campaign=lancamento`.
 
 ## 6. Requisitos de implantação
+
+### Primeiro passo realizado: configuração do frontend
+
+- ID de medição informado para o projeto: `G-B68K6N7WP1`.
+- Variáveis públicas documentadas em `frontend/.env.example`, lidas por `frontend/src/analytics/config.ts`.
+- `VITE_ANALYTICS_ENABLED=false` mantém a configuração desabilitada. O módulo também desabilita analytics no servidor de desenvolvimento do Vite e exige um ID válido.
+- O Vite usa `frontend/` como raiz: para configuração local, copiar `frontend/.env.example` para `frontend/.env.local`. As variáveis são incorporadas durante o build; o `.env` da raiz não é carregado automaticamente pelo frontend.
+- A interface de consentimento está disponível no jogo (inclusive na tela de largura incompatível) e em `/sobre/`, em português e inglês. Permite clicar em “Aprovar”, recusar e rever a escolha pelo botão “Preferências de analytics”.
+- A preferência é salva no `localStorage` com a chave versionada `rave-trail-analytics-consent-v1`, compartilhada pelas páginas na mesma origem e sincronizada entre abas. Sem acesso ao armazenamento, a escolha vale apenas na página atual, com aviso ao visitante. Valores ausentes ou inválidos exigem nova escolha.
+- O script Google só é solicitado com configuração habilitada e preferência `accepted`. Uma aprovação salva permite retomar a coleta nas próximas visitas, sem novo clique. Antes da aprovação, as mudanças de tela apenas atualizam a referência local da tela atual: não são enviadas ou reconstruídas depois.
+- Após carregar o script, o cliente configura o GA4 sem visualização automática e envia um `page_view` da tela atual. As mudanças seguintes geram visualizações manuais deduplicadas; o jogo, `/sobre/` e o bloqueio por largura usam esse mesmo cliente. Não há instrumentação de cadastro, login ou ações de batalha nesta etapa.
+- Ao recusar ou remover a aprovação, o cliente ativa `ga-disable`, descarta comandos pendentes e remove cookies `_ga`/`_ga_*` acessíveis à aplicação no caminho raiz e domínios compatíveis. Um download já iniciado pode terminar, mas sua conclusão não configura nem envia eventos se a aprovação tiver sido retirada. Dados já enviados não são apagados por esse controle.
+- A configuração desabilita Google Signals e personalização de anúncios, com consentimentos publicitários negados. Manter a medição otimizada desativada no fluxo web para evitar eventos automáticos fora deste escopo.
+- URLs analíticas são estáveis, sem query strings ou fragmentos; a origem externa é reduzida ao domínio de origem. A preservação de UTMs de campanha ainda está pendente, portanto os relatórios atuais não cobrem a atribuição completa prevista nesta proposta.
+
+### Habilitação e publicação
+
+1. Manter a coleta desabilitada até concluir o aviso de privacidade e as definições aplicáveis ao público do jogo, configurar retenção e revisar o fluxo web GA4.
+2. Em **Settings → Secrets and variables → Actions → Variables**, definir `VITE_ANALYTICS_ENABLED=true`. O workflow usa `VITE_GA_MEASUREMENT_ID` quando fornecido, com padrão `G-B68K6N7WP1`. São configurações públicas; o workflow também aceita os mesmos nomes em **Secrets**, como alternativa de cadastro, dando prioridade a **Variables**. Mesmo cadastradas como secrets, essas configurações são incorporadas ao bundle público.
+3. O workflow passa as variáveis como argumentos do build Docker; a coleta ainda depende da aprovação no navegador. Publicar uma nova imagem para aplicar alterações.
+4. Para build direto, fornecer as variáveis de ambiente ao comando `npm run build:web`, ou usar `frontend/.env.local`. Para Docker manual, fornecer `--build-arg VITE_ANALYTICS_ENABLED=true` e, se necessário, `--build-arg VITE_GA_MEASUREMENT_ID=G-B68K6N7WP1`.
+5. Para desabilitar globalmente, definir `VITE_ANALYTICS_ENABLED=false` e publicar novamente. Alterar apenas o ambiente do container em execução não atualiza o bundle.
+6. Validar na propriedade de teste e no navegador: nenhuma requisição ao Google antes da aprovação; uma visualização por transição após aprovação; interrupção após recusa; preferência compartilhada com `/sobre/`. Typecheck, build e testes locais não substituem essa conferência de rede e recebimento no GA4.
 
 ### Conta e configuração externa
 

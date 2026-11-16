@@ -73,6 +73,9 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            VITE_ANALYTICS_ENABLED=${{ vars.VITE_ANALYTICS_ENABLED || secrets.VITE_ANALYTICS_ENABLED || 'false' }}
+            VITE_GA_MEASUREMENT_ID=${{ vars.VITE_GA_MEASUREMENT_ID || secrets.VITE_GA_MEASUREMENT_ID || 'G-B68K6N7WP1' }}
           tags: |
             ${{ steps.image.outputs.uri }}
             ${{ steps.ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest

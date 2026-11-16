@@ -5,6 +5,7 @@ import { SkyBackground } from './components/SkyBackground';
 import './styles/base.css';
 import './styles/app.css';
 import './i18n/language.css';
+import './analytics/consent.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
