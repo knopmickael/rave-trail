@@ -77,7 +77,7 @@ it('baixa os dados no boot e navega repetidamente sem GETs extras nem loading in
     expect(screen.getByRole('button', { name: 'Batalha 1: Saqueadores da estrada' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Voltar às campanhas' }));
     await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
-    for (const name of ['Lista de personagens', 'Loja', 'Tabela de missões', 'Batalha rápida']) {
+    for (const name of ['Lista de personagens', 'Loja', 'Quadro de missões', 'Batalha rápida']) {
       await user.click(screen.getByRole('button', { name }));
       expect(screen.queryByText(/Carregando/)).not.toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));

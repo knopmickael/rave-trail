@@ -34,7 +34,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
           <path d="M14 6 4 16l10 10M5 16h23" />
         </svg>
       </button>
-      <h1>{t('Tabela de missões')}</h1>
+      <h1>{t('Quadro de missões')}</h1>
     </header>
     {error && <section className="unlocks-state"><p className="feedback" role="alert">{text(error)}</p>
       <button className="fantasy-button compact" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button>

@@ -66,7 +66,7 @@ export function QuickBattle({ onBack, onOpenCharacters, onSessionExpired, onBatt
     <div className="quick-battle-content">
       <section className="quick-battle-panel" aria-labelledby="quick-battle-intro" aria-busy={busy}>
         <h2 id="quick-battle-intro">{t('Prepare-se para o confronto')}</h2>
-        <p>{t('Enfrente uma equipe sorteada entre os três protagonistas, disponíveis desde o início, os inimigos que você já derrotou na campanha e os capitães desbloqueados na Tabela de missões. Cada Batalha rápida é um novo confronto, sem mapa e sem avançar a campanha.')}</p>
+        <p>{t('Enfrente uma equipe sorteada entre os três protagonistas, disponíveis desde o início, os inimigos que você já derrotou na campanha e os capitães desbloqueados no Quadro de missões. Cada Batalha rápida é um novo confronto, sem mapa e sem avançar a campanha.')}</p>
         {error ? <>
           <p className="feedback" role="alert">{text(error)}</p>
           <button className="text-button" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button>

@@ -15,7 +15,7 @@ export class PostgresAuthRepository implements AuthRepository {
       await client.query('BEGIN');
       await client.query('INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)', [user.id, email, passwordHash]);
       const { selectedTeam: _team, ...progress } = createInitialProgress();
-      const starters = await client.query<{ id: string }>("SELECT id FROM units WHERE unlock_condition->>'kind'='starter' ORDER BY roster_order NULLS LAST, id");
+      const starters = await client.query<{ id: string }>("SELECT id FROM units WHERE enabled AND unlock_condition->>'kind'='starter' ORDER BY roster_order NULLS LAST, id");
       progress.unlockedUnitIds = starters.rows.map((unit) => unit.id);
       await client.query('INSERT INTO player_progress (user_id, data) VALUES ($1, $2)', [user.id, JSON.stringify(progress)]);
       await client.query('INSERT INTO player_team_slots (user_id, slot_index) SELECT $1, generate_series(0, 2)', [user.id]);

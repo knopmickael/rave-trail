@@ -6,7 +6,7 @@ import { GameError, type GameRepository } from '../game/repository.js';
 import { readCharacterUnlocks } from './character-unlocks.js';
 
 export async function readTeam(client: Pool | PoolClient, userId: string): Promise<TeamSlots> {
-  const result = await client.query<{ slot_index: number; unit_id: string | null }>('SELECT slot_index, unit_id FROM player_team_slots WHERE user_id = $1 ORDER BY slot_index', [userId]);
+  const result = await client.query<{ slot_index: number; unit_id: string | null }>('SELECT t.slot_index, u.id AS unit_id FROM player_team_slots t LEFT JOIN units u ON u.id=t.unit_id AND u.enabled WHERE t.user_id = $1 ORDER BY t.slot_index', [userId]);
   const team: TeamSlots = [null, null, null];
   for (const row of result.rows) team[row.slot_index] = row.unit_id;
   return team;
@@ -39,14 +39,14 @@ export class PostgresGameRepository implements GameRepository {
   }
 
   async getCatalog(client: Pool | PoolClient = this.pool): Promise<GameCatalog> {
-    const characters = await client.query<GameCatalog['characters'][number]>('SELECT id, name FROM narrative_characters ORDER BY id');
+    const characters = await client.query<GameCatalog['characters'][number]>('SELECT id, name FROM narrative_characters n WHERE EXISTS (SELECT 1 FROM units u WHERE u.character_id=n.id AND u.enabled) ORDER BY id');
     const abilities = await client.query<GameCatalog['abilities'][number]>('SELECT id, name, description, energy_cost AS "energyCost", target, effects, icon_path AS icon FROM abilities ORDER BY id');
     const units = await client.query<UnitDefinition>(`SELECT u.id, u.character_id AS "characterId", u.name, u.version, u.description,
         u.max_hp AS "maxHp", u.portrait_path AS portrait, u.illustration_path AS illustration,
         u.unlock_condition AS unlock, u.roster_order AS "rosterOrder",
         array_agg(ua.ability_id ORDER BY ua.slot_index) AS "abilityIds"
-        FROM units u JOIN unit_abilities ua ON ua.unit_id = u.id GROUP BY u.id ORDER BY u.roster_order NULLS LAST, u.id`);
-    if (!units.rowCount || units.rows.some((unit) => unit.abilityIds.length !== 4)) {
+        FROM units u JOIN unit_abilities ua ON ua.unit_id = u.id WHERE u.enabled GROUP BY u.id ORDER BY u.roster_order NULLS LAST, u.id`);
+    if (units.rows.some((unit) => unit.abilityIds.length !== 4)) {
       throw new GameError(503, 'Catálogo indisponível. Aplique as migrações e o seed do banco.');
     }
     return { characters: characters.rows, abilities: abilities.rows, units: units.rows };
@@ -60,7 +60,7 @@ export class PostgresGameRepository implements GameRepository {
       const progress = await client.query<{ data: { unlockedUnitIds: string[] } }>('SELECT data FROM player_progress WHERE user_id = $1 FOR UPDATE', [userId]);
       if (!progress.rows[0]) throw new GameError(404, 'Progresso não encontrado.');
       if (unitId !== null) {
-        const unit = await client.query('SELECT 1 FROM units WHERE id = $1', [unitId]);
+        const unit = await client.query('SELECT 1 FROM units WHERE id = $1 AND enabled', [unitId]);
         if (!unit.rowCount) throw new GameError(400, 'Personagem inválido para a equipe.');
         if (!progress.rows[0].data.unlockedUnitIds.includes(unitId)) throw new GameError(403, 'Este personagem ainda está bloqueado.');
         // Mover uma unidade já escalada, sem duplicá-la em dois slots.

@@ -66,15 +66,15 @@ it('disponibiliza protagonistas desde o início e acrescenta somente inimigos j�
   expect(expanded.opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(true);
 });
 
-it('lista e sorteia adversários da campanha 2 após vencer seus confrontos', async () => {
+it('omite adversários desabilitados da campanha 2 mesmo após vencer seus confrontos', async () => {
   const user = await readyPlayer(encounters.length);
   const second = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
   const opponents = (await battles.getQuickBattle(user.id)).opponents;
-  expect(opponents.filter((unit) => second.has(unit.id))).toHaveLength(SECOND_CAMPAIGN_UNIT_IDS.length - 1);
+  expect(opponents.filter((unit) => second.has(unit.id))).toHaveLength(0);
   expect(opponents.some((unit) => unit.id === 'maga-artemis')).toBe(false);
   expect(opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(true);
   const quick = await new PostgresBattleRepository(pool, (maximum) => maximum - 1).startQuickBattle(user.id);
-  expect(quick.state.teams.enemy.units.every((unit) => second.has(unit.unitId))).toBe(true);
+  expect(quick.state.teams.enemy.units.every((unit) => !second.has(unit.unitId))).toBe(true);
 });
 
 it('libera capitães como adversários somente após as três vitórias rápidas exigidas', async () => {

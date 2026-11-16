@@ -70,6 +70,8 @@ O indicador de conexão mostra o rótulo configurado, a disponibilidade do banco
 ### Personagens
 
 - Criar, consultar, editar e excluir unidades, com ID estável, personagem narrativo, versão, nome, descrição e HP.
+- O controle **Personagem habilitado** permite desabilitar qualquer unidade. Ela deixa de aparecer na Lista de personagens e no Quadro de missões, não pode ser escalada nem sorteada na Batalha rápida e é removida das equipes dos jogadores e dos confrontos cadastrados. O progresso já conquistado e o histórico são preservados. Reabilitar não a recoloca automaticamente nas equipes ou confrontos.
+- Confrontos que ficam sem inimigos podem ser editados e salvos; uma nova batalha exige de um a três inimigos habilitados. A migração `040_character_availability.sql` desabilita os 17 personagens próprios da campanha 02; novos bancos também os inicializam desabilitados.
 - A lista de personagens tem posições globais e botões **Subir/Descer**, sem confirmação. A ordem é salva atomicamente e aparece na Lista de personagens do jogo; o seed preserva a ordenação. Novos personagens entram no fim da lista.
 - Rosto e corpo por upload ou caminho/URL. As quatro habilidades devem existir e ser distintas, mantendo a ordem de slots do jogo. Cada slot oferece pesquisa por nome/ID, imagem, descrição, custo, alvo e dados dos efeitos.
 - Somente três formas de desbloqueio: **Disponível desde o início**, **Premium** e **Missão com requisitos**. A descrição interna do desbloqueio é gerada automaticamente.

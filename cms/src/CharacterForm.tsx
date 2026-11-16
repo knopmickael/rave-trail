@@ -21,6 +21,8 @@ export function CharacterForm({ value: c, onChange, catalog }: { value: Characte
   }
   return <>
     <section className="form-section"><div className="section-heading"><span>01</span><h3>Identidade do personagem</h3></div>
+      <label className="check"><input type="checkbox" checked={c.enabled} onChange={(e) => update({ enabled: e.target.checked })} />Personagem habilitado</label>
+      <p className="muted">Ao desabilitar, o personagem sai da Lista de personagens, do Quadro de missões, das equipes dos jogadores e de todos os confrontos. Reabilitar não o adiciona novamente às equipes ou aos confrontos.</p>
       <div className="form-grid"><Text label="Nome" value={c.name} onChange={(name) => update({ name })} /><Text label="Versão" value={c.version} onChange={(version) => update({ version })} />
         <Text label="ID do personagem narrativo" value={c.characterId} onChange={(characterId) => update({ characterId })} hint="Versões da mesma pessoa podem compartilhar este ID." />
         <NumberField label="HP máximo" value={c.maxHp} min={1} max={10000} onChange={(maxHp) => update({ maxHp })} /></div>

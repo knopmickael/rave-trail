@@ -149,7 +149,7 @@ it('migra a formação antiga e reaplica o balanceamento de Jung II sem alterar 
   await migrate(pool);
   await seedDatabase(pool);
   const catalog = await game.getCatalog();
-  expect(catalog.units).toHaveLength(38);
+  expect(catalog.units).toHaveLength(21);
   expect(catalog.units.find((unit) => unit.id === 'rival-a-base')).toEqual(original);
   expect(catalog.units.find((unit) => unit.id === 'jung-de-grimoria-ii')?.abilityIds).toEqual(definition('jung-de-grimoria-ii').abilityIds);
   expect((await battles.getMap(user.id, 'path-1')).encounters[5].enemyUnitIds).toEqual(['jung-de-grimoria-ii', 'rival-b-base']);

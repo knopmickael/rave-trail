@@ -7,7 +7,7 @@ export interface Character {
   maxHp: number; portrait: string; illustration: string; abilityIds: string[];
   unlock: { kind: 'starter' | 'premium' | 'battle-wins'; description: string };
   unlockRule: BattleUnlockRule | null; priceUsd: number | null;
-  rosterOrder: number | null;
+  rosterOrder: number | null; enabled: boolean;
 }
 export interface Campaign {
   id: string; chapterNumber: number; title: string; description: string; background: string;

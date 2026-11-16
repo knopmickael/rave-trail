@@ -55,8 +55,8 @@ it('abre as missões e acessa um personagem liberado pelo menu sem exibir notifi
   const user = userEvent.setup();
   render(<App />);
   await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
-  await user.click(screen.getByRole('button', { name: 'Tabela de missões' }));
-  expect(screen.getByRole('heading', { name: 'Tabela de missões' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Quadro de missões' }));
+  expect(screen.getByRole('heading', { name: 'Quadro de missões' })).toBeInTheDocument();
   const card = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
   expect(within(card).getByText('Disponível')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Abrir Lista de personagens' })).not.toBeInTheDocument();
@@ -66,8 +66,8 @@ it('abre as missões e acessa um personagem liberado pelo menu sem exibir notifi
   expect(screen.getByRole('button', { name: 'Adicionar à equipe' })).toBeEnabled();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
-  await user.click(screen.getByRole('button', { name: 'Tabela de missões' }));
-  expect(screen.getByRole('heading', { name: 'Tabela de missões' })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Quadro de missões' }));
+  expect(screen.getByRole('heading', { name: 'Quadro de missões' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
   expect(screen.getByRole('heading', { name: 'Menu principal' })).toBeInTheDocument();
 });
@@ -139,7 +139,7 @@ it('exibe o logo e nomes dos itens sem textos auxiliares e abre o perfil pelo ca
   expect(screen.getByRole('img', { name: 'Rave Trail' })).toBeInTheDocument();
   const menu = screen.getByRole('navigation', { name: 'Opções do menu principal' });
   expect(within(menu).getAllByRole('button').map((button) => button.textContent)).toEqual([
-    'Campanha', 'Batalha rápida', 'Lista de personagens', 'Tabela de missões', 'Loja', 'Multiplayer', 'Configurações',
+    'Campanha', 'Batalha rápida', 'Lista de personagens', 'Quadro de missões', 'Loja', 'Multiplayer', 'Configurações',
   ]);
   expect(within(menu).queryByText('Em breve')).not.toBeInTheDocument();
   expect(within(menu).queryByText('Em desenvolvimento')).not.toBeInTheDocument();

@@ -3,6 +3,7 @@ import { abilities } from '@game/content/abilities.js';
 import { narrativeCharacters, STARTER_UNIT_IDS, units } from '@game/content/units.js';
 import { campaigns } from '@game/content/campaigns.js';
 import { encounters } from '@game/content/encounters.js';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import { synchronizeCharacterUnlocks } from './character-unlocks.js';
 import type { PlayerProgress } from '@game/contracts.js';
 
@@ -34,12 +35,12 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
   await client.query('UPDATE units SET roster_order = NULL WHERE id = ANY($1::text[])', [units.filter((unit) => !managed.has(`characters:${unit.id}`)).map((unit) => unit.id)]);
   for (const unit of units) {
     if (managed.has(`characters:${unit.id}`)) continue;
-    await client.query(`INSERT INTO units (id, character_id, name, version, description, max_hp, portrait_path, illustration_path, unlock_condition, roster_order)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT (id) DO UPDATE SET
+    await client.query(`INSERT INTO units (id, character_id, name, version, description, max_hp, portrait_path, illustration_path, unlock_condition, roster_order, enabled)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name, version = EXCLUDED.version, description = EXCLUDED.description,
       portrait_path = EXCLUDED.portrait_path, illustration_path = EXCLUDED.illustration_path, roster_order = EXCLUDED.roster_order,
       unlock_condition = EXCLUDED.unlock_condition`,
-    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), unit.rosterOrder]);
+    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), unit.rosterOrder, !SECOND_CAMPAIGN_UNIT_IDS.includes(unit.id as typeof SECOND_CAMPAIGN_UNIT_IDS[number])]);
     for (const [slot, abilityId] of unit.abilityIds.entries()) {
       await client.query('INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING', [unit.id, slot, abilityId]);
     }
@@ -52,7 +53,7 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
     [encounter.id, encounter.campaignId, encounter.position, encounter.title, encounter.story, encounter.mapX, encounter.mapY]);
     await client.query('DELETE FROM encounter_enemies WHERE encounter_id = $1', [encounter.id]);
     for (const [slot, unitId] of encounter.enemyUnitIds.entries()) {
-      await client.query('INSERT INTO encounter_enemies (encounter_id, slot_index, unit_id) VALUES ($1,$2,$3)', [encounter.id, slot, unitId]);
+      await client.query('INSERT INTO encounter_enemies (encounter_id, slot_index, unit_id) SELECT $1,$2,id FROM units WHERE id=$3 AND enabled', [encounter.id, slot, unitId]);
     }
   }
 }

@@ -52,7 +52,7 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
         <button className="menu-option" onClick={onOpenCampaigns}>{t('Campanha')}</button>
         <button className="menu-option" onClick={onOpenQuickBattle}>{t('Batalha rápida')}</button>
         <button className="menu-option" onClick={onOpenCharacters}>{t('Lista de personagens')}</button>
-        <button className="menu-option" onClick={onOpenUnlocks}>{t('Tabela de missões')}</button>
+        <button className="menu-option" onClick={onOpenUnlocks}>{t('Quadro de missões')}</button>
         <button className="menu-option" onClick={onOpenStore}>{t('Loja')}</button>
         <button className="menu-option" disabled>{t('Multiplayer')}</button>
         <button className="menu-option" aria-haspopup="dialog" aria-controls="audio-settings-dialog"

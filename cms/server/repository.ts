@@ -17,7 +17,7 @@ export class CmsRepository {
       await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
       const characters = await client.query<Character>(`SELECT u.id, character_id AS "characterId", name, version, description,
         max_hp AS "maxHp", portrait_path AS portrait, illustration_path AS illustration, unlock_condition AS unlock,
-        unlock_rule AS "unlockRule", (unlock_condition->>'priceUsd')::float AS "priceUsd", roster_order AS "rosterOrder",
+        unlock_rule AS "unlockRule", (unlock_condition->>'priceUsd')::float AS "priceUsd", roster_order AS "rosterOrder", enabled,
         ARRAY(SELECT ability_id FROM unit_abilities WHERE unit_id = u.id ORDER BY slot_index) AS "abilityIds" FROM units u ORDER BY roster_order NULLS LAST, u.id`);
       for (const unit of characters.rows) {
         unit.unlockRule = unit.unlock.kind === 'battle-wins' ? unit.unlockRule ?? battleUnlockRules.find((rule) => rule.unitId === unit.id) ?? null : null;
@@ -78,6 +78,8 @@ export class CmsRepository {
       }
       if (entity === 'encounters') {
         const e = value as Encounter;
+        const enemies = await client.query('SELECT id FROM units WHERE id=ANY($1::text[]) AND enabled', [e.enemyUnitIds]);
+        if (enemies.rowCount !== new Set(e.enemyUnitIds).size) throw new CmsError(400, 'Escolha somente personagens habilitados para o confronto.');
         // Inserir/mover desloca as demais batalhas atomicamente; IDs/progresso permanecem estáveis.
         const previous = await client.query<{ campaign_id: string; position: number }>('SELECT campaign_id, position FROM encounters WHERE id=$1', [e.id]);
         if (previous.rows[0] && previous.rows[0].campaign_id !== e.campaignId) throw new CmsError(400, 'A campanha de um confronto existente não pode ser alterada.');
@@ -118,10 +120,16 @@ export class CmsRepository {
     const description = c.unlock.kind === 'starter' ? 'Disponível desde o início da jornada.' : c.unlock.kind === 'premium'
       ? `Personagem premium: US$ ${c.priceUsd?.toFixed(2).replace('.', ',')}.` : c.unlockRule!.requirements.map((r) => r.description).join(' ');
     const unlock = { kind: c.unlock.kind, description, ...(c.unlock.kind === 'premium' ? { priceUsd: c.priceUsd } : {}) };
-    await client.query(`INSERT INTO units (id,character_id,name,version,description,max_hp,portrait_path,illustration_path,unlock_condition,unlock_rule,roster_order)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,(SELECT COALESCE(MAX(roster_order),-1)+1 FROM units)) ON CONFLICT (id) DO UPDATE SET character_id=$2,name=$3,version=$4,description=$5,max_hp=$6,portrait_path=$7,illustration_path=$8,unlock_condition=$9,unlock_rule=$10`,
+    await client.query(`INSERT INTO units (id,character_id,name,version,description,max_hp,portrait_path,illustration_path,unlock_condition,unlock_rule,enabled,roster_order)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,(SELECT COALESCE(MAX(roster_order),-1)+1 FROM units)) ON CONFLICT (id) DO UPDATE SET character_id=$2,name=$3,version=$4,description=$5,max_hp=$6,portrait_path=$7,illustration_path=$8,unlock_condition=$9,unlock_rule=$10,enabled=$11`,
     [c.id, c.characterId, c.name, c.version, c.description, c.maxHp, c.portrait, c.illustration, JSON.stringify(unlock),
-      c.unlock.kind === 'battle-wins' ? JSON.stringify({ ...c.unlockRule, description }) : null]);
+      c.unlock.kind === 'battle-wins' ? JSON.stringify({ ...c.unlockRule, description }) : null, c.enabled]);
+    if (!c.enabled) {
+      const removed = await client.query<{ encounter_id: string }>('DELETE FROM encounter_enemies WHERE unit_id=$1 RETURNING encounter_id', [c.id]);
+      for (const encounterId of new Set(removed.rows.map((row) => row.encounter_id))) await this.mark(client, 'encounters', encounterId);
+      const teams = await client.query<{ user_id: string }>('UPDATE player_team_slots SET unit_id=NULL WHERE unit_id=$1 RETURNING user_id', [c.id]);
+      await client.query('UPDATE player_progress SET revision=revision+1, updated_at=now() WHERE user_id=ANY($1::uuid[])', [teams.rows.map((row) => row.user_id)]);
+    }
     await client.query('DELETE FROM unit_abilities WHERE unit_id=$1', [c.id]);
     for (const [slot, abilityId] of c.abilityIds.entries()) await client.query('INSERT INTO unit_abilities VALUES ($1,$2,$3)', [c.id, slot, abilityId]);
   }

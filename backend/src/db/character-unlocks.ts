@@ -8,7 +8,7 @@ type MissionProgress = Pick<PlayerProgress, 'unlockedUnitIds' | 'completedEncoun
 
 export async function readCharacterUnlocks(client: Pool | PoolClient, userId: string, progress: MissionProgress) {
   const configured = await client.query<{ id: string; unlock: UnitDefinition['unlock'] & { priceUsd?: number }; rule: BattleUnlockRule | null }>(
-    'SELECT id, unlock_condition AS unlock, unlock_rule AS rule FROM units');
+    'SELECT id, unlock_condition AS unlock, unlock_rule AS rule FROM units WHERE enabled');
   const rules = configured.rows.flatMap((unit): BattleUnlockRule[] => {
     if (unit.unlock.kind === 'battle-wins') {
       const rule = unit.rule ?? battleUnlockRules.find((entry) => entry.unitId === unit.id);
@@ -22,7 +22,7 @@ export async function readCharacterUnlocks(client: Pool | PoolClient, userId: st
     || (rule.availableAfterEncounterId && progress.completedEncounters.includes(rule.availableAfterEncounterId)))
     .map((rule) => rule.unitId);
   const units = await client.query<Pick<UnitDefinition, 'id' | 'name' | 'portrait'>>(
-    `SELECT u.id, u.name, u.portrait_path AS portrait FROM units u ORDER BY u.roster_order NULLS LAST, u.id`);
+    `SELECT u.id, u.name, u.portrait_path AS portrait FROM units u WHERE u.enabled ORDER BY u.roster_order NULLS LAST, u.id`);
   if (!units.rows.length) return { characters: [] };
   const victories = await client.query<BattleVictory>(`SELECT mode,
     to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt",
@@ -50,7 +50,7 @@ export async function synchronizeCharacterUnlocks(client: PoolClient, userId: st
   const data = await readCharacterUnlocks(client, userId, progress);
   const earned = data.characters.filter((unit) => unit.campaignAvailable && unit.kind === 'battle-wins'
     && unit.requirements.every((requirement) => requirement.current >= requirement.target)).map((unit) => unit.id);
-  const automatic = await client.query<{ id: string }>("SELECT id FROM units WHERE unlock_condition->>'kind'='starter'");
+  const automatic = await client.query<{ id: string }>("SELECT id FROM units WHERE enabled AND unlock_condition->>'kind'='starter'");
   earned.push(...automatic.rows.map((unit) => unit.id));
   const unlockedUnitIds = [...new Set([...progress.unlockedUnitIds, ...earned])];
   if (unlockedUnitIds.length !== progress.unlockedUnitIds.length) {

@@ -53,7 +53,7 @@ it('valida propostas de IA e não transforma uma mecânica inédita em efeito ex
 });
 
 it('rejeita desbloqueios diretos, revelação implícita, recompensas e estado provisório no contrato de autoria', () => {
-  const base = { ...units[0], abilityIds: [...units[0].abilityIds], unlockRule: null, priceUsd: null };
+  const base = { ...units[0], enabled: true, abilityIds: [...units[0].abilityIds], unlockRule: null, priceUsd: null };
   expect(characterSchema.safeParse(base).success).toBe(true);
   for (const kind of ['encounter', 'unavailable']) expect(characterSchema.safeParse({ ...base, unlock: { kind, description: 'Legado.' } }).success).toBe(false);
   expect(characterSchema.safeParse({ ...base, provisional: true }).success).toBe(false);

@@ -14,7 +14,7 @@ import type { UnlockBattleMode } from '@game/content/unlocks.js';
 
 const encounterQuery = `SELECT e.id, e.campaign_id AS "campaignId", e.position, e.title, e.story,
   e.map_x::float AS "mapX", e.map_y::float AS "mapY",
-  ARRAY(SELECT unit_id FROM encounter_enemies WHERE encounter_id = e.id ORDER BY slot_index) AS "enemyUnitIds" FROM encounters e`;
+  ARRAY(SELECT ee.unit_id FROM encounter_enemies ee JOIN units u ON u.id=ee.unit_id AND u.enabled WHERE ee.encounter_id = e.id ORDER BY ee.slot_index) AS "enemyUnitIds" FROM encounters e`;
 const initialLog = (): BattleEvent[] => [{ kind: 'turn', message: 'Batalha iniciada. Sua equipe começa o turno 1 com 15 de energia.' }];
 const recordColumns = `id, encounter_id AS "encounterId", revision, state, log, combo,
   to_char(turn_deadline_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "turnDeadlineAt",
@@ -158,7 +158,7 @@ export class PostgresBattleRepository implements BattleRepository {
     unlockedUnitIds: readonly string[]) {
     const missionOpponents = QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS.filter((id) => unlockedUnitIds.includes(id));
     const opponents = await client.query<QuickBattleData['opponents'][number]>(`SELECT u.id, u.name, u.portrait_path AS portrait
-      FROM units u WHERE (u.id = ANY($2::text[]) OR u.id = ANY($3::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
+      FROM units u WHERE u.enabled AND (u.id = ANY($2::text[]) OR u.id = ANY($3::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
           WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[])))
       ORDER BY u.roster_order NULLS LAST, u.id`, [completedEncounters, QUICK_BATTLE_ALWAYS_UNIT_IDS,
         missionOpponents]);

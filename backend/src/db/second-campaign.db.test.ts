@@ -72,13 +72,13 @@ it('mantém a campanha 02 bloqueada mesmo com equipe vazia ou Osiris já desbloq
   for (let slot = 0; slot < 3; slot++) await game.setTeamSlot(user.id, slot, null);
   await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 })).rejects.toMatchObject({ statusCode: 403 });
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || $2::jsonb) WHERE user_id = $1", [user.id, JSON.stringify([OSIRIS_UNIT_ID])]);
-  await game.setTeamSlot(user.id, 0, OSIRIS_UNIT_ID);
+  await expect(game.setTeamSlot(user.id, 0, OSIRIS_UNIT_ID)).rejects.toMatchObject({ statusCode: 400 });
   await game.setTeamSlot(user.id, 1, STARTER_UNIT_IDS[1]);
   await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 })).rejects.toMatchObject({ statusCode: 403 });
-  expect((await auth.getProgress(user.id))!.selectedTeam).toEqual([OSIRIS_UNIT_ID, STARTER_UNIT_IDS[1], null]);
+  expect((await auth.getProgress(user.id))!.selectedTeam).toEqual([null, STARTER_UNIT_IDS[1], null]);
 });
 
-it('mantém as missões da campanha 02 bloqueadas antes das batalhas específicas e não as libera só por vitórias rápidas', async () => {
+it('oculta personagens e missões desabilitados da campanha 02 mesmo após vitórias rápidas', async () => {
   const user = await player();
   await pool.query('UPDATE player_progress SET data = data || $2::jsonb WHERE user_id = $1', [user.id,
     JSON.stringify({ completedEncounters: first.map((entry) => entry.id), availablePathIds: ['path-1', 'path-2'] })]);
@@ -88,21 +88,16 @@ it('mantém as missões da campanha 02 bloqueadas antes das batalhas específica
   await pool.query(`INSERT INTO battles (id, user_id, encounter_id, state, status, mode)
     SELECT gen_random_uuid(), $1, NULL, $2::jsonb, 'victory', 'quick' FROM generate_series(1, 100)`, [user.id, JSON.stringify(state)]);
   const missions = (await game.getCharacterUnlocks(user.id)).characters.filter((unit) => SECOND_CAMPAIGN_UNIT_IDS.includes(unit.id as typeof SECOND_CAMPAIGN_UNIT_IDS[number]));
-  expect(missions).toHaveLength(SECOND_CAMPAIGN_UNIT_IDS.length);
-  expect(missions.filter((unit) => unit.kind === 'battle-wins').every((unit) => !unit.campaignAvailable && !unit.unlocked)).toBe(true);
+  expect(missions).toHaveLength(0);
   const after = (await auth.getProgress(user.id))!;
   for (const id of SECOND_CAMPAIGN_UNIT_IDS) expect(after.unlockedUnitIds).not.toContain(id);
   const catalog = await game.getCatalog();
-  expect(catalog.units).toHaveLength(units.length);
-  expect(catalog.units.find((unit) => unit.id === 'maga-artemis')?.unlock.kind).toBe('premium');
-  expect(catalog.units.some((unit) => unit.id === 'combatente-demonio')).toBe(true);
-  expect(catalog.units.some((unit) => unit.id === 'lorde-demonio-rakin')).toBe(true);
-  for (const id of SECOND_CAMPAIGN_UNIT_IDS) {
-    const unit = catalog.units.find((entry) => entry.id === id)!;
-    expect(unit).not.toHaveProperty('provisional');
-    expect(unit.abilityIds).toEqual(['simple-strike', 'guard', 'retain-energy', 'strong-strike']);
-    expect(unit.portrait).toBe(`/media/characters/02/${id}-face.png`);
-  }
+  expect(catalog.units).toHaveLength(units.length - SECOND_CAMPAIGN_UNIT_IDS.length);
+  for (const id of SECOND_CAMPAIGN_UNIT_IDS) expect(catalog.units.some((unit) => unit.id === id)).toBe(false);
+  const disabled = await pool.query('SELECT id FROM units WHERE NOT enabled');
+  expect(disabled.rows.map((unit) => unit.id).sort()).toEqual([...SECOND_CAMPAIGN_UNIT_IDS].sort());
+  const enemies = await pool.query('SELECT 1 FROM encounter_enemies e JOIN units u ON u.id=e.unit_id WHERE NOT u.enabled');
+  expect(enemies.rowCount).toBe(0);
 });
 
 it('a conta com todos os personagens liberados acessa as missões de Berserk e da Fera sem bloqueios de campanha', async () => {
@@ -124,6 +119,6 @@ it('executa as migrações e o seed novamente preservando equipe e publicação 
   expect(after).toEqual(before);
   await migrate(pool); await seedDatabase(pool);
   expect(await auth.getProgress(user.id)).toEqual(after);
-  expect((await game.getCatalog()).units).toHaveLength(units.length);
+  expect((await game.getCatalog()).units).toHaveLength(units.length - SECOND_CAMPAIGN_UNIT_IDS.length);
   await expect(battles.getMap(user.id, 'path-2')).rejects.toMatchObject({ statusCode: 403 });
 });

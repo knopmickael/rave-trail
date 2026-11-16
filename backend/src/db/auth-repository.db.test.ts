@@ -14,6 +14,9 @@ import { PostgresBattleRepository } from './battle-repository.js';
 import type { BattleRecord } from '@game/core/battle.js';
 import { abilities } from '@game/content/abilities.js';
 import { STARTER_UNIT_IDS, units } from '@game/content/units.js';
+import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
+
+const enabledUnits = units.filter((unit) => !new Set<string>(SECOND_CAMPAIGN_UNIT_IDS).has(unit.id));
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url || !new URL(url).pathname.endsWith('_test') || url === process.env.DATABASE_URL) {
@@ -140,7 +143,7 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
   for (const ability of Object.values(abilities)) {
     expect(catalog.abilities.find((entry) => entry.id === ability.id)).toEqual(ability);
   }
-  for (const unit of units) {
+  for (const unit of enabledUnits) {
     expect(catalog.units.find((entry) => entry.id === unit.id)?.abilityIds).toEqual(unit.abilityIds);
   }
   expect(await repository.getProgress(user.id)).toEqual(progressBefore);
@@ -179,7 +182,7 @@ it('persiste os quatro inimigos posteriores a Drak sem duplicar registros ao rea
   }
   expect(catalog.units.find((unit) => unit.id === 'rival-b-base')?.characterId).toBe('rival-b');
   expect(catalog.units.find((unit) => unit.id === 'rival-b-final-mode')?.characterId).toBe('rival-b');
-  expect(catalog.units).toHaveLength(38);
+  expect(catalog.units).toHaveLength(enabledUnits.length);
   expect(catalog.units.find((unit) => unit.id === 'rival-b-final-mode')?.unlock.kind).toBe('premium');
   expect(catalog.units.find((unit) => unit.id === 'legendary-beast-premium')?.unlock.kind).toBe('premium');
 });
@@ -261,12 +264,11 @@ it('reaplica nomes e ordem sobre posições antigas sem conflito e preserva equi
     'Curandeiro de Pontes', 'Curandeira de Pontes', 'Drak de Pontes',
     'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
     'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
-    ...units.filter((unit) => unit.version === 'Além das Fronteiras').map((unit) => unit.name),
   ]);
-  expect(catalog.units.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));
+  expect(catalog.units.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: enabledUnits.length }, (_, index) => index));
   expect(catalog.units.map((unit) => [unit.id, unit.abilityIds]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))).toEqual(abilitiesBefore);
   expect(await repository.getProgress(user.id)).toEqual(progressBefore);
-  expect(catalog.units.filter((unit) => unit.unlock.kind === 'premium').map((unit) => unit.id)).toEqual(['rival-b-final-mode', 'legendary-beast-premium', 'maga-artemis']);
+  expect(catalog.units.filter((unit) => unit.unlock.kind === 'premium').map((unit) => unit.id)).toEqual(['rival-b-final-mode', 'legendary-beast-premium']);
 });
 
 async function nearVictory(battle: BattleRecord) {

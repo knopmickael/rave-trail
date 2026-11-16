@@ -42,7 +42,7 @@ export function createCmsApp(pool: Pool | null, origin = 'http://127.0.0.1:5188'
     let message = `Configure CMS_DATABASE_URL no ${environmentFile} e reinicie o CMS.`;
     if (pool) {
       try {
-        const result = await pool.query("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE name='039_cms_content_requirements.sql') AS ready");
+        const result = await pool.query("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE name='040_character_availability.sql') AS ready");
         ready = result.rows[0].ready;
         message = ready ? 'Conectado. Alterações são gravadas diretamente neste banco.' : `Execute npm run ${setupCommand} para preparar o banco.`;
       } catch { message = 'Banco indisponível. Verifique a URL, o túnel SSH e as migrações.'; }

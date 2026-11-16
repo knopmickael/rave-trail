@@ -44,7 +44,7 @@ const requirement = z.discriminatedUnion('kind', [
 ]);
 export const characterSchema = z.object({
   id, characterId: id, name: text, version: text, description, maxHp: integer(1, 10000), portrait: image, illustration: image,
-  abilityIds: ids.length(4), rosterOrder: integer(0, 100000).nullable(),
+  abilityIds: ids.length(4), rosterOrder: integer(0, 100000).nullable(), enabled: z.boolean(),
   unlock: z.object({ kind: z.enum(['starter', 'premium', 'battle-wins']), description }).strict(),
   unlockRule: z.object({ unitId: id, description, requirements: z.array(requirement).min(1).max(30), availableAfterEncounterId: id.optional(), availableFromStart: z.boolean().optional() }).strict().nullable(),
   priceUsd: z.number().positive().max(10000).nullable(),
@@ -58,7 +58,7 @@ export const campaignSchema = z.object({ id, chapterNumber: integer(1, 100000), 
   mapBackground: image.nullable(), prerequisiteEncounterId: id.nullable(), sortOrder: integer(0, 100000), released: z.boolean() }).strict();
 export const encounterSchema = z.object({ id, campaignId: id, position: integer(1, 100000), title: text, story: description,
   mapX: z.number().min(0).max(100), mapY: z.number().min(0).max(100),
-  enemyUnitIds: z.array(id).min(1).max(3) }).strict();
+  enemyUnitIds: z.array(id).max(3) }).strict();
 export const characterOrderSchema = z.object({ ids: z.array(id).min(1).max(10000).refine((values) => new Set(values).size === values.length, 'Não repita personagens.') }).strict();
 export const setupSchema = z.object({ id, name: text, config: configSchema }).strict();
 export const proposalSchema = z.object({ message: description, ability: abilitySchema.nullable(),

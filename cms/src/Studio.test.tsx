@@ -13,7 +13,7 @@ import { Studio } from './main';
 vi.mock('./api', () => ({ request: vi.fn(), setToken: vi.fn() }));
 let catalog: Catalog;
 beforeEach(() => {
-  catalog = { characters: units.slice(0, 2).map((u) => ({ ...u, abilityIds: [...u.abilityIds], unlockRule: null, priceUsd: null } as Character)),
+  catalog = { characters: units.slice(0, 2).map((u) => ({ ...u, enabled: true, abilityIds: [...u.abilityIds], unlockRule: null, priceUsd: null } as Character)),
     abilities: Object.values(abilities), campaigns: campaigns.map((c) => ({ ...c, mapBackground: c.mapBackground ?? null, prerequisiteEncounterId: null })),
     encounters: [{ id: 'test-battle', campaignId: 'path-1', position: 1, title: 'Confronto de teste', story: 'História do confronto.', enemyUnitIds: [units[0].id], mapX: 50, mapY: 50 }], setups: [] };
   vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -23,6 +23,10 @@ beforeEach(() => {
     if (path === '/api/characters/order') {
       const ids = (body as { ids: string[] }).ids;
       catalog.characters = ids.map((id, rosterOrder) => ({ ...catalog.characters.find((c) => c.id === id)!, rosterOrder }));
+    }
+    if (method === 'PUT' && path.startsWith('/api/characters/') && path !== '/api/characters/order') {
+      const character = body as Character;
+      catalog.characters = catalog.characters.map((item) => item.id === character.id ? structuredClone(character) : item);
     }
     if (method === 'DELETE') {
       const [, , entity, id] = path.split('/');
@@ -63,6 +67,22 @@ it.each([
   await user.click(screen.getByRole('button', { name: 'Excluir' }));
   await screen.findByText('Registro excluído.');
   expect(request).toHaveBeenCalledWith(expect.stringContaining(`/api/${entity}/`), 'DELETE');
+});
+
+it('permite desabilitar e reabilitar um personagem pelo editor', async () => {
+  const user = userEvent.setup(); render(<Studio />);
+  await user.click(await screen.findByRole('button', { name: /^Ravi de Berdal/ }));
+  const checkbox = screen.getByRole('checkbox', { name: 'Personagem habilitado' });
+  expect(checkbox).toBeChecked();
+  await user.click(checkbox);
+  await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  await screen.findByText('Alterações salvas no banco com sucesso.');
+  expect(request).toHaveBeenCalledWith(`/api/characters/${units[0].id}`, 'PUT', expect.objectContaining({ enabled: false }));
+  expect(screen.getByText(/^Desabilitado ·/)).toBeInTheDocument();
+  await user.click(screen.getByRole('checkbox', { name: 'Personagem habilitado' }));
+  await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  await screen.findByText('Alterações salvas no banco com sucesso.');
+  expect(request).toHaveBeenCalledWith(`/api/characters/${units[0].id}`, 'PUT', expect.objectContaining({ enabled: true }));
 });
 
 it('reordena pela lista sem confirmação e mantém as posições globais durante a pesquisa', async () => {

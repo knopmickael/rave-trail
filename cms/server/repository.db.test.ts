@@ -28,7 +28,7 @@ const character = (): Character => ({ id: 'cms-test-character', characterId: 'cm
   maxHp: 100, portrait: '/media/abilities/guard.jpg', illustration: '/media/abilities/guard.jpg', abilityIds: ['simple-strike', 'guard', 'retain-energy', 'heal'],
   unlock: { kind: 'battle-wins', description: 'Finalize a batalha de teste.' }, unlockRule: { unitId: 'cms-test-character', description: 'Finalize a batalha de teste.',
     availableAfterEncounterId: 'cms-test-battle-a', requirements: [{ kind: 'encounter', encounterId: 'cms-test-battle-a', target: 1, description: 'Finalize a batalha A.' }] },
-  priceUsd: null, rosterOrder: null });
+  priceUsd: null, rosterOrder: null, enabled: true });
 beforeAll(async () => { await migrate(pool); await seedDatabase(pool); });
 afterEach(async () => {
   await pool.query('TRUNCATE users CASCADE');
@@ -46,6 +46,33 @@ afterAll(async () => { await pool.end(); });
 async function player() {
   return auth.register(`${randomUUID()}@example.com`, 'hash', { tokenHash: randomUUID(), expiresAt: new Date(Date.now() + 60000) });
 }
+
+it('desabilita personagens, limpa confrontos e equipes e preserva a decisão após o seed', async () => {
+  await repo.save('campaigns', campaign, true);
+  await repo.save('encounters', encounter('cms-test-battle-a', 1), true);
+  const unit = character();
+  await repo.save('characters', unit, true);
+  await repo.save('encounters', { ...encounter('cms-test-battle-b', 2), enemyUnitIds: [unit.id, 'road-raider-1-base'] }, true);
+  const user = await player();
+  await pool.query("UPDATE player_progress SET data=jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || $2::jsonb) WHERE user_id=$1", [user.id, JSON.stringify([unit.id])]);
+  await game.setTeamSlot(user.id, 0, unit.id);
+  await repo.save('characters', { ...unit, enabled: false }, false);
+  expect((await game.getCatalog()).units.some((u) => u.id === unit.id)).toBe(false);
+  expect((await game.getCharacterUnlocks(user.id)).characters.some((u) => u.id === unit.id)).toBe(false);
+  expect((await auth.getProgress(user.id))!.selectedTeam).toEqual([null, null, null]);
+  expect((await repo.catalog()).characters.find((u) => u.id === unit.id)?.enabled).toBe(false);
+  expect((await repo.catalog()).encounters.find((e) => e.id === 'cms-test-battle-b')?.enemyUnitIds).toEqual(['road-raider-1-base']);
+  await expect(game.setTeamSlot(user.id, 0, unit.id)).rejects.toMatchObject({ statusCode: 400 });
+  await expect(repo.save('encounters', { ...encounter('cms-test-battle-b', 2), enemyUnitIds: [unit.id] }, false)).rejects.toMatchObject({ statusCode: 400 });
+  await seedDatabase(pool);
+  expect((await repo.catalog()).characters.find((u) => u.id === unit.id)?.enabled).toBe(false);
+  await repo.save('characters', unit, false);
+  expect((await game.getCatalog()).units.some((u) => u.id === unit.id)).toBe(true);
+  expect((await repo.catalog()).encounters.find((e) => e.id === 'cms-test-battle-b')?.enemyUnitIds).toEqual(['road-raider-1-base']);
+  await repo.save('characters', { ...unit, enabled: false }, false);
+  await repo.save('encounters', { ...encounter('cms-test-battle-b', 2), enemyUnitIds: [] }, false);
+  expect((await repo.catalog()).encounters.find((e) => e.id === 'cms-test-battle-b')?.enemyUnitIds).toEqual([]);
+});
 
 it('cria, edita e exclui conteúdo; preserva edições e exclusões ao executar o seed', async () => {
   const original = (await repo.catalog()).abilities.find((a) => a.id === 'simple-strike')!;
@@ -72,7 +99,7 @@ it('reordena confrontos em transação e usa campanhas, habilidades e desbloquei
   await repo.save('encounters', a, true); await repo.save('encounters', b, true);
   await repo.save('encounters', { ...b, position: 1 }, false);
   expect((await repo.catalog()).encounters.filter((e) => e.campaignId === campaign.id).map((e) => [e.id, e.position])).toEqual([[b.id, 1], [a.id, 2]]);
-  await expect(repo.save('encounters', { ...a, enemyUnitIds: ['nonexistent'] }, false)).rejects.toMatchObject({ code: '23503' });
+  await expect(repo.save('encounters', { ...a, enemyUnitIds: ['nonexistent'] }, false)).rejects.toMatchObject({ statusCode: 400 });
   expect((await repo.catalog()).encounters.filter((e) => e.campaignId === campaign.id).map((e) => e.id)).toEqual([b.id, a.id]);
   await repo.save('abilities', { ...abilities['simple-strike'], id: 'cms-test-ability', effects: [{ kind: 'damage', amount: 27 }] }, true);
   await repo.save('characters', { ...character(), abilityIds: ['cms-test-ability', 'guard', 'retain-energy', 'heal'] }, true);
@@ -123,10 +150,10 @@ it('publica e despublica a campanha 02 para uma conta nova usando somente a conf
     await repo.save('campaigns', { ...original, prerequisiteEncounterId: null, released: true, description: 'História publicada pelo CMS.' }, false);
     expect((await game.getCampaigns(user.id)).find((c) => c.id === original.id)).toMatchObject({ available: true, description: 'História publicada pelo CMS.' });
     expect((await battles.getMap(user.id, original.id)).campaign.description).toBe('História publicada pelo CMS.');
-    expect((await battles.startBattle(user.id, 'path-2-encounter-1')).encounterId).toBe('path-2-encounter-1');
+    await expect(battles.startBattle(user.id, 'path-2-encounter-1')).rejects.toMatchObject({ statusCode: 503 });
     await pool.query("UPDATE player_progress SET data=jsonb_set(data,'{completedEncounters}','[\"path-2-encounter-1\"]') WHERE user_id=$1", [user.id]);
-    expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => unit.id === 'general-abel')).toBe(true);
-    expect((await game.getCharacterUnlocks(user.id)).characters.find((unit) => unit.id === 'general-abel')).toMatchObject({ campaignAvailable: true, unlocked: false, revealRequirement: 'Finalize a batalha 1 da campanha 2' });
+    expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => unit.id === 'general-abel')).toBe(false);
+    expect((await game.getCharacterUnlocks(user.id)).characters.some((unit) => unit.id === 'general-abel')).toBe(false);
     await seedDatabase(pool);
     expect((await game.getCampaigns(user.id)).find((c) => c.id === original.id)?.available).toBe(true);
     await repo.save('campaigns', { ...original, released: false }, false);
@@ -144,11 +171,12 @@ it('reordena o catálogo inteiro atomicamente, preserva a ordem no seed e rejeit
   const ids = [...original]; [ids[0], ids[1]] = [ids[1], ids[0]];
   try {
     await repo.reorderCharacters(ids);
-    expect((await game.getCatalog()).units.map((u) => u.id)).toEqual(ids);
+    const enabled = new Set((await repo.catalog()).characters.filter((u) => u.enabled).map((u) => u.id));
+    expect((await game.getCatalog()).units.map((u) => u.id)).toEqual(ids.filter((id) => enabled.has(id)));
     await seedDatabase(pool);
     expect((await repo.catalog()).characters.map((u) => u.id)).toEqual(ids);
     await expect(repo.reorderCharacters(ids.slice(1))).rejects.toMatchObject({ statusCode: 409 });
-    expect((await game.getCatalog()).units.map((u) => u.id)).toEqual(ids);
+    expect((await game.getCatalog()).units.map((u) => u.id)).toEqual(ids.filter((id) => enabled.has(id)));
   } finally {
     await repo.reorderCharacters(original);
     await pool.query("DELETE FROM cms_content_overrides WHERE entity='characters' AND NOT (id=ANY($1::text[]))", [overrides.rows.map((r) => r.id)]);
