@@ -13,6 +13,7 @@ interface MainMenuProps {
   onOpenStore: () => void;
   onOpenCampaigns: () => void;
   onOpenQuickBattle: () => void;
+  onOpenMultiplayer?: () => void;
   onOpenUnlocks: () => void;
   onOpenProfile: () => void;
   onLogout: () => Promise<void>;
@@ -23,7 +24,7 @@ interface MainMenuProps {
   onAudioMutedChange: (muted: boolean) => void;
 }
 
-export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onOpenCampaigns, onOpenQuickBattle, onOpenUnlocks, onOpenProfile, onLogout, onSaveName, audioVolume, audioMuted, onAudioVolumeChange, onAudioMutedChange }: MainMenuProps) {
+export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onOpenCampaigns, onOpenQuickBattle, onOpenMultiplayer, onOpenUnlocks, onOpenProfile, onLogout, onSaveName, audioVolume, audioMuted, onAudioVolumeChange, onAudioMutedChange }: MainMenuProps) {
   const { t, text } = useI18n();
   const profileDialog = useRef<HTMLDialogElement>(null);
   const settingsDialog = useRef<HTMLDialogElement>(null);
@@ -54,7 +55,7 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
         <button className="menu-option" onClick={onOpenCharacters}>{t('Lista de personagens')}</button>
         <button className="menu-option" onClick={onOpenUnlocks}>{t('Quadro de missões')}</button>
         <button className="menu-option" onClick={onOpenStore}>{t('Loja')}</button>
-        <button className="menu-option" disabled>{t('Multiplayer')}</button>
+        <button className="menu-option" disabled={!onOpenMultiplayer} onClick={onOpenMultiplayer}>{t('Multiplayer')}</button>
         <button className="menu-option" aria-haspopup="dialog" aria-controls="audio-settings-dialog"
           onClick={() => settingsDialog.current?.showModal()}>{t('Configurações')}</button>
       </nav>

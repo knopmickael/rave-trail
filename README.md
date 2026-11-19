@@ -40,6 +40,8 @@ Propostas de implantação: [analytics de audiência e funil](docs/analytics.md)
 
 Planejamento do multiplayer: [regras e arquitetura com WebSocket](docs/multiplayer.md) e [etapas de implementação e critérios de aceite](docs/multiplayer-tasks.md).
 
+Multiplayer implementado para um único processo Fastify: fila global, equipes de três personagens, combos ao vivo e reconexão por 10 segundos. Requer migrações **041–043**. Consulte [operação, retenção e limites](docs/deploy/multiplayer.md) e [registro de execução](docs/multiplayer-progress.md).
+
 `frontend/public/media/` é a única fonte dos arquivos usados pelo jogo. `frontend/dist/media/` é a cópia **gerada** para publicação. Os templates estão em `docs/design/templates/`.
 
 ## Executar localmente

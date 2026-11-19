@@ -9,8 +9,17 @@ import { AbilityTooltip } from './AbilityTooltip';
 import { useI18n } from '../../i18n/LanguageProvider';
 import './battle.css';
 
-export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }: {
+export interface MultiplayerBattleTransport {
+  record: BattleRecord;
+  connected: boolean;
+  onDraft: (actions: BattleAction[]) => Promise<void>;
+  onTurn: () => Promise<void>;
+  onSurrender: () => Promise<void>;
+}
+
+export function BattleScreen({ initialBattle, title, onBack, onSessionExpired, multiplayer }: {
   initialBattle: BattleRecord; title: string; onBack: () => void; onSessionExpired: () => void;
+  multiplayer?: MultiplayerBattleTransport;
 }) {
   const { t, text } = useI18n();
   const [battle, setBattle] = useState(initialBattle);
@@ -33,7 +42,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
   const state = battle.state;
   const active = state.status === 'active';
   const remaining = battle.turnDeadlineAt ? Math.max(0, Math.ceil((Date.parse(battle.turnDeadlineAt) - now) / 1000)) : 45;
-  const playerTurn = active && state.activeSide === 'player' && remaining > 0;
+  const playerTurn = active && state.activeSide === 'player' && remaining > 0 && (!multiplayer || multiplayer.connected);
   const turnLabel = state.activeSide === 'enemy' ? 'Aguardando inimigo' : 'Encerrar turno';
   const quickBattle = battle.encounterId === null;
   const finalBattle = isFinalEncounter(battle.encounterId);
@@ -52,16 +61,28 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
   const revealingEnemy = enemyTurn && !!battle.botActsAt;
   const visibleServerCombo = revealingEnemy ? serverCombo.slice(0, revealedEnemyActions) : serverCombo;
   const comboActions = playerTurn
-    ? [...serverCombo, ...queue.filter((entry) => !serverCombo.some((action) => action.actorId === entry.actorId))]
+    ? multiplayer ? queue : [...serverCombo, ...queue.filter((entry) => !serverCombo.some((action) => action.actorId === entry.actorId))]
     : visibleServerCombo;
   const logEntries = buildLogEntries(events, state);
   const logGroups = groupLogEntries(logEntries);
   const finalComboEntries = active ? [] : logEntries.filter((entry) => entry.actionId.startsWith(`${state.activeSide}:${state.turn}:`));
 
   function cancelAction(actorId: string) {
-    setQueue((previous) => previous.filter((action) => action.actorId !== actorId));
+    const updated = queue.filter((action) => action.actorId !== actorId);
+    setQueue(updated);
+    if (updated.length !== queue.length) void syncDraft(updated);
     if (pending?.actorId === actorId) setPending(null);
     setError('');
+  }
+
+  async function syncDraft(actions: BattleAction[]) {
+    if (!multiplayer) return;
+    inFlight.current = true; setBusy(true);
+    try { await multiplayer.onDraft(actions); }
+    catch (cause) {
+      setQueue(latestBattle.current.combo?.side === 'player' ? latestBattle.current.combo.actions : []);
+      setError(cause instanceof Error ? cause.message : 'Não foi possível sincronizar a batalha. Tentando novamente…');
+    } finally { inFlight.current = false; setBusy(false); }
   }
 
   function actionLabel(action: BattleAction) {
@@ -96,6 +117,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
     try {
       previewActions(state, updated);
       setQueue(updated);
+      void syncDraft(updated);
       setPending(null);
       setError('');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível selecionar a habilidade.'); }
@@ -112,7 +134,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
     } else addAction({ actorId: unit.id, abilityId: ability.id });
   }
 
-  function acceptBattle(record: BattleRecord, fallbackEvents = events) {
+  function acceptBattle(record: BattleRecord, fallbackEvents = events, preserveDraft = false) {
     if (record.revision < latestBattle.current.revision) return;
     const updatedEvents = record.log ?? fallbackEvents;
     if (record.revision > latestBattle.current.revision) {
@@ -125,12 +147,17 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
       playSoundEffect(record.state.status);
     }
     acceptedEventCount.current = updatedEvents.length;
+    const changedTurn = record.revision !== latestBattle.current.revision || record.state.status !== latestBattle.current.state.status;
     latestBattle.current = record;
     setBattle(record);
     setEvents(updatedEvents);
-    setQueue([]);
-    setPending(null);
+    setQueue(preserveDraft && record.state.activeSide === 'player' ? record.combo?.actions ?? [] : []);
+    if (!preserveDraft || changedTurn) setPending(null);
   }
+
+  useEffect(() => {
+    if (multiplayer) acceptBattle(multiplayer.record, multiplayer.record.log ?? [], true);
+  }, [multiplayer?.record]);
 
   useEffect(() => {
     if (!active || !battle.turnDeadlineAt) return;
@@ -147,7 +174,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
   }, [battle.id, battle.revision, revealingEnemy, serverCombo.length]);
 
   useEffect(() => {
-    if (!active || !battle.turnDeadlineAt) return;
+    if (multiplayer || !active || !battle.turnDeadlineAt) return;
     let mounted = true;
     let polling = false;
     const refresh = async () => {
@@ -182,7 +209,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
       document.removeEventListener('visibilitychange', visible);
       document.removeEventListener('resume', resume);
     };
-  }, [battle.id, active, battle.turnDeadlineAt, onSessionExpired]);
+  }, [battle.id, active, battle.turnDeadlineAt, onSessionExpired, !!multiplayer]);
 
   async function handleFailure(cause: unknown, fallback: string) {
     if (cause instanceof ApiError && cause.status === 401) { onSessionExpired(); return; }
@@ -203,6 +230,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
     const signature = JSON.stringify({ revision: battle.revision, queue });
     if (pendingRequest.current?.signature !== signature) pendingRequest.current = { signature, id: crypto.randomUUID() };
     try {
+      if (multiplayer) { await multiplayer.onTurn(); return; }
       const response = await api.turn(battle.id, battle.revision, pendingRequest.current.id, queue);
       acceptBattle(response.battle, [...events, ...response.events]);
       pendingRequest.current = null;
@@ -216,6 +244,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
     setBusy(true);
     setError('');
     try {
+      if (multiplayer) { await multiplayer.onSurrender(); return; }
       acceptBattle(await api.abandonBattle(battle.id));
       onBack();
     } catch (cause) { await handleFailure(cause, 'Não foi possível desistir da batalha.'); }
@@ -369,16 +398,17 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
 
     {active && <>
       {playerTurn && pending && targetAbility && <p className="battle-target-hint" role="status">{t(targetAbility.target === 'defeated-ally' ? 'Escolha um aliado derrotado para {ability}.' : targetAbility.target === 'enemy' ? 'Escolha um inimigo para {ability}.' : 'Escolha um aliado para {ability}.', { ability: text(targetAbility.name) })}</p>}
-      <button type="button" className="battle-surrender" disabled={busy} onClick={openSurrender}>{t('Desistir')}</button>
+      <button type="button" className="battle-surrender" disabled={busy || (!!multiplayer && !multiplayer.connected)} onClick={openSurrender}>{t('Desistir')}</button>
     </>}
     {queueError && <p className="battle-feedback feedback" role="alert">{text(queueError)}</p>}
     {error && <p className="battle-feedback feedback" role="alert">{text(error)}</p>}
     {!active && <section className="battle-result" aria-label={t('Resultado da batalha')}>
       <h2>{t(state.status === 'victory' ? 'Vitória!' : state.status === 'abandoned' ? 'Batalha encerrada' : 'Derrota')}</h2>
-      <p>{t(state.status === 'abandoned' ? 'A batalha foi encerrada. A próxima tentativa começará do zero.'
+      <p>{t(multiplayer ? state.status === 'abandoned' ? 'Partida anulada. Nenhuma vitória ou derrota foi registrada.' : 'O resultado multiplayer foi salvo.'
+        : state.status === 'abandoned' ? 'A batalha foi encerrada. A próxima tentativa começará do zero.'
         : quickBattle ? 'O resultado da Batalha rápida foi salvo. Prepare-se para um novo confronto.'
           : state.status === 'victory' ? 'O resultado foi salvo. Continue a jornada pelo mapa.' : 'Reorganize sua equipe e tente novamente pelo mapa.')}</p>
-      <button className="fantasy-button compact" onClick={onBack}>{t(quickBattle ? 'Voltar à Batalha rápida' : 'Continuar no mapa')}</button>
+      <button className="fantasy-button compact" onClick={onBack}>{t(multiplayer ? 'Voltar ao menu principal' : quickBattle ? 'Voltar à Batalha rápida' : 'Continuar no mapa')}</button>
     </section>}
 
     <dialog ref={logDialog} className="battle-log-dialog" aria-labelledby="battle-log-title">
@@ -399,7 +429,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired }:
 
     <dialog ref={surrenderDialog} className="battle-confirm-dialog" aria-labelledby="surrender-title" aria-describedby="surrender-description">
       <h2 id="surrender-title">{t('Desistir da batalha?')}</h2>
-      <p id="surrender-description">{t('A batalha será encerrada e a próxima tentativa começará do zero.')}</p>
+      <p id="surrender-description">{t(multiplayer ? 'Você perderá a partida e seu adversário receberá a vitória.' : 'A batalha será encerrada e a próxima tentativa começará do zero.')}</p>
       <div className="battle-confirm-actions">
         <button type="button" onClick={() => surrenderDialog.current?.close()}>{t('Continuar na batalha')}</button>
         <button type="button" className="battle-confirm-danger" disabled={busy} onClick={confirmSurrender}>{t('Confirmar desistência')}</button>

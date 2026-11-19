@@ -1,6 +1,6 @@
 # Multiplayer por WebSocket: plano de implementação
 
-**Status:** planejamento; a funcionalidade ainda não foi implementada.
+**Status:** implementação local entregue; consulte o [registro de execução](multiplayer-progress.md) para decisões e verificações e o [guia operacional](deploy/multiplayer.md) para o comportamento efetivo. As seções abaixo preservam o plano original; diferenças estão registradas nesses documentos.
 
 Este documento registra as regras confirmadas para a primeira entrega e a proposta técnica discutida para o Rave Trail. As etapas e verificações estão em [tarefas de multiplayer](multiplayer-tasks.md). Não substitui regras já implementadas da campanha e da Batalha rápida.
 

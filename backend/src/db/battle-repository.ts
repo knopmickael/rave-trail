@@ -16,7 +16,7 @@ const encounterQuery = `SELECT e.id, e.campaign_id AS "campaignId", e.position, 
   e.map_x::float AS "mapX", e.map_y::float AS "mapY",
   ARRAY(SELECT ee.unit_id FROM encounter_enemies ee JOIN units u ON u.id=ee.unit_id AND u.enabled WHERE ee.encounter_id = e.id ORDER BY ee.slot_index) AS "enemyUnitIds" FROM encounters e`;
 const initialLog = (): BattleEvent[] => [{ kind: 'turn', message: 'Batalha iniciada. Sua equipe começa o turno 1 com 15 de energia.' }];
-const recordColumns = `id, encounter_id AS "encounterId", revision, state, log, combo,
+const recordColumns = `id, encounter_id AS "encounterId", revision, COALESCE(state,summary->'terminalState') AS state, log, combo,
   to_char(turn_deadline_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "turnDeadlineAt",
   to_char(bot_acts_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "botActsAt"`;
 type BattleMode = 'campaign' | UnlockBattleMode;
@@ -74,7 +74,11 @@ export class PostgresBattleRepository implements BattleRepository {
       log: [...(battle.log ?? []), ...outcome.events], combo: this.nextCombo(outcome.state, mode),
       ...this.clocks(outcome.state, mode) };
     await client.query(`UPDATE battles SET state = $2, status = $3, revision = $4, log = $5, combo = $6,
-      turn_deadline_at = $7, bot_acts_at = $8, updated_at = clock_timestamp() WHERE id = $1`,
+      turn_deadline_at = $7, bot_acts_at = $8, updated_at = clock_timestamp(),
+      counters_exact=counters_exact AND executed_turns IS NOT NULL,
+      executed_turns=COALESCE(executed_turns,GREATEST(0,(state->>'turn')::int-1))+1,
+      round_count=COALESCE(round_count,GREATEST(1,(state #>> '{teams,player,turns}')::int))+CASE WHEN state->>'activeSide'='enemy' AND $2::jsonb->>'activeSide'='player' AND $3='active' THEN 1 ELSE 0 END
+      WHERE id = $1`,
       [battle.id, JSON.stringify(updated.state), updated.state.status, updated.revision, JSON.stringify(updated.log),
         updated.combo ? JSON.stringify(updated.combo) : null, updated.turnDeadlineAt, updated.botActsAt]);
     let savedProgress = progress;
@@ -147,6 +151,12 @@ export class PostgresBattleRepository implements BattleRepository {
     finally { client.release(); }
   }
 
+  private async requireNoMultiplayer(client: PoolClient, userId: string) {
+    if ((await client.query('SELECT 1 FROM multiplayer_entries WHERE user_id=$1', [userId])).rowCount) {
+      throw new GameError(409, 'Saia da fila ou conclua a partida multiplayer antes de iniciar outra batalha.');
+    }
+  }
+
   private async playerTeam(client: PoolClient, userId: string, progress: PlayerProgress) {
     const team = (await readTeam(client, userId)).filter((id): id is string => id !== null);
     if (!team.length || team.length > 3 || new Set(team).size !== team.length) throw new GameError(400, 'Escolha de um a três personagens para sua equipe antes de iniciar.');
@@ -177,6 +187,7 @@ export class PostgresBattleRepository implements BattleRepository {
     try {
       await client.query('BEGIN');
       const progress = await this.lockProgress(client, userId);
+      await this.requireNoMultiplayer(client, userId);
       const opponents = await this.quickBattleOpponents(client, progress.completedEncounters, progress.unlockedUnitIds);
       if (!opponents.length) throw new GameError(503, 'Adversários indisponíveis no catálogo.');
       const team = await this.playerTeam(client, userId, progress);
@@ -196,6 +207,7 @@ export class PostgresBattleRepository implements BattleRepository {
       await client.query("INSERT INTO battles (id, user_id, encounter_id, state, status, mode, log, combo, turn_deadline_at) VALUES ($1,$2,NULL,$3,$4,'quick',$5,$6,$7)",
         [battle.id, userId, JSON.stringify(battle.state), battle.state.status, JSON.stringify(battle.log),
           JSON.stringify(battle.combo), battle.turnDeadlineAt]);
+      await this.initializeCounters(client, battle);
       await client.query('COMMIT');
       return battle;
     } catch (error) { await client.query('ROLLBACK'); throw error; }
@@ -207,6 +219,7 @@ export class PostgresBattleRepository implements BattleRepository {
     try {
       await client.query('BEGIN');
       const progress = await this.lockProgress(client, userId);
+      await this.requireNoMultiplayer(client, userId);
       const result = await client.query<EncounterDefinition>(`${encounterQuery} WHERE e.id = $1`, [encounterId]);
       const encounter = result.rows[0];
       if (!encounter) throw new GameError(404, 'Encontro não encontrado.');
@@ -253,10 +266,16 @@ export class PostgresBattleRepository implements BattleRepository {
       await client.query('INSERT INTO battles (id, user_id, encounter_id, state, status, log, combo, turn_deadline_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
         [battle.id, userId, encounterId, JSON.stringify(battle.state), battle.state.status, JSON.stringify(battle.log),
           JSON.stringify(battle.combo), battle.turnDeadlineAt]);
+      await this.initializeCounters(client, battle);
       await client.query('COMMIT');
       return battle;
     } catch (error) { await client.query('ROLLBACK'); throw error; }
     finally { client.release(); }
+  }
+
+  private async initializeCounters(client: PoolClient, battle: BattleRecord) {
+    const teams = Object.fromEntries(Object.entries(battle.state.teams).map(([side, team]) => [side, team.units.map((unit) => unit.unitId)]));
+    await client.query('UPDATE battles SET round_count=1,executed_turns=0,counters_exact=true,initial_teams=$2 WHERE id=$1', [battle.id, JSON.stringify(teams)]);
   }
 
   async submitTurn(userId: string, battleId: string, revision: number, requestId: string, actions: BattleAction[]): Promise<BattleTurnResult> {
