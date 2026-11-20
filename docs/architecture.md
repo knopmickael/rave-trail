@@ -10,7 +10,7 @@ backend/src ────┘
     └──> PostgreSQL
 ```
 
-- `frontend/src`: React, CSS, APIs do navegador e comunicação HTTP por `api.ts`.
+- `frontend/src`: React, CSS, APIs do navegador, comunicação HTTP por `api.ts` e cliente WebSocket de multiplayer.
 - `backend/src`: Fastify, autenticação, autorização, validação e repositórios PostgreSQL.
 - `shared/src`: contratos serializáveis, catálogo e funções puras. Não importa React, Node, HTTP, SQL ou APIs do navegador.
 - `@game/*` identifica módulos de `shared/src` em TypeScript, Vite, Vitest, tsx e no build da API.
@@ -68,6 +68,8 @@ Os documentos e templates não são copiados para o diretório público. As ferr
 `npm run typecheck` também verifica cada camada separadamente: shared sem tipos de Node/DOM e backend sem DOM. Testes de regras/HTTP/UI e integração com PostgreSQL complementam essas verificações.
 
 ## Missões e persistência
+
+O multiplayer tem contratos em `shared/src/multiplayer.ts`, serviço autoritativo em `backend/src/db/multiplayer.ts` e transporte em `backend/src/game/multiplayer-socket.ts`. Sockets e distribuição de eventos são locais a um único processo; fila e estado temporário ficam no PostgreSQL. Finalização grava um resumo único e remove os temporários na mesma transação. Partidas contra bot são compactadas após janela transitória de cinco minutos; consultas de missões suportam estado temporário e resumo. Consulte [operação do multiplayer](deploy/multiplayer.md) antes de publicar ou aumentar réplicas.
 
 Todas as missões retornam da API com `campaignAvailable`. O campo é calculado a partir dos adversários dos encontros que constam em `completedEncounters`, sem aceitar decisões de disponibilidade do cliente. Cartões não habilitados ficam inertes, escurecidos sobre preto e com cadeado; seus contadores retornam zero e não concedem unidades.
 

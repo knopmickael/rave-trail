@@ -1,5 +1,5 @@
 export type AnalyticsScreen = 'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns'
-  | 'map' | 'quick-battle' | 'unlocks' | 'battle' | 'unsupported-viewport' | 'about';
+  | 'map' | 'quick-battle' | 'unlocks' | 'battle' | 'multiplayer' | 'unsupported-viewport' | 'about';
 
 type AnalyticsWindow = Window & {
   dataLayer?: unknown[];

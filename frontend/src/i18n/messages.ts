@@ -2,6 +2,22 @@ import { aboutMessages } from './about-messages';
 
 // Portuguese is the source language. Keys are checked at every UI call site.
 export const messages = {
+  'Buscar partida': 'Find a match',
+  'Multiplayer contra {name}': 'Multiplayer vs {name}',
+  'Cancelar busca': 'Cancel search',
+  'Procurando adversário…': 'Finding an opponent…',
+  'Conectando ao multiplayer…': 'Connecting to multiplayer…',
+  'Aguardando os dois jogadores…': 'Waiting for both players…',
+  'Encontre outro jogador na fila global. Sua equipe precisa ter três personagens. Quem começa é sorteado.': 'Find another player in the global queue. Your team must have three characters. The first player is chosen at random.',
+  'Você tem 45 segundos por turno. Ao esgotar o tempo, seu combo é descartado. Desconexões permitem reconectar por 10 segundos.': 'You have 45 seconds per turn. When time runs out, your combo is discarded. Disconnections allow 10 seconds to reconnect.',
+  'Adversário desconectado. Aguardando reconexão por até {seconds}s.': 'Opponent disconnected. Waiting up to {seconds}s for reconnection.',
+  'Reconectando à partida…': 'Reconnecting to the match…',
+  'Partida anulada. Nenhuma vitória ou derrota foi registrada.': 'Match voided. No win or loss was recorded.',
+  'O resultado multiplayer foi salvo.': 'The multiplayer result was saved.',
+  'Você perderá a partida e seu adversário receberá a vitória.': 'You will lose the match and your opponent will receive the win.',
+  'Histórico detalhado indisponível após a reconexão. O resultado foi preservado.': 'Detailed history is unavailable after reconnection. The result was preserved.',
+  'Rodadas: {rounds} · Turnos executados: {turns}': 'Rounds: {rounds} · Completed turns: {turns}',
+  'Montar equipe': 'Build team',
   ...aboutMessages,
   'Preferências de analytics': 'Analytics preferences',
   'Aprovar': 'Approve',

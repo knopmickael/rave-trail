@@ -22,9 +22,11 @@ import { LanguageProvider, useI18n } from './i18n/LanguageProvider';
 import { AnalyticsConsent } from './analytics/AnalyticsConsent';
 import { useAnalyticsScreen } from './analytics/useAnalyticsScreen';
 import { LanguageSelector } from './i18n/LanguageSelector';
+import { multiplayerStorageKey } from './features/multiplayer/client';
 
 const battleScreenImport = () => import('./features/battle/BattleScreen');
 const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default: module.BattleScreen })));
+const MultiplayerScreen = lazy(() => import('./features/multiplayer/MultiplayerScreen').then((module) => ({ default: module.MultiplayerScreen })));
 
 export function App() {
   return <LanguageProvider><DesktopAccess><GameApp /></DesktopAccess><AppVersion /><AnalyticsConsent /></LanguageProvider>;
@@ -37,10 +39,11 @@ function AppVersion() {
 
 function GameApp() {
   const { t, text } = useI18n();
-  const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle'>('title');
+  const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle' | 'multiplayer'>('title');
   useAnalyticsScreen(screen);
   const [campaignId, setCampaignId] = useState('path-1');
-  const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map' | 'quick-battle'>('menu');
+  const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map' | 'quick-battle' | 'multiplayer'>('menu');
+  const [multiplayerBattling, setMultiplayerBattling] = useState(false);
   const [battle, setBattle] = useState<BattleRecord | null>(null);
   const [battleTitle, setBattleTitle] = useState('Batalha');
   const [user, setUser] = useState<User | null>(null);
@@ -51,7 +54,7 @@ function GameApp() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const audio = useAudioSettings();
-  useGameAudio({ inBattle: screen === 'battle', finalBattle: isFinalEncounter(battle?.encounterId),
+  useGameAudio({ inBattle: screen === 'battle' || multiplayerBattling, finalBattle: screen === 'battle' && isFinalEncounter(battle?.encounterId),
     volume: audio.volume, muted: audio.muted });
 
   const handleSessionExpired = useCallback(() => {
@@ -100,6 +103,11 @@ function GameApp() {
       .finally(() => { if (active) setChecking(false); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    try { if (window.sessionStorage.getItem(multiplayerStorageKey(user.id))) setScreen('multiplayer'); } catch { /* Storage is optional. */ }
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -172,6 +180,12 @@ function GameApp() {
     return <CharacterUnlocks onBack={() => setScreen('menu')} onSessionExpired={handleSessionExpired} />;
   }
 
+  if (screen === 'multiplayer' && user) {
+    return <Suspense fallback={<BattleLoading />}><MultiplayerScreen key={user.id} userId={user.id}
+      onBack={() => setScreen('menu')} onSessionExpired={handleSessionExpired} onBattleActive={setMultiplayerBattling}
+      onOpenCharacters={() => { setCharactersReturn('multiplayer'); setScreen('characters'); }} /></Suspense>;
+  }
+
   if (screen === 'battle' && user && battle) {
     return <Suspense fallback={<BattleLoading />}>
       <BattleScreen initialBattle={battle} title={battleTitle} onBack={() => setScreen(battle.encounterId === null ? 'quick-battle' : 'map')} onSessionExpired={handleSessionExpired} />
@@ -186,6 +200,7 @@ function GameApp() {
       onOpenProfile={() => setError('')}
       onOpenCampaigns={() => { setError(''); setScreen('campaigns'); }}
       onOpenQuickBattle={() => { setError(''); setScreen('quick-battle'); }}
+      onOpenMultiplayer={() => { setError(''); setScreen('multiplayer'); }}
       onOpenUnlocks={() => { setError(''); setScreen('unlocks'); }}
       onOpenStore={() => { setError(''); setScreen('store'); }}
       onOpenCharacters={() => { setError(''); setCharactersReturn('menu'); setScreen('characters'); }} />;

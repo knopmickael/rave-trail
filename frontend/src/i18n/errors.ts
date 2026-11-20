@@ -1,6 +1,21 @@
 // Messages are kept in the API's original language until render time, so an
 // already-visible error also follows a language change.
 export const errorMessages: Readonly<Record<string, string>> = {
+  'Partida não encontrada.': 'Match not found.',
+  'Outra conexão controla esta partida.': 'Another connection controls this match.',
+  'Identificador de comando reutilizado.': 'Command identifier reused.',
+  'A partida ainda não começou.': 'The match has not started yet.',
+  'O turno ou o combo já mudou. Atualize a partida.': 'The turn or combo has changed. Refresh the match.',
+  'Conclua ou desista da batalha atual antes de buscar uma partida.': 'Finish or surrender your current battle before finding a match.',
+  'Escolha três personagens para jogar multiplayer.': 'Choose three characters to play multiplayer.',
+  'Personagem indisponível.': 'Character unavailable.',
+  'Saia da fila ou conclua a partida multiplayer antes de iniciar outra batalha.': 'Leave the queue or finish your multiplayer match before starting another battle.',
+  'Não foi possível sincronizar a partida. Tente novamente.': 'Unable to sync the match. Please try again.',
+  'Mensagem multiplayer inválida.': 'Invalid multiplayer message.',
+  'Aguarde a conexão com o servidor.': 'Wait for the server connection.',
+  'Não foi possível confirmar o comando. Sincronize a partida.': 'Unable to confirm the command. Sync the match.',
+  'Conexão interrompida. Aguarde a sincronização.': 'Connection interrupted. Wait for synchronization.',
+  'Não foi possível carregar a equipe.': 'Unable to load your team.',
   'Sua sessão expirou. Entre novamente para continuar.': 'Your session has expired. Sign in again to continue.',
   'Sessão expirada.': 'Session expired.',
   'Não foi possível entrar.': 'Unable to sign in.',

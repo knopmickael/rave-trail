@@ -8,6 +8,8 @@ import { EmailAlreadyUsedError, type AuthRepository } from './auth/repository.js
 import { GameError, type GameRepository } from './game/repository.js';
 import type { BattleRepository } from './game/battle-repository.js';
 import { BattleRuleError } from '@game/core/battle.js';
+import type { PostgresMultiplayer } from './db/multiplayer.js';
+import { registerMultiplayerSocket } from './game/multiplayer-socket.js';
 
 const sessionCookie = 'rave_trail_session';
 const sessionSeconds = 60 * 60;
@@ -19,6 +21,7 @@ interface AppOptions {
   repository: AuthRepository;
   gameRepository: GameRepository;
   battleRepository?: BattleRepository;
+  multiplayer?: PostgresMultiplayer;
   origin: string;
   production?: boolean;
   logger?: boolean;
@@ -28,7 +31,7 @@ interface AppOptions {
   readMedia?: (id: string) => Promise<{ mimeType: string; content: Buffer } | null>;
 }
 
-export async function createApp({ repository, gameRepository, battleRepository, origin, production = false, logger = false, checkDatabase, readMedia }: AppOptions) {
+export async function createApp({ repository, gameRepository, battleRepository, multiplayer, origin, production = false, logger = false, checkDatabase, readMedia }: AppOptions) {
   const app = Fastify({
     logger: logger ? { redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers.set-cookie'] } : false,
     bodyLimit: 16 * 1024,
@@ -67,6 +70,8 @@ export async function createApp({ repository, gameRepository, battleRepository, 
     request.log.error({ err: error }, 'Falha na requisição');
     return reply.code(500).send({ message: 'Não foi possível concluir a solicitação.' });
   });
+
+  if (multiplayer) await registerMultiplayerSocket(app, multiplayer, repository, origin);
 
   // Verificação de saúde para monitores externos (UptimeRobot, etc.).
   // Pública e leve: valida o processo e, quando possível, a conexão com o banco.

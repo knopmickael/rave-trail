@@ -26,9 +26,17 @@ export async function readCharacterUnlocks(client: Pool | PoolClient, userId: st
   if (!units.rows.length) return { characters: [] };
   const victories = await client.query<BattleVictory>(`SELECT mode,
     to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt",
-    ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,player,units}') AS fighter) AS "playerUnitIds",
-    ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,enemy,units}') AS fighter) AS "enemyUnitIds"
-    FROM battles WHERE user_id = $1 AND status = 'victory' AND mode IN ('quick', 'multiplayer')`, [userId]);
+    CASE WHEN state IS NOT NULL THEN ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,player,units}') AS fighter)
+      ELSE ARRAY(SELECT jsonb_array_elements_text(summary->'playerUnitIds')) END AS "playerUnitIds",
+    CASE WHEN state IS NOT NULL THEN ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,enemy,units}') AS fighter)
+      ELSE ARRAY(SELECT jsonb_array_elements_text(summary->'enemyUnitIds')) END AS "enemyUnitIds"
+    FROM battles WHERE user_id = $1 AND status = 'victory' AND mode IN ('quick', 'multiplayer')
+    UNION ALL
+    SELECT 'multiplayer' AS mode,
+      to_char(completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt",
+      ARRAY(SELECT jsonb_array_elements_text(data->'teams'->$1::text)) AS "playerUnitIds",
+      ARRAY(SELECT jsonb_array_elements_text(data->'teams'->(data->>'loserId'))) AS "enemyUnitIds"
+    FROM multiplayer_results WHERE winner_id=$1`, [userId]);
   const campaignCompletions = await client.query<{ encounterId: string; completedAt: string }>(`SELECT encounter_id AS "encounterId",
     to_char(MIN(updated_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt"
     FROM battles WHERE user_id = $1 AND status = 'victory' AND encounter_id IS NOT NULL

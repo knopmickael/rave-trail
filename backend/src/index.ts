@@ -6,6 +6,8 @@ import { createApp } from './app.js';
 import { PostgresAuthRepository } from './db/auth-repository.js';
 import { PostgresGameRepository } from './db/game-repository.js';
 import { PostgresBattleRepository } from './db/battle-repository.js';
+import { PostgresMultiplayer } from './db/multiplayer.js';
+import { compactCompletedBattles } from './db/battle-compaction.js';
 import { environmentPath, frontendDistPath } from './paths.js';
 import { readMedia } from './db/media.js';
 
@@ -15,10 +17,13 @@ const pool = new pg.Pool({ connectionString: config.DATABASE_URL, connectionTime
 pool.on('error', (error) => console.error('Falha em conexão ociosa do PostgreSQL:', error.message));
 await pool.query('SELECT 1');
 const battleRepository = new PostgresBattleRepository(pool);
+const multiplayer = new PostgresMultiplayer(pool);
+await multiplayer.initialize();
 const app = await createApp({
   repository: new PostgresAuthRepository(pool),
   gameRepository: new PostgresGameRepository(pool),
   battleRepository,
+  multiplayer,
   origin: config.APP_ORIGIN,
   production: config.NODE_ENV === 'production',
   logger: true,
@@ -31,9 +36,12 @@ if (config.NODE_ENV === 'production') {
 }
 
 let advancingTurns: Promise<void> | null = null;
+let lastCompaction = 0;
 const turnTimer = setInterval(() => {
   if (advancingTurns) return;
-  advancingTurns = battleRepository.processDueBattles().catch((error) => app.log.error({ err: error }, 'Falha ao atualizar prazos de batalha'))
+  advancingTurns = battleRepository.processDueBattles().then(async () => {
+    if (Date.now() - lastCompaction >= 60_000) { await compactCompletedBattles(pool); lastCompaction = Date.now(); }
+  }).catch((error) => app.log.error({ err: error }, 'Falha ao atualizar prazos de batalha'))
     .finally(() => { advancingTurns = null; });
 }, 1000);
 turnTimer.unref();

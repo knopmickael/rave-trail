@@ -1,0 +1,8 @@
+.multiplayer-team { display: flex; justify-content: center; gap: 1rem; padding: 0; margin: 1.5rem 0; list-style: none; }
+.multiplayer-team li { display: grid; justify-items: center; align-content: start; gap: .5rem; flex: 1; max-width: 10rem; font-size: .9rem; }
+.multiplayer-team img { width: 4.5rem; height: 4.5rem; object-fit: cover; border: 2px solid #735330; border-radius: 50%; }
+.multiplayer-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; }
+.multiplayer-notice:empty { display: none; }
+.multiplayer-notice { text-align: center; }
+.multiplayer-notice:has(+ .battle-page) { position: fixed; z-index: 25; left: 50%; bottom: .8rem; transform: translateX(-50%); max-width: 70vw; padding: .5rem 1rem; background: #211b14ef; color: #fff0cb; border: 1px solid #ad8655; border-radius: .5rem; pointer-events: none; }
+.multiplayer-notice p { margin: .25rem 0; }
