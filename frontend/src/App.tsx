@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import type { User } from '@game/contracts';
 import { api, ApiError, clearGameData, preloadGameData } from './api';
 import { preloadGameAssets } from './asset-preloader';
@@ -29,7 +29,7 @@ const BattleScreen = lazy(() => battleScreenImport().then((module) => ({ default
 const MultiplayerScreen = lazy(() => import('./features/multiplayer/MultiplayerScreen').then((module) => ({ default: module.MultiplayerScreen })));
 
 export function App() {
-  return <LanguageProvider><DesktopAccess><GameApp /></DesktopAccess><AppVersion /><AnalyticsConsent /></LanguageProvider>;
+  return <LanguageProvider><DesktopAccess><GameApp /></DesktopAccess><AppVersion /></LanguageProvider>;
 }
 
 function AppVersion() {
@@ -37,9 +37,15 @@ function AppVersion() {
   return <span className="app-version" aria-label={t('Versão do aplicativo {version}', { version })}>v{version}</span>;
 }
 
+type GameScreen = 'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle' | 'multiplayer';
+
 function GameApp() {
+  const [screen, setScreen] = useState<GameScreen>('title');
+  return <><GameContent screen={screen} setScreen={setScreen} /><AnalyticsConsent showPreferences={screen === 'menu'} /></>;
+}
+
+function GameContent({ screen, setScreen }: { screen: GameScreen; setScreen: Dispatch<SetStateAction<GameScreen>> }) {
   const { t, text } = useI18n();
-  const [screen, setScreen] = useState<'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle' | 'multiplayer'>('title');
   useAnalyticsScreen(screen);
   const [campaignId, setCampaignId] = useState('path-1');
   const [charactersReturn, setCharactersReturn] = useState<'menu' | 'map' | 'quick-battle' | 'multiplayer'>('menu');

@@ -115,12 +115,16 @@ it('abre a lista pelo menu e retorna pelo botão de seta', async () => {
   vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
   const user = userEvent.setup();
   render(<App />);
+  expect(screen.queryByRole('button', { name: 'Preferências' })).not.toBeInTheDocument();
   await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  expect(screen.getByRole('button', { name: 'Preferências' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Lista de personagens' }));
+  expect(screen.queryByRole('button', { name: 'Preferências' })).not.toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Lista de personagens' })).toBeInTheDocument();
   expect(await screen.findByRole('button', { name: 'Selecionar Ravi de Berdal' })).toBeEnabled();
   await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
   expect(screen.getByRole('heading', { name: 'Menu principal' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Preferências' })).toBeInTheDocument();
 });
 
 it('retorna ao login quando o servidor informa sessão expirada no preload de progresso', async () => {

@@ -21,7 +21,8 @@ it('redireciona larguras abaixo de 720 px e mostra o aviso com logo sem montar o
   const Game = game;
   render(<DesktopAccess><Game /></DesktopAccess>);
   expect(window.location.pathname).toBe('/acesse-pelo-computador');
-  expect(screen.getByRole('heading')).toHaveTextContent('Para ter uma melhor experiência com o jogo, por favor acesse-o através de um computador.');
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Para ter uma melhor experiência com o jogo, por favor acesse-o através de um computador.');
+  expect(screen.queryByRole('button', { name: 'Preferências' })).not.toBeInTheDocument();
   expect(screen.getByRole('img', { name: 'Rave Trail' })).toHaveAttribute('src', '/media/images/logo-rave-trail.png');
   expect(game).not.toHaveBeenCalled();
 });

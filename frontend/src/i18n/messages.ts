@@ -19,7 +19,7 @@ export const messages = {
   'Rodadas: {rounds} · Turnos executados: {turns}': 'Rounds: {rounds} · Completed turns: {turns}',
   'Montar equipe': 'Build team',
   ...aboutMessages,
-  'Preferências de analytics': 'Analytics preferences',
+  'Preferências': 'Preferences',
   'Aprovar': 'Approve',
   'O Google Analytics só será carregado após sua aprovação. Sua escolha é salva neste navegador e pode ser alterada aqui.': 'Google Analytics will only load after your approval. Your choice is saved in this browser and can be changed here.',
   'A coleta está desativada neste ambiente.': 'Collection is disabled in this environment.',

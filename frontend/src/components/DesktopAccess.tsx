@@ -6,6 +6,7 @@ import { useI18n } from '../i18n/LanguageProvider';
 import { LanguageSelector } from '../i18n/LanguageSelector';
 import './desktop-access.css';
 import { useAnalyticsScreen } from '../analytics/useAnalyticsScreen';
+import { AnalyticsConsent } from '../analytics/AnalyticsConsent';
 
 const noticePath = '/acesse-pelo-computador';
 const isNarrow = () => window.innerWidth < 720;
@@ -30,7 +31,7 @@ export function DesktopAccess({ children }: { children: ReactNode }) {
   }, [blocked]);
 
   if (!blocked) return children;
-  return <main className="desktop-access" aria-labelledby="desktop-access-message">
+  return <><main className="desktop-access" aria-labelledby="desktop-access-message">
     <section className="desktop-access-content">
       <LanguageSelector />
       <img src={assets.logo} alt="Rave Trail" />
@@ -39,5 +40,5 @@ export function DesktopAccess({ children }: { children: ReactNode }) {
       <a href="/sobre/">{t('Conheça o Rave Trail e saiba como jogar')}</a>
       <IndieRadarBadge />
     </section>
-  </main>;
+  </main><AnalyticsConsent /></>;
 }

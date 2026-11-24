@@ -4,12 +4,14 @@ import { useAnalyticsConsent, type AnalyticsConsent as Consent } from './consent
 import { analyticsConfig } from './config';
 import { setAnalyticsCollection } from './client';
 
-export function AnalyticsConsent() {
+export function AnalyticsConsent({ showPreferences = false }: { showPreferences?: boolean }) {
   const { t } = useI18n();
   const { consent, ready, persisted, choose } = useAnalyticsConsent();
   const [reviewing, setReviewing] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const preferences = useRef<HTMLButtonElement>(null);
+
+  if (reviewing && !showPreferences) setReviewing(false);
 
   useEffect(() => {
     if (reviewing) heading.current?.focus();
@@ -20,7 +22,7 @@ export function AnalyticsConsent() {
   }, [consent, ready]);
 
   if (!ready) return null;
-  const open = consent === null || reviewing;
+  const open = consent === null || (showPreferences && reviewing);
   function save(next: Exclude<Consent, null>) {
     // Stop collection synchronously on refusal, before React's next effect.
     if (next === 'declined') setAnalyticsCollection(false, analyticsConfig);
@@ -30,8 +32,8 @@ export function AnalyticsConsent() {
   }
 
   return <div className="analytics-consent">
-    <button ref={preferences} type="button" className="analytics-preferences" aria-expanded={open}
-      aria-controls="analytics-choice" onClick={() => setReviewing(true)}>{t('Preferências de analytics')}</button>
+    {showPreferences && <button ref={preferences} type="button" className="analytics-preferences" aria-expanded={open}
+      aria-controls="analytics-choice" onClick={() => setReviewing(true)}>{t('Preferências')}</button>}
     {open && <section id="analytics-choice" className="analytics-choice" aria-labelledby="analytics-choice-title">
       <h2 id="analytics-choice-title" ref={heading} tabIndex={-1}>{t('Você escolhe o que compartilhar')}</h2>
       <p>{t('Sua permissão permitirá usar o Google Analytics para entender visitas e o caminho até as batalhas, sem enviar nome, e-mail ou identificador de conta. Você pode recusar e continuar jogando, ou mudar sua escolha a qualquer momento.')}</p>
