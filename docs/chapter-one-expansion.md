@@ -28,6 +28,16 @@ Os novos personagens têm 100 HP e usam os arquivos de corpo/rosto fornecidos em
 
 Os IDs dos sete encontros são preservados. As batalhas 1–3 e 7 conservam suas equipes. A batalha 4 passa a enfrentar os três novos saqueadores; a 5 enfrenta Trinity, Vlade e Passago; a 6 enfrenta Jung II, Exal II e Monnica II. Títulos e histórias acompanham os novos confrontos; mapa, posições e coordenadas existentes são preservados.
 
+### Ordem do catálogo — migration 048
+
+A Lista de personagens e o Quadro de missões usam a mesma ordenação persistida em `roster_order`. A migration `048_campaign_roster_order.sql` estabelece esta sequência inicial:
+
+Ravi, Doko, Anna, Kalis, Ridan, Saqueador I, Saqueador II, Saqueadora I, Jung I, Exal I, Monnica I, Curandeiro, Curandeira, Drak, Saqueador III, Saqueador IV, Saqueadora II, Trinity, Vlade, Passago, Jung II, Exal II, Monnica II, Ravi Berserk, Exal — Verdadeiro poder, Besta Lendária.
+
+As missões pertinentes mantêm essa ordem, respeitando os filtros existentes de personagens iniciais e Premium. Conteúdo da campanha 02 e personagens adicionais vêm depois, preservando sua ordem relativa no banco. O seed usa a mesma ordem para novos bancos e continua preservando ajustes posteriores pelo CMS.
+
+As ilustrações de corpo na seleção são centralizadas e dimensionadas pela altura disponível, mantendo a proporção e a largura automática. Artes mais largas podem transbordar horizontalmente pelo espaço ao redor, sem recorte pelo quadro. Catálogo, equipe e painel de informações ficam à frente da arte; a imagem decorativa não intercepta cliques. Miniaturas e ícones continuam com seus próprios enquadramentos.
+
 ## Missões
 
 | Personagem | Revelação | Requisitos de Batalha rápida |

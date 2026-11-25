@@ -263,11 +263,12 @@ it('reaplica nomes e ordem sobre posições antigas sem conflito e preserva equi
     'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
     'Jung de Grimória', 'Exal de Grimória', 'Monnica de Grimória',
     'Curandeiro de Pontes', 'Curandeira de Pontes', 'Drak de Pontes',
+    'Saqueador da estrada III', 'Saqueador da estrada IV', 'Saqueadora da estrada II',
     'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
-    'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
-    'Saqueador da estrada III', 'Saqueador da estrada IV', 'Saqueadora da estrada II', 'Exal de Grimória II', 'Monnica de Grimória II',
+    'Jung de Grimória II', 'Exal de Grimória II', 'Monnica de Grimória II',
+    'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
   ]);
-  expect(catalog.units.map((unit) => unit.rosterOrder)).toEqual([...Array.from({ length: 21 }, (_, index) => index), 38, 39, 40, 41, 42]);
+  expect(catalog.units.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: 26 }, (_, index) => index));
   expect(catalog.units.map((unit) => [unit.id, unit.abilityIds]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))).toEqual(abilitiesBefore);
   expect(await repository.getProgress(user.id)).toEqual(progressBefore);
   expect(catalog.units.filter((unit) => unit.unlock.kind === 'premium').map((unit) => unit.id)).toEqual(['rival-b-final-mode', 'legendary-beast-premium']);

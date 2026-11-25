@@ -143,14 +143,15 @@ describe('catálogo compartilhado', () => {
       'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
       'Jung de Grimória', 'Exal de Grimória', 'Monnica de Grimória',
       'Curandeiro de Pontes', 'Curandeira de Pontes', 'Drak de Pontes',
+      'Saqueador da estrada III', 'Saqueador da estrada IV', 'Saqueadora da estrada II',
       'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
-      'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
+      'Jung de Grimória II', 'Exal de Grimória II', 'Monnica de Grimória II',
+      'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
       ...SECOND_CAMPAIGN_CHARACTERS.map((character) => character.name),
-      'Saqueador da estrada III', 'Saqueador da estrada IV', 'Saqueadora da estrada II', 'Exal de Grimória II', 'Monnica de Grimória II',
     ]);
     expect(rosterUnits.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));
-    expect(rosterUnits.findIndex((unit) => unit.id === 'combatente-demonio')).toBe(33);
-    expect(rosterUnits.findIndex((unit) => unit.id === 'lorde-demonio-rakin')).toBe(35);
+    expect(rosterUnits.findIndex((unit) => unit.id === 'combatente-demonio')).toBe(38);
+    expect(rosterUnits.findIndex((unit) => unit.id === 'lorde-demonio-rakin')).toBe(40);
   });
 
   it('cadastra Jung II como uma unidade independente com o mesmo personagem e conjunto próprio de habilidades', () => {

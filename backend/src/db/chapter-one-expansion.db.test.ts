@@ -64,6 +64,10 @@ it('preserva a posição de um personagem CMS que já ocupava o fim do catálogo
   await pool.query('DELETE FROM encounter_enemies WHERE unit_id=ANY($1::text[])', [additions]);
   await pool.query('DELETE FROM unit_abilities WHERE unit_id=ANY($1::text[])', [additions]);
   await pool.query('DELETE FROM units WHERE id=ANY($1::text[])', [additions]);
+  // Reconstitui as 38 posições legadas antes de adicionar o personagem do CMS.
+  await pool.query('UPDATE units SET roster_order=roster_order+1000 WHERE roster_order IS NOT NULL');
+  await pool.query(`WITH ranked AS (SELECT id,(row_number() OVER (ORDER BY roster_order NULLS LAST,id)-1)::int AS position FROM units)
+    UPDATE units u SET roster_order=ranked.position FROM ranked WHERE ranked.id=u.id`);
   const base = (await cms.catalog()).characters.find((u) => u.id === 'protagonist-main-base')!;
   await cms.save('characters', { ...base, id: 'cms-order-test-character', characterId: 'cms-order-test-narrative', name: 'Personagem de autoria' }, true);
   expect((await cms.catalog()).characters.find((u) => u.id === 'cms-order-test-character')?.rosterOrder).toBe(38);
@@ -73,5 +77,5 @@ it('preserva a posição de um personagem CMS que já ocupava o fim do catálogo
   await seedDatabase(pool);
   const catalog = await cms.catalog();
   expect(catalog.characters.find((u) => u.id === 'cms-order-test-character')?.rosterOrder).toBe(38);
-  expect(catalog.characters.filter((u) => additions.includes(u.id)).map((u) => u.rosterOrder)).toEqual([39, 40, 41, 42, 43]);
+  expect(catalog.characters.filter((u) => additions.includes(u.id)).map((u) => u.rosterOrder)).toEqual([14, 15, 16, 21, 22]);
 });
