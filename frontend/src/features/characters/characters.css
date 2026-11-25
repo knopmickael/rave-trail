@@ -77,6 +77,9 @@
 .character-nameplate::after { right: 17px; }
 .character-nameplate h2 { margin: 0; overflow-wrap: anywhere; color: #3d1b08; font: 800 clamp(20px, 2vw, 26px) / 1.15 var(--font-ui); letter-spacing: .055em; text-shadow: 0 1px 0 #ffe8bd; text-transform: uppercase; }
 .character-information { display: grid; justify-self: end; width: min(100%, 460px); grid-template-rows: minmax(0, 1.3fr) minmax(200px, .8fr); gap: 18px; min-width: 0; min-height: 0; }
+@media (min-width: 720px) {
+  .roster-page:not(.store-page) .character-information { grid-template-rows: minmax(0, 1.3fr) minmax(150px, .5fr); }
+}
 .character-skills { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #9a7651 #efe2ca; scrollbar-gutter: stable; padding: 18px; border: 1px solid #9a7651; border-radius: 8px; background: #fff9ef; }
 .character-skills::-webkit-scrollbar { width: 10px; }
 .character-skills::-webkit-scrollbar-track { margin-block: 12px; border-radius: 10px; background: #efe2ca; }
@@ -165,6 +168,7 @@
   .character-nameplate { padding-block: 10px; }
   .character-nameplate h2 { font-size: clamp(18px, 1.5vw, 23px); }
   .character-information { width: 100%; grid-template-rows: minmax(0, 1fr) minmax(132px, .5fr); gap: 12px; }
+  .roster-page:not(.store-page) .character-information { grid-template-rows: minmax(0, 1fr) minmax(120px, .32fr); }
   .character-skills, .character-description { padding: 12px; }
   .ability-list { grid-template-rows: repeat(4, minmax(60px, auto)); gap: 8px; }
   .ability-row { grid-template-columns: 48px minmax(0, 1fr); gap: 10px; }
