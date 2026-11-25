@@ -11,7 +11,9 @@ const teamTurns = integer(1, 20);
 export const effectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('damage'), amount }).strict(), z.object({ kind: z.literal('heal'), amount }).strict(),
   z.object({ kind: z.literal('drain'), amount }).strict(), z.object({ kind: z.literal('revive'), hpRatio: z.number().min(0.01).max(1) }).strict(),
-  z.object({ kind: z.literal('guard'), reduction: amount, teamTurns }).strict(),
+  z.object({ kind: z.literal('guard'), reduction: amount, teamTurns, healPerTurn: integer(0, 10000).optional() }).strict(),
+  z.object({ kind: z.literal('dispel-shields') }).strict(),
+  z.object({ kind: z.literal('ability-block'), teamTurns }).strict(),
   z.object({ kind: z.literal('restore-energy'), amount: integer(1, 100) }).strict(),
   z.object({ kind: z.literal('extra-turn'), count: integer(1, 3) }).strict(),
   z.object({ kind: z.literal('bleed'), amount, turns: teamTurns }).strict(),
@@ -27,7 +29,7 @@ export const configSchema = z.object({ energyCost: abilityShape.energyCost, targ
   for (const effect of ability.effects) {
     const allowed = effect.kind === 'restore-energy' || effect.kind === 'extra-turn' ? ['team']
       : effect.kind === 'revive' ? ['defeated-ally']
-      : ['damage', 'drain', 'bleed', 'attack-block'].includes(effect.kind) ? ['enemy', 'all-enemies']
+      : ['damage', 'drain', 'bleed', 'attack-block', 'ability-block', 'dispel-shields'].includes(effect.kind) ? ['enemy', 'all-enemies']
       : ['ally', 'self', 'all-allies'];
     if (!allowed.includes(ability.target)) ctx.addIssue({ code: 'custom', path: ['effects'], message: `${effect.kind}: alvo incompatível (${allowed.join(', ')}).` });
   }

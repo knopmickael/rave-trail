@@ -59,11 +59,11 @@ describe('motor determinístico de combate', () => {
     expect(previewActions(initial, [action(0, 'main-special', 'enemy-0')]).state.teams.enemy.units[0].hp).toBe(65);
   });
 
-  it('cura 20 sem exceder o máximo e não revive um alvo derrotado', () => {
+  it('cura 25 sem exceder o máximo e não revive um alvo derrotado', () => {
     const initial = state(['guardian-healer-male-base']); initial.teams.player.energy = 100;
     initial.teams.player.units[0].hp = 70;
     const outcome = previewActions(initial, [action(0, 'heal', 'player-0')]);
-    expect(outcome.state.teams.player.units[0].hp).toBe(90);
+    expect(outcome.state.teams.player.units[0].hp).toBe(95);
     expect(outcome.state.teams.player.energy).toBe(65);
     initial.teams.player.units[0].hp = 0;
     expect(() => previewActions(initial, [action(0, 'heal', 'player-0')])).toThrow();
@@ -262,7 +262,7 @@ describe('motor determinístico de combate', () => {
     expect(result.activeSide).toBe('player');
     expect(result.teams.player.energy).toBe(25);
     expect(result.teams.player.turns).toBe(2);
-    expect(() => executeTurn(result, [action(0, 'retain-energy')])).not.toThrow();
+    expect(() => executeTurn(result, [action(0, 'retain-energy-plus')])).not.toThrow();
   });
 
   it('acumula turnos extras e conta-os para a duração da Guarda', () => {
@@ -310,6 +310,8 @@ describe('motor determinístico de combate', () => {
     const initial = createBattle(STARTER_UNIT_IDS.map(definition), ['legendary-beast-premium', 'rival-b-base', 'road-raider-1-base'].map(definition), Object.values(abilities));
     initial.activeSide = 'enemy'; initial.teams.enemy.energy = 100;
     initial.teams.enemy.units.forEach((unit) => { unit.hp = 40; });
+    // Isola cura imediata: o escudo com cura periódica possui seu próprio teste.
+    initial.teams.enemy.units[0].abilityIds = ['heal-plus', 'retain-energy-plus', 'resurrection'];
     const planned = planEnemyTurn(initial);
     expect(planned[0].abilityId).toBe('heal-plus');
     expect(planned.some((entry) => entry.abilityId === 'soul-drain')).toBe(true);

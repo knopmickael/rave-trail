@@ -42,6 +42,8 @@ Planejamento do multiplayer: [regras e arquitetura com WebSocket](docs/multiplay
 
 Multiplayer implementado para um único processo Fastify: fila global, equipes de três personagens, combos ao vivo e reconexão por 10 segundos. Requer migrações **041–043**. Consulte [operação, retenção e limites](docs/deploy/multiplayer.md) e [registro de execução](docs/multiplayer-progress.md).
 
+O balanceamento da migração **044** adiciona Proteção divina, Retaliação e Uivo do lobo, recalibra Invulnerabilidade/Recuperar vida e redistribui habilidades de sete personagens. Requer o motor atualizado; detalhes de duração, cura e bloqueios em [CMS — balanceamento](docs/cms.md#balanceamento-da-migração-044). O deploy aplica a migration automaticamente; não há sincronização automática de edições locais do CMS.
+
 `frontend/public/media/` é a única fonte dos arquivos usados pelo jogo. `frontend/dist/media/` é a cópia **gerada** para publicação. Os templates estão em `docs/design/templates/`.
 
 ## Executar localmente

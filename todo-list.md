@@ -1,35 +1,45 @@
-# Site alterações
+# Adição de habilidades
 
-1. [x] Trocar o favicon pelo logo oficial do game que é usado nos menus.
+- Proteção divina:
+    - Descrição: Aplica Proteção coletiva por 3 turnos e cura a mesma quantidade de vida a cada turno sob efeito (10 HP por turno da equipe, total 30 HP pra cada aliado)
+    - Custo: 35 de energia
+    - Ícone: /frontend/public/media/abilites/divine-protection.png
 
-# CMS alterações
+- Retaliação:
+    - Descrição: Desabilita completamente habilidades do tipo Escudo de todo o time inimigo, independente de quantos turnos ainda faltarem para que terminem (inclusive, proteção divina que além de fornecer escudo, cura, interrompe tudo)
+    - Custo: 30 de energia
+    - Ícone: /frontend/public/media/abilites/retaliation.png
 
-1. [x] Troque o conteúdo de "01 Uma nova jornada por: 01 Metadados".
+- Uivo do lobo:
+    - Descrição: Causa 20 de dano à um inimigo e impede que ele use qualquer habilidade pelos próximos 2 turnos do time dele.
+    - Custo: 35 de energia
+    - Ícone: /frontend/public/media/abilites/wolfs-howl.png
 
-2. [x] A descrição da campanha não aparece em lugar algum do site/jogo e ela não está refletindo de fato a descrição que é mostrada ao clicar no ícone de pergaminho no mapa da campanha - sincronize-os.
+# Calibragem de habilidades
 
-3. [x] Ao clicar em "Campanha publicada / disponível no jogo" não está refletindo no site/jogo, continua desabilitada (somente a campanha 2, a campanha está refletindo normalmente).
+- Invulnerabilidade custa 25 de energia agora
+- Recuperar vida restaura 25 de hp agora
 
-4. [x] Por algum motivo, a imagem de fundo (mapa) de ambas as campanhas aparece como vazia no form, deveria estar aparecendo o caminho /media/images/mapa-campanha-01.png que inclusive está incorreto, afinal deveria estar em /media/campaigns/ e não /media/images. Pode colocar o mapa-campanha-01.png como imagem de fundo de ambas as campanhas atuais (01 e 02).
+# Distribuição das habilidades entre os personagens
 
-5. [x] Operações de escrita precisam de confirmação do usuário, exceto o reposicionamento de entidades nos catálogos. Abrir personagens, campanhas, habilidades ou confrontos não deve exibir prompt de confirmação.
-
-6. [x] Fica complicado de definir a ordem do Personagem no catálogo dentro do formulário do personagem, seria melhor se a disposição dos personagens fosse em lista e eu pudesse fazer um drag and drop deles ou até mesmo um botão que sobe/desce o personagem de posição na lista (o que reflete diretamente na ordem do personagem na Lista de personagens do jogo/site).
-
-7. [x] Remova a opção "conteúdo provisório" de TODAS entidades do sistema, não estamos trabalhando com essa lógica em hipótese alguma.
-
-8. [x] Ainda no formulário do personagem, na parte de Leque de habilidades, seria interessante ver a imagem e os dados da habilidade sendo escolhida e quem sabe um campo de pesquisa por nome também.
-
-9. [x] Aparentemente não precisamos do campo "Descrição do desbloqueio" dos personagens, não faz muito sentido.
-
-10. [x] Nenhum personagem será desbloqueado através da opção existente: Concluir uma batalha. As opções atuais de desbloqueio são exclusivamente: Disponível desde o início, Premium e Missão com requisitos, que é a única que possui o setup de "Quando revelar a lista de requisitos" que por sua vez somente possui 2 opções: Desde o início e Após vencer uma batalha específica de uma campanha específica.
-
-11. [x] No formulário de habilidades, não precisa da condição de Setup reutilizável, dificilmente utilizarei isto, vou montar "na mão" sempre a habilidade.
-
-12. [x] NENHUM confronto de campanha nenhuma deve conceder personagem algum como recompensa direta, jamais, desbloqueios são Premium ou através de cumprimento de Requisitos. Pode remover este elemento do formulário.
-
-## Implementação
-
-- Migração: `backend/migrations/039_cms_content_requirements.sql`.
-- Detalhes de uso e atualização dos bancos: `docs/cms.md`.
-- Ordenação pela lista com botões Subir/Descer e abertura de registros sem prompt; confirmações nativas do navegador nas demais ações de escrita.
+- Jung de Grimória troca:
+    - Investida por Retaliação
+- Drak de Pontes troca:
+    - Investida por Ataque simples II
+    - Reter energia por Reter muita energia
+- Trinity de Espinea troca:
+    - Investida por Ataque simples II
+    - Invulnerabilidade por Guarda
+    - Reter energia por Reter muita energia
+- Vlade de Espinea troca:
+    - Investida por Ataque simples II
+    - Invulnerabilidade por Guarda
+    - Proteção coletiva por Proteção divina
+- Passago de Espinea troca:
+    - Invulnerabilidade por Guarda
+    - Reter muita energia por Reter energia
+    - Varredura tática por Uivo do lobo
+- Ravi Berserk troca:
+    - Golpes simples II por Corte rápido
+- Besta Lendária troca:
+    - Proteção coletiva por Proteção divina

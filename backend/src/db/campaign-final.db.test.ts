@@ -105,7 +105,7 @@ it('persiste a transformação inicial uma única vez após recarga e conclui a 
   transformed.state.teams.player.energy = 100;
   await pool.query('UPDATE battles SET state = $2 WHERE id = $1', [final.id, JSON.stringify(transformed.state)]);
   const victoryId = randomUUID();
-  const finishing = [{ actorId: 'player-0', abilityId: 'simple-strike-ii', targetId: 'enemy-0' }];
+  const finishing = [{ actorId: 'player-0', abilityId: 'quick-slash', targetId: 'enemy-0' }];
   const victory = await battles.submitTurn(user.id, final.id, transformed.revision, victoryId, finishing);
   expect(victory.battle.state.status).toBe('victory');
   expect(await battles.submitTurn(user.id, final.id, transformed.revision, victoryId, finishing)).toEqual(victory);

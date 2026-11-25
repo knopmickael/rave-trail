@@ -140,7 +140,7 @@ export const units: readonly UnitDefinition[] = [
   ...(['rival-a', 'rival-b'] as const).map((characterId) => defineUnit({
     id: `${characterId}-base`, characterId, version: 'Primeiro encontro',
     description: 'Jovem mercenário de um trio rival. Sua presença nas estradas sugere uma organização por trás dos ataques à região.',
-    abilityIds: [...common, characterId === 'rival-a' ? 'main-special' : 'soul-drain'], unlock: battleUnlock(`${characterId}-base`),
+    abilityIds: [...common, characterId === 'rival-a' ? 'retaliation' : 'soul-drain'], unlock: battleUnlock(`${characterId}-base`),
   })),
   defineUnit({
     id: 'jung-de-grimoria-ii', characterId: 'rival-a', version: 'Versão II',
@@ -155,7 +155,7 @@ export const units: readonly UnitDefinition[] = [
   defineUnit({
     id: 'passage-guardian-base', characterId: 'passage-guardian', version: 'Guardião',
     description: 'Um combatente experiente que controla a passagem. Combina golpes fortes e uma técnica capaz de conceder turnos adicionais à própria equipe.',
-    abilityIds: ['main-special', 'fast-move', 'retain-energy', 'extra-turn'],
+    abilityIds: ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn'],
     unlock: battleUnlock('passage-guardian-base'),
   }),
   ...(['guardian-healer-male', 'guardian-healer-female'] as const).map((characterId) => defineUnit({
@@ -166,9 +166,9 @@ export const units: readonly UnitDefinition[] = [
   ...(['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'] as const).map((characterId) => defineUnit({
     id: characterId, characterId, version: 'Após a passagem',
     description: 'Integrante do trio de guerreiros habilidosos encontrado após o confronto com Drak de Pontes.',
-    abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['main-special', 'fast-move', 'retain-energy', 'secondary-special']
-      : characterId === 'guerreiros-habilidosos-b' ? ['main-special', 'fast-move', 'retain-energy', 'female-special']
-        : ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'secondary-special'], unlock: battleUnlock(characterId),
+    abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['simple-strike-ii', 'guard', 'retain-energy-plus', 'secondary-special']
+      : characterId === 'guerreiros-habilidosos-b' ? ['simple-strike-ii', 'guard', 'retain-energy', 'divine-protection']
+        : ['simple-strike-ii', 'guard', 'retain-energy', 'wolfs-howl'], unlock: battleUnlock(characterId),
   })),
   defineUnit({
     id: 'rival-b-final-mode', characterId: 'rival-b', version: 'Verdadeiro poder',
@@ -179,13 +179,13 @@ export const units: readonly UnitDefinition[] = [
   defineUnit({
     id: 'protagonist-main-transformed', characterId: 'protagonist-main', version: 'Despertar',
     description: 'O despertar de Ravi durante a jornada revela uma força que ele ainda precisa compreender e aprender a controlar.',
-    abilityIds: ['simple-strike-ii', 'female-special', 'retain-energy-plus', 'fury-scream'],
+    abilityIds: ['quick-slash', 'female-special', 'retain-energy-plus', 'fury-scream'],
     unlock: battleUnlock('protagonist-main-transformed'),
   }),
   defineUnit({
     id: 'legendary-beast-premium', characterId: 'legendary-beast', version: 'Lendária',
     description: 'Uma presença rara que sugere forças muito além das conhecidas no vilarejo.',
-    abilityIds: ['heal-plus', 'female-special', 'retain-energy-plus', 'resurrection'],
+    abilityIds: ['heal-plus', 'divine-protection', 'retain-energy-plus', 'resurrection'],
     unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' },
   }),
   ...SECOND_CAMPAIGN_CHARACTERS.map((character) => ({

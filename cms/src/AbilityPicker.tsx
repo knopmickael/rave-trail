@@ -17,7 +17,7 @@ export function AbilityPicker({ index, value, abilities, onChange }: {
     {!results.length && <p className="muted" role="status">Nenhuma habilidade encontrada.</p>}
     {selected && <div className="ability-summary"><img src={selected.icon} alt={`Ícone de ${selected.name}`} width="52" height="52" />
       <div><strong>{selected.name}</strong><p>{selected.description}</p><p>{selected.energyCost} energia · {targets[selected.target]}</p>
-        <ul>{selected.effects.map((effect, i) => <li key={i}>{effectSpecs[effect.kind].label}: {Object.entries(effectSpecs[effect.kind].fields).map(([field, spec]) => `${spec.label}: ${(effect as unknown as Record<string, number>)[field]}`).join(' · ')}</li>)}</ul>
+        <ul>{selected.effects.map((effect, i) => <li key={i}>{effectSpecs[effect.kind].label}: {Object.entries(effectSpecs[effect.kind].fields).map(([field, spec]) => `${spec.label}: ${(effect as unknown as Record<string, number>)[field] ?? 0}`).join(' · ')}</li>)}</ul>
       </div></div>}
   </div>;
 }

@@ -221,6 +221,18 @@ it('reserva energia assim que escolhe a habilidade e bloqueia as demais opções
   expect(await screen.findByRole('button', { name: /^Encerrar turno \d+s$/ })).toBeEnabled();
 });
 
+it('desativa todas as habilidades sob Uivo do lobo e mantém o turno e os aliados disponíveis', () => {
+  const record = initial();
+  record.state.teams.player.energy = 100;
+  record.state.teams.player.units[0].abilitiesBlockedExpiresAt = 3;
+  record.state.teams.player.units[0].abilityBlockAbilityId = 'wolfs-howl';
+  render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
+  for (const name of ['Golpe simples', 'Guarda', 'Reter energia', 'Investida']) expect(skill(name)).toBeDisabled();
+  expect(skill('Reter energia', 'Doko de Berdal')).toBeEnabled();
+  expect(endTurn()).toBeEnabled();
+  expect(screen.getByRole('img', { name: 'Efeito ativo: habilidades bloqueadas' })).toHaveAttribute('src', '/media/abilities/wolfs-howl.png');
+});
+
 it('mantém a batalha visível na escolha de alvo, sem opção de cancelar, e destaca o inimigo selecionável', async () => {
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={initial()} title="Batalha" {...handlers()} />);

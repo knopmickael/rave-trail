@@ -26,7 +26,7 @@ it('protege o CMS contra hosts externos, requisições cross-site e mutações s
   } finally { await app.close(); }
 });
 
-it('aceita os 11 efeitos existentes e impede efeitos desconhecidos, campos extras e alvos incompatíveis', () => {
+it('aceita efeitos existentes e impede efeitos desconhecidos, campos extras e alvos incompatíveis', () => {
   for (const ability of Object.values(abilities)) expect(abilitySchema.safeParse(ability).success, ability.id).toBe(true);
   expect(abilitySchema.safeParse({ ...abilities.guard, effects: [{ kind: 'stun', turns: 2 }] }).success).toBe(false);
   expect(abilitySchema.safeParse({ ...abilities.guard, effects: [{ kind: 'guard', reduction: 10, teamTurns: 2, percent: true }] }).success).toBe(false);
@@ -35,6 +35,17 @@ it('aceita os 11 efeitos existentes e impede efeitos desconhecidos, campos extra
   expect(abilitySchema.safeParse({ ...abilities.guard, icon: 'javascript:alert(1)' }).success).toBe(false);
   expect(abilitySchema.safeParse({ ...abilities.guard, icon: '/media/../../secret' }).success).toBe(false);
   expect(characterSchema.safeParse({}).success).toBe(false);
+});
+
+it('valida cura vinculada ao escudo, remoção de escudos e bloqueio total com alvos e limites corretos', () => {
+  const valid = [
+    { ...abilities.guard, effects: [{ kind: 'guard', reduction: 10, teamTurns: 3, healPerTurn: 10 }] },
+    { ...abilities.guard, target: 'all-enemies', effects: [{ kind: 'dispel-shields' }] },
+    { ...abilities.guard, target: 'enemy', effects: [{ kind: 'ability-block', teamTurns: 2 }] },
+  ];
+  for (const ability of valid) expect(abilitySchema.safeParse(ability).success).toBe(true);
+  for (const ability of valid.slice(1)) expect(abilitySchema.safeParse({ ...ability, target: 'all-allies' }).success).toBe(false);
+  expect(abilitySchema.safeParse({ ...valid[0], effects: [{ kind: 'guard', reduction: 10, teamTurns: 3, healPerTurn: -10 }] }).success).toBe(false);
 });
 
 it('valida propostas de IA e não transforma uma mecânica inédita em efeito executável', async () => {

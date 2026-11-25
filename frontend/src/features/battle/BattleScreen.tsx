@@ -319,6 +319,13 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired, m
                       <img src={state.abilities['dark-vortex'].icon} alt={t('Efeito ativo: ataques bloqueados')} />
                     </AbilityTooltip>
                   </li>}
+                  {unit.abilitiesBlockedExpiresAt != null && (() => {
+                    const effect = state.abilities[unit.abilityBlockAbilityId ?? 'wolfs-howl'];
+                    return effect ? <li><AbilityTooltip ability={effect} resetKey={tooltipReset} focusable
+                      extra={t('Impedido de usar habilidades por {count} turno(s) da equipe.', { count: Math.max(0, unit.abilitiesBlockedExpiresAt - state.teams[side].turns - (state.activeSide === side ? 0 : 1)) })}>
+                      <img src={effect.icon} alt={t('Efeito ativo: habilidades bloqueadas')} />
+                    </AbilityTooltip></li> : null;
+                  })()}
                   {(unit.bleedTurns ?? 0) > 0 && state.abilities['quick-slash'] && <li>
                     <AbilityTooltip ability={state.abilities['quick-slash']} resetKey={tooltipReset} focusable
                       extra={t('Sangramento: {damage} de dano por {count} turno(s) restantes.', { damage: unit.bleedAmount ?? 0, count: unit.bleedTurns ?? 0 })}>
@@ -340,7 +347,8 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired, m
                 const noTarget = ability.target === 'defeated-ally'
                   ? !state.teams.player.units.some((entry) => entry.hp === 0)
                   : ability.target === 'enemy' ? !state.teams.enemy.units.some((entry) => entry.hp > 0) : false;
-                const disabled = !player || busy || !playerTurn || unit.hp <= 0
+                const attackBlocked = unit.attackBlockedExpiresAt != null && ability.effects.some((effect) => ['damage', 'drain', 'bleed'].includes(effect.kind));
+                const disabled = !player || busy || !playerTurn || unit.hp <= 0 || unit.abilitiesBlockedExpiresAt != null || attackBlocked
                   || (!!chosen && !selected) || (!!pending && pending.actorId !== unit.id)
                   || (!selected && (ability.energyCost > energy || noTarget));
                 return <AbilityTooltip key={id} ability={ability} resetKey={tooltipReset} focusable={disabled}>

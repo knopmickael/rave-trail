@@ -18,10 +18,13 @@ export interface Fighter {
   guardExpiresAt: number | null;
   guardAbilityId?: string | null;
   guardReduction?: number | null;
+  guardHealPerTurn?: number | null;
   bleedTurns?: number;
   bleedAmount?: number;
   invulnerableExpiresAt?: number | null;
   attackBlockedExpiresAt?: number | null;
+  abilitiesBlockedExpiresAt?: number | null;
+  abilityBlockAbilityId?: string | null;
   damageBoostAmount?: number;
   damageBoostStartsAt?: number | null;
   damageBoostExpiresAt?: number | null;
@@ -73,14 +76,21 @@ export function damageBonus(unit: Fighter, teamTurns: number) {
     && unit.damageBoostStartsAt <= teamTurns && unit.damageBoostExpiresAt > teamTurns ? unit.damageBoostAmount ?? 0 : 0;
 }
 
-function clearEffects(unit: Fighter) {
+function clearGuard(unit: Fighter) {
   unit.guardExpiresAt = null;
   unit.guardAbilityId = null;
   unit.guardReduction = null;
+  unit.guardHealPerTurn = null;
+}
+
+function clearEffects(unit: Fighter) {
+  clearGuard(unit);
   unit.bleedTurns = 0;
   unit.bleedAmount = 0;
   unit.invulnerableExpiresAt = null;
   unit.attackBlockedExpiresAt = null;
+  unit.abilitiesBlockedExpiresAt = null;
+  unit.abilityBlockAbilityId = null;
   unit.damageBoostAmount = 0;
   unit.damageBoostStartsAt = null;
   unit.damageBoostExpiresAt = null;
@@ -112,15 +122,23 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
   team.turns++;
   team.energy = clamp(team.energy + 15, 100);
   for (const unit of team.units) {
+    // O último tick pertence ao turno de expiração. A cura é parte do escudo,
+    // portanto removê-lo ou substituí-lo também cancela os ticks restantes.
+    if (unit.hp > 0 && unit.guardExpiresAt !== null && unit.guardExpiresAt >= team.turns && (unit.guardHealPerTurn ?? 0) > 0) {
+      heal(unit, unit.guardHealPerTurn!, events, { abilityId: unit.guardAbilityId ?? undefined, targetIds: [unit.id] });
+    }
     if (unit.guardExpiresAt !== null && unit.guardExpiresAt <= team.turns) {
-      unit.guardExpiresAt = null;
-      unit.guardAbilityId = null;
-      unit.guardReduction = null;
+      clearGuard(unit);
       events.push({ kind: 'guard', message: `A Guarda de ${unit.name} expirou.` });
     }
     if (unit.attackBlockedExpiresAt != null && unit.attackBlockedExpiresAt <= team.turns) {
       unit.attackBlockedExpiresAt = null;
       events.push({ kind: 'guard', message: `${unit.name} pode voltar a atacar.` });
+    }
+    if (unit.abilitiesBlockedExpiresAt != null && unit.abilitiesBlockedExpiresAt <= team.turns) {
+      unit.abilitiesBlockedExpiresAt = null;
+      unit.abilityBlockAbilityId = null;
+      events.push({ kind: 'guard', message: `${unit.name} pode voltar a usar habilidades.` });
     }
     if (unit.damageBoostExpiresAt != null && unit.damageBoostExpiresAt <= team.turns) {
       unit.damageBoostAmount = 0;
@@ -182,8 +200,9 @@ export function createBattle(player: readonly UnitDefinition[], enemy: readonly 
   const makeTeam = (units: readonly UnitDefinition[], side: BattleSide): BattleTeam => ({
     energy: 0, turns: 0, extraTurns: 0,
     units: units.map((unit, index) => ({ id: `${side}-${index}`, unitId: unit.id, name: unit.name, portrait: unit.portrait,
-      hp: unit.maxHp, maxHp: unit.maxHp, abilityIds: [...unit.abilityIds], guardExpiresAt: null, guardReduction: null,
+      hp: unit.maxHp, maxHp: unit.maxHp, abilityIds: [...unit.abilityIds], guardExpiresAt: null, guardReduction: null, guardHealPerTurn: null,
       bleedTurns: 0, bleedAmount: 0, invulnerableExpiresAt: null, attackBlockedExpiresAt: null,
+      abilitiesBlockedExpiresAt: null, abilityBlockAbilityId: null,
       damageBoostAmount: 0, damageBoostStartsAt: null, damageBoostExpiresAt: null })),
   });
   const state: BattleState = { teams: { player: makeTeam(player, 'player'), enemy: makeTeam(enemy, 'enemy') },
@@ -211,6 +230,9 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
     if (!actor || actor.hp <= 0 || !actor.abilityIds.includes(action.abilityId) || !ability) throw new BattleRuleError('Personagem ou habilidade inválidos.');
     if (acted.has(actor.id)) throw new BattleRuleError('Cada personagem pode usar somente uma habilidade por turno.');
     acted.add(actor.id);
+    if (actor.abilitiesBlockedExpiresAt != null) {
+      throw new BattleRuleError(`${actor.name} está impedido de usar habilidades neste turno.`);
+    }
     if (actor.attackBlockedExpiresAt != null && isAttackAbility(ability)) {
       throw new BattleRuleError(`${actor.name} está impedido de atacar neste turno.`);
     }
@@ -280,7 +302,17 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
             target.guardExpiresAt = targetTeam.turns + effect.teamTurns;
             target.guardAbilityId = ability.id;
             target.guardReduction = effect.reduction;
+            target.guardHealPerTurn = effect.healPerTurn ?? null;
             events.push({ kind: 'guard', message: `Guarda aplicada em ${target.name}: −${effect.reduction} por golpe, por ${effect.teamTurns} turnos.`, ...targetMetadata });
+          } else if (effect.kind === 'dispel-shields') {
+            clearGuard(target);
+            target.invulnerableExpiresAt = null;
+            events.push({ kind: 'guard', message: `Os escudos de ${target.name} foram removidos.`, ...targetMetadata });
+          } else if (effect.kind === 'ability-block') {
+            const targetTeam = team.units.includes(target) ? team : enemy;
+            target.abilitiesBlockedExpiresAt = targetTeam.turns + 1 + effect.teamTurns;
+            target.abilityBlockAbilityId = ability.id;
+            events.push({ kind: 'guard', message: `${target.name} não poderá usar habilidades durante ${effect.teamTurns} turno(s).`, ...targetMetadata });
           } else if (effect.kind === 'bleed') {
             target.bleedTurns = effect.turns;
             target.bleedAmount = effect.amount + damageBonus(actor, team.turns);

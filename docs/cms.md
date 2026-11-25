@@ -84,7 +84,7 @@ O indicador de conexão mostra o rótulo configurado, a disponibilidade do banco
 
 Há dois modos de autoria, ambos produzindo o mesmo contrato validado de combate:
 
-1. **Configuração manual:** nome, imagem, descrição, custo de energia, alvo e lista ordenada de efeitos. São oferecidos os 7 alvos e os 11 efeitos existentes: dano, cura, dreno, ressurreição, guarda, recuperação de energia, turno extra, sangramento, invulnerabilidade, bloqueio de ataques e bônus de dano. Valores e combinações de alvo são validados na API.
+1. **Configuração manual:** nome, imagem, descrição, custo de energia, alvo e lista ordenada de efeitos. São oferecidos os 7 alvos e os 13 efeitos existentes: dano, cura, dreno, ressurreição, guarda, recuperação de energia, turno extra, sangramento, invulnerabilidade, bloqueio de ataques, bônus de dano, remoção de escudos e bloqueio de todas as habilidades. Guarda aceita cura por turno vinculada ao escudo (zero significa sem cura). Valores e combinações de alvo são validados na API.
 2. **Assistente de IA:** conversa com histórico e contexto do rascunho. A resposta pode gerar uma configuração nova usando os efeitos suportados. A ação **Aplicar ao formulário** preenche o rascunho; **Salvar alterações** persiste a habilidade.
 
 Configure um provedor compatível com **OpenAI Chat Completions**:
@@ -101,7 +101,17 @@ O contexto enviado ao modelo contém o contrato de efeitos/alvos, o rascunho de 
 
 A configuração manual é montada diretamente no formulário da habilidade, sem seletores ou salvamento de setups reutilizáveis.
 
-Uma descrição que exige uma mecânica ausente do motor — por exemplo, alvos mistos, condições arbitrárias, passivas ou um atordoamento total — gera uma **especificação de extensão**, exportável como JSON. Não se salva um `kind` desconhecido nem se executa código produzido pelo modelo. A extensão precisa ser implementada e testada no motor compartilhado; depois, o contrato e o formulário podem ser ampliados. Uma combinação nova dos efeitos existentes já pode ser configurada e salva sem alterar o motor.
+Uma descrição que exige uma mecânica ausente do motor — por exemplo, alvos mistos, condições arbitrárias ou passivas — gera uma **especificação de extensão**, exportável como JSON. Não se salva um `kind` desconhecido nem se executa código produzido pelo modelo. A extensão precisa ser implementada e testada no motor compartilhado; depois, o contrato e o formulário podem ser ampliados. Uma combinação nova dos efeitos existentes já pode ser configurada e salva sem alterar o motor.
+
+### Balanceamento da migração 044
+
+- **Proteção divina (35 energia):** redução de 10 por golpe por 3 rodadas; cura 10 HP no início dos próximos 3 turnos da própria equipe, até o máximo de HP, somente em vivos. A última cura acontece antes da expiração do escudo. Turnos extras contam. Reaplicar/substituir Guarda não acumula os efeitos; o novo escudo substitui o anterior e sua cura.
+- **Retaliação (30 energia):** remove Guarda, Proteção coletiva/divina e Invulnerabilidade dos inimigos vivos, junto com a cura vinculada. Não remove sangramento, bônus de ataque ou bloqueios. Pode-se aplicar um novo escudo depois.
+- **Uivo do lobo (35 energia):** 20 de dano e bloqueio de qualquer habilidade durante 2 turnos da equipe alvo, incluindo turnos extras. Os aliados não atingidos continuam agindo; a equipe pode encerrar o turno sem ações. Vórtex negro continua bloqueando somente ataques.
+- Invulnerabilidade passa a custar 25 de energia; Recuperar vida restaura 25 HP.
+- Conjuntos atualizados de Jung original, Drak, Trinity, Vlade, Passago, Ravi Berserk e Besta Lendária; os slots existentes são preservados.
+
+A migration `044_divine_protection_retaliation_and_wolfs_howl.sql` leva o conteúdo aos bancos existentes e é aplicada pela esteira normal de deploy, uma única vez. O catálogo compartilhado acompanha esses valores para novos bancos. Efeitos adicionais de Recuperar vida são preservados, ajustando apenas a quantidade de cura. Se uma troca gerar duplicidade porque a habilidade de destino já estava em outro slot editado no CMS, a troca solicitada tem prioridade; somente o slot duplicado é preenchido com uma habilidade ainda ausente do conjunto aprovado. Edições posteriores pelo CMS continuam protegidas do seed. Como os novos efeitos exigem o motor atualizado, publique a aplicação junto da migration. Partidas anteriores continuam com seus snapshots.
 
 ### Campanhas e confrontos
 

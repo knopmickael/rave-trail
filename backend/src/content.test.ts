@@ -54,7 +54,7 @@ describe('catálogo compartilhado', () => {
 
   it('preserva os conjuntos aprovados do chefão, curandeiros e protagonistas', () => {
     const guardian = units.find((unit) => unit.id === 'passage-guardian-base')!;
-    expect(guardian.abilityIds).toEqual(['main-special', 'fast-move', 'retain-energy', 'extra-turn']);
+    expect(guardian.abilityIds).toEqual(['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn']);
     for (const unit of units.filter((unit) => unit.characterId.startsWith('guardian-healer'))) {
       expect(unit.abilityIds).toEqual(['simple-strike', 'female-special', 'retain-energy', 'heal']);
     }
@@ -77,7 +77,7 @@ describe('catálogo compartilhado', () => {
     expect(abilities['soul-drain-plus']).toMatchObject({ target: 'all-enemies', energyCost: 45,
       description: 'Causa 30 de dano a todos os inimigos vivos e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.',
       effects: [{ kind: 'drain', amount: 30 }] });
-    expect(abilities.heal).toMatchObject({ energyCost: 35, effects: [{ kind: 'heal', amount: 20 }] });
+    expect(abilities.heal).toMatchObject({ energyCost: 35, effects: [{ kind: 'heal', amount: 25 }] });
     expect(abilities['heal-plus']).toMatchObject({ energyCost: 45, effects: [{ kind: 'heal', amount: 30 }] });
     expect(abilities.resurrection).toMatchObject({ energyCost: 50 });
     expect(abilities['extra-turn']).toMatchObject({ energyCost: 40 });
@@ -88,7 +88,7 @@ describe('catálogo compartilhado', () => {
       effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 10, turns: 3 }] });
     expect(abilities['dark-vortex']).toMatchObject({ energyCost: 30, target: 'all-enemies',
       effects: [{ kind: 'damage', amount: 15 }, { kind: 'attack-block', teamTurns: 1 }] });
-    expect(abilities['fast-move']).toMatchObject({ name: 'Invulnerabilidade', energyCost: 15, target: 'self',
+    expect(abilities['fast-move']).toMatchObject({ name: 'Invulnerabilidade', energyCost: 25, target: 'self',
       effects: [{ kind: 'invulnerable', teamTurns: 1 }] });
   });
 
@@ -121,17 +121,17 @@ describe('catálogo compartilhado', () => {
     ['protagonist-female-base', ['simple-strike', 'guard', 'retain-energy', 'secondary-special']],
     ['road-raider-1-base', ['simple-strike', 'guard', 'retain-energy', 'strong-strike']],
     ['road-raider-2-base', ['simple-strike', 'guard', 'retain-energy', 'secondary-special']],
-    ['rival-a-base', ['simple-strike', 'guard', 'retain-energy', 'main-special']],
+    ['rival-a-base', ['simple-strike', 'guard', 'retain-energy', 'retaliation']],
     ['jung-de-grimoria-ii', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash']],
     ['rival-b-base', ['simple-strike', 'guard', 'retain-energy', 'soul-drain']],
     ['rival-female-base', ['simple-strike', 'guard', 'retain-energy', 'heal']],
-    ['passage-guardian-base', ['main-special', 'fast-move', 'retain-energy', 'extra-turn']],
-    ['guerreiros-habilidosos-a', ['main-special', 'fast-move', 'retain-energy', 'secondary-special']],
-    ['guerreiros-habilidosos-b', ['main-special', 'fast-move', 'retain-energy', 'female-special']],
-    ['guerreiros-habilidosos-c', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'secondary-special']],
-    ['protagonist-main-transformed', ['simple-strike-ii', 'female-special', 'retain-energy-plus', 'fury-scream']],
+    ['passage-guardian-base', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn']],
+    ['guerreiros-habilidosos-a', ['simple-strike-ii', 'guard', 'retain-energy-plus', 'secondary-special']],
+    ['guerreiros-habilidosos-b', ['simple-strike-ii', 'guard', 'retain-energy', 'divine-protection']],
+    ['guerreiros-habilidosos-c', ['simple-strike-ii', 'guard', 'retain-energy', 'wolfs-howl']],
+    ['protagonist-main-transformed', ['quick-slash', 'female-special', 'retain-energy-plus', 'fury-scream']],
     ['rival-b-final-mode', ['dark-vortex', 'fast-move', 'retain-energy-plus', 'soul-drain-plus']],
-    ['legendary-beast-premium', ['heal-plus', 'female-special', 'retain-energy-plus', 'resurrection']],
+    ['legendary-beast-premium', ['heal-plus', 'divine-protection', 'retain-energy-plus', 'resurrection']],
   ])('aplica o conjunto aprovado em %s', (id, expected) => {
     expect(units.find((unit) => unit.id === id)?.abilityIds).toEqual(expected);
   });

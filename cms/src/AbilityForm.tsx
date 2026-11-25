@@ -48,7 +48,7 @@ export function AbilityForm({ value: a, onChange, catalog, aiReady }: {
             update({ effects: a.effects.map((e, i) => i === index ? value : e) });
           }} /><button type="button" className="text-button danger" disabled={a.effects.length === 1} onClick={() => { if (window.confirm(`Remover o efeito ${index + 1}?`)) update({ effects: a.effects.filter((_, i) => i !== index) }); }}>Remover efeito</button></div>
           <div className="form-grid">{Object.entries(effectSpecs[effect.kind].fields).map(([field, config]) => <NumberField key={field} label={config.label} min={config.min} max={config.max} step={config.step ?? 1}
-            value={(effect as unknown as Record<string, number>)[field]} onChange={(number) => update({ effects: a.effects.map((e, i) => i === index ? { ...e, [field]: number } : e) })} />)}</div>
+            value={(effect as unknown as Record<string, number>)[field] ?? 0} onChange={(number) => update({ effects: a.effects.map((e, i) => i === index ? { ...e, [field]: number } : e) })} />)}</div>
         </fieldset>)}
         <button type="button" className="secondary" disabled={a.effects.length >= 12} onClick={() => update({ effects: [...a.effects, { kind: 'damage', amount: 20 }] })}>+ Combinar outro efeito</button>
       </> : <div className="ai-panel">

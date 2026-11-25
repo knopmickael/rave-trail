@@ -24,6 +24,10 @@ const patterns: readonly Pattern[] = [
   [/^Derrote (.+) na Batalha rápida (\d+) vezes(?: utilizando (.+))?\.$/, ([, name, count, allies], text) =>
     `Defeat ${text(name)} in Quick battle ${count} times${allies ? ` using ${text(allies)}` : ''}.`],
   [/^(.+) está impedido de atacar neste turno\.$/, ([, name], text) => `${text(name)} cannot attack this turn.`],
+  [/^(.+) está impedido de usar habilidades neste turno\.$/, ([, name], text) => `${text(name)} cannot use abilities this turn.`],
+  [/^(.+) pode voltar a usar habilidades\.$/, ([, name], text) => `${text(name)} can use abilities again.`],
+  [/^(.+) não poderá usar habilidades durante (\d+) turno\(s\)\.$/, ([, name, turns], text) => `${text(name)} cannot use abilities for ${turns} turn(s).`],
+  [/^Os escudos de (.+) foram removidos\.$/, ([, name], text) => `${text(name)}’s shields were removed.`],
   [/^Energia insuficiente para (.+)\. Ajuste a ordem do combo\.$/, ([, name], text) => `Not enough energy for ${text(name)}. Adjust the combo order.`],
   [/^(.+) despertou como (.+)!$/, ([, before, after], text) => `${text(before)} awakened as ${text(after)}!`],
   [/^(.+) recupera (\d+) HP\.$/, ([, name, amount], text) => `${text(name)} recovers ${amount} HP.`],

@@ -3,7 +3,9 @@ export type AbilityEffect =
   | { readonly kind: 'heal'; readonly amount: number }
   | { readonly kind: 'drain'; readonly amount: number }
   | { readonly kind: 'revive'; readonly hpRatio: number }
-  | { readonly kind: 'guard'; readonly reduction: number; readonly teamTurns: number }
+  | { readonly kind: 'guard'; readonly reduction: number; readonly teamTurns: number; readonly healPerTurn?: number }
+  | { readonly kind: 'dispel-shields' }
+  | { readonly kind: 'ability-block'; readonly teamTurns: number }
   | { readonly kind: 'restore-energy'; readonly amount: number }
   | { readonly kind: 'extra-turn'; readonly count: number }
   | { readonly kind: 'bleed'; readonly amount: number; readonly turns: number }
@@ -63,13 +65,13 @@ export const abilities = {
     effects: [{ kind: 'damage', amount: 15 }, { kind: 'attack-block', teamTurns: 1 }],
   },
   'fast-move': {
-    id: 'fast-move', name: 'Invulnerabilidade', energyCost: 15, target: 'self', icon: '/media/abilities/fast-move.png',
+    id: 'fast-move', name: 'Invulnerabilidade', energyCost: 25, target: 'self', icon: '/media/abilities/fast-move.png',
     description: 'Permite que o usuário fique invulnerável pelo próximo turno do time inimigo.',
     effects: [{ kind: 'invulnerable', teamTurns: 1 }],
   },
   heal: {
     id: 'heal', name: 'Recuperar vida', energyCost: 35, target: 'ally', icon: '/media/abilities/heal.jpg',
-    description: 'Restaura 20 HP de um aliado vivo, sem ultrapassar o HP máximo.', effects: [{ kind: 'heal', amount: 20 }],
+    description: 'Restaura 25 HP de um aliado vivo, sem ultrapassar o HP máximo.', effects: [{ kind: 'heal', amount: 25 }],
   },
   'soul-drain': {
     id: 'soul-drain', name: 'Drenar alma', energyCost: 35, target: 'enemy', icon: '/media/abilities/soul-drain.jpg',
@@ -108,6 +110,21 @@ export const abilities = {
     id: 'extra-turn', name: 'Turno extra', energyCost: 40, target: 'team', icon: '/media/abilities/extra-turn.jpg',
     description: 'Concede um turno adicional à equipe após o combo atual. Turnos adicionais são acumuláveis e cada um regenera 15 de energia.',
     effects: [{ kind: 'extra-turn', count: 1 }],
+  },
+  'divine-protection': {
+    id: 'divine-protection', name: 'Proteção divina', energyCost: 35, target: 'all-allies', icon: '/media/abilities/divine-protection.png',
+    description: 'Protege todos os aliados vivos: reduz 10 de dano por golpe durante 3 turnos da equipe e cura 10 HP no início de cada um dos próximos 3 turnos da equipe (30 HP por aliado). Não acumula redução nem cura.',
+    effects: [{ kind: 'guard', reduction: 10, teamTurns: 3, healPerTurn: 10 }],
+  },
+  retaliation: {
+    id: 'retaliation', name: 'Retaliação', energyCost: 30, target: 'all-enemies', icon: '/media/abilities/retaliation.png',
+    description: 'Remove imediatamente todos os escudos dos inimigos vivos, incluindo Guarda, Proteção coletiva, Proteção divina e Invulnerabilidade. Também interrompe a cura vinculada ao escudo removido.',
+    effects: [{ kind: 'dispel-shields' }],
+  },
+  'wolfs-howl': {
+    id: 'wolfs-howl', name: 'Uivo do lobo', energyCost: 35, target: 'enemy', icon: '/media/abilities/wolfs-howl.png',
+    description: 'Causa 20 de dano a um inimigo e impede que ele use qualquer habilidade nos próximos 2 turnos da equipe dele.',
+    effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 2 }],
   },
 } as const satisfies Record<string, AbilityDefinition>;
 

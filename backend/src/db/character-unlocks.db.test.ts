@@ -204,7 +204,7 @@ it('migra a habilidade de Drak e recalcula o histórico de Espinea com as novas 
   await migrate(pool);
   await seedDatabase(pool);
   expect((await game.getCatalog()).units.find((unit) => unit.id === 'passage-guardian-base')?.abilityIds)
-    .toEqual(['main-special', 'fast-move', 'retain-energy', 'extra-turn']);
+    .toEqual(['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn']);
   const hub = await game.getCharacterUnlocks(user.id);
   for (const id of ['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c']) {
     expect(entry(hub, id).unlocked).toBe(true);

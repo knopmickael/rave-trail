@@ -42,7 +42,7 @@ async function finish(userId: string, battle: BattleRecord, requestId = randomUU
   await pool.query('UPDATE battles SET state = $2 WHERE id = $1', [battle.id, JSON.stringify(state)]);
   return battles.submitTurn(userId, battle.id, battle.revision, requestId,
     [{ actorId: state.teams.player.units[0].id,
-      abilityId: state.teams.player.units[0].abilityIds.includes('simple-strike') ? 'simple-strike' : 'simple-strike-ii', targetId: 'enemy-0' }]);
+      abilityId: state.teams.player.units[0].abilityIds.includes('simple-strike') ? 'simple-strike' : 'quick-slash', targetId: 'enemy-0' }]);
 }
 
 it('mantém a campanha 02 bloqueada mesmo após a vitória final da primeira', async () => {

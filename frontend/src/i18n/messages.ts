@@ -187,6 +187,8 @@ export const messages = {
   'Efeito ativo: Invulnerabilidade': 'Active effect: Invulnerability',
   'Impedido de atacar por {count} turno(s) da equipe.': 'Unable to attack for {count} team turn(s).',
   'Efeito ativo: ataques bloqueados': 'Active effect: attacks blocked',
+  'Impedido de usar habilidades por {count} turno(s) da equipe.': 'Unable to use abilities for {count} team turn(s).',
+  'Efeito ativo: habilidades bloqueadas': 'Active effect: abilities blocked',
   'Sangramento: {damage} de dano por {count} turno(s) restantes.': 'Bleeding: {damage} damage for {count} remaining turn(s).',
   'Efeito ativo: sangramento': 'Active effect: bleeding',
   '+{damage} de dano no próximo turno da equipe.': '+{damage} damage on the team’s next turn.',

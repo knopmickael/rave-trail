@@ -104,7 +104,7 @@ it('lê catálogo persistido, com os nomes aprovados e quatro habilidades por un
     'Ravi de Berdal', 'Doko de Berdal', 'Anna de Berdal', 'Capitão da guarda Kalis', 'Capitão da guarda Ridan',
     'Saqueador da estrada I', 'Saqueador da estrada II', 'Saqueadora da estrada',
   ]);
-  expect(catalog.abilities).toHaveLength(20);
+  expect(catalog.abilities).toHaveLength(23);
   for (const unit of catalog.units) expect(unit.abilityIds).toHaveLength(4);
   await pool.query("UPDATE units SET description = 'Descrição do banco' WHERE id = 'protagonist-main-base'");
   expect((await gameRepository.getCatalog()).units.find((unit) => unit.id === 'protagonist-main-base')?.description).toBe('Descrição do banco');
@@ -135,6 +135,7 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
   await pool.query('ALTER TABLE abilities DROP CONSTRAINT abilities_target_check');
   await pool.query("ALTER TABLE abilities ADD CONSTRAINT abilities_target_check CHECK (target IN ('enemy', 'ally', 'all-enemies', 'all-allies', 'team'))");
   await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '028_internal_strength.sql', '029_monnica_guard.sql', '030_heal_20.sql',     '031_swap_starter_specials.sql', '032_soul_drain_35.sql', '033_drain_heal_on_damage.sql', '034_reduce_guard_absorption.sql', '035_ability_rebalance.sql', '036_guard_captains_and_store_content.sql', '037_internal_strength_two_turns.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name='044_divine_protection_retaliation_and_wolfs_howl.sql'");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
@@ -313,7 +314,7 @@ it('vitórias da campanha liberam somente o próximo ponto sem conceder personag
     const battle = await battleRepository.startBattle(user.id, encounterId);
     await nearVictory(battle);
     const requestId = randomUUID();
-    const actions = [{ actorId: 'player-0', abilityId: position === 7 ? 'simple-strike-ii' : 'simple-strike', targetId: 'enemy-0' }];
+    const actions = [{ actorId: 'player-0', abilityId: position === 7 ? 'quick-slash' : 'simple-strike', targetId: 'enemy-0' }];
     const response = await battleRepository.submitTurn(user.id, battle.id, 0, requestId, actions);
     expect(response.battle.state.status).toBe('victory');
     const duplicate = await battleRepository.submitTurn(user.id, battle.id, 0, requestId, actions);

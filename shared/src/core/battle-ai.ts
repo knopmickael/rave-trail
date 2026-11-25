@@ -15,15 +15,17 @@ interface PlannedTurn {
 
 const other = (side: BattleSide): BattleSide => side === 'player' ? 'enemy' : 'player';
 const nextTurn = (state: BattleState, side: BattleSide) => state.teams[side].turns + (state.activeSide === side ? 0 : 1);
-const blocked = (state: BattleState, side: BattleSide, unit: Fighter) => (unit.attackBlockedExpiresAt ?? 0) > nextTurn(state, side);
+const blocked = (state: BattleState, side: BattleSide, unit: Fighter) => (unit.attackBlockedExpiresAt ?? 0) > nextTurn(state, side)
+  || (unit.abilitiesBlockedExpiresAt ?? 0) > nextTurn(state, side);
 
 function positionKey(state: BattleState) {
   return JSON.stringify([state.status, state.activeSide, state.turn, state.pendingTransformation?.unit.id,
     ...(['player', 'enemy'] as const).map((side) => {
       const team = state.teams[side];
       return [team.energy, team.turns, team.extraTurns, team.units.map((unit) =>
-        [unit.unitId, unit.hp, unit.guardExpiresAt, unit.guardAbilityId, unit.guardReduction,
+        [unit.unitId, unit.hp, unit.guardExpiresAt, unit.guardAbilityId, unit.guardReduction, unit.guardHealPerTurn,
           unit.bleedTurns, unit.bleedAmount, unit.invulnerableExpiresAt, unit.attackBlockedExpiresAt,
+          unit.abilitiesBlockedExpiresAt, unit.abilityBlockAbilityId,
           unit.damageBoostAmount, unit.damageBoostStartsAt, unit.damageBoostExpiresAt])];
     })]);
 }
@@ -44,7 +46,7 @@ function teamValue(state: BattleState, side: BattleSide) {
   const opponent = other(side);
   const enemies = state.teams[opponent];
   // Energia disponível no próximo ataque, incluindo retenções possíveis dos aliados.
-  const restored = enemies.units.filter((unit) => unit.hp > 0).reduce((total, unit) => total + Math.max(0,
+   const restored = enemies.units.filter((unit) => unit.hp > 0 && (unit.abilitiesBlockedExpiresAt ?? 0) <= nextTurn(state, opponent)).reduce((total, unit) => total + Math.max(0,
     ...unit.abilityIds.map((id) => (state.abilities[id]?.effects ?? []).reduce((sum, effect) =>
       sum + (effect.kind === 'restore-energy' ? effect.amount : 0), 0))), 0);
   const enemyEnergy = Math.min(100, enemies.energy + (state.activeSide === opponent ? 0 : 15) + restored);
@@ -66,12 +68,14 @@ function teamValue(state: BattleState, side: BattleSide) {
       const guard = unit.guardAbilityId ? state.abilities[unit.guardAbilityId]?.effects.find((effect) => effect.kind === 'guard') : undefined;
       const reduction = unit.guardReduction ?? (guard?.kind === 'guard' ? guard.reduction : 10);
       value += Math.min(unit.hp, attacks.reduce((saved, power) => saved + Math.min(power, reduction), 0)) * .35;
+      value += Math.min(unit.maxHp - unit.hp, (unit.guardHealPerTurn ?? 0) * (unit.guardExpiresAt - team.turns)) * .6;
     }
     if ((unit.invulnerableExpiresAt ?? 0) > nextTurn(state, opponent)) value += Math.min(unit.hp, incoming) * .5;
     if (blocked(state, side, unit)) {
       // Mede a ofensiva perdida sem considerar o próprio bloqueio duas vezes.
-      const available = { ...unit, attackBlockedExpiresAt: null };
+      const available = { ...unit, attackBlockedExpiresAt: null, abilitiesBlockedExpiresAt: null };
       value -= attackPower(state, side, available, Math.min(100, team.energy + 15)) * .4;
+      if ((unit.abilitiesBlockedExpiresAt ?? 0) > nextTurn(state, side)) value -= 20;
     }
     value -= Math.min(unit.hp, (unit.bleedAmount ?? 0) * (unit.bleedTurns ?? 0) * .65);
   }
@@ -133,7 +137,7 @@ export function planEnemyTurn(initial: BattleState): BattleAction[] {
       if (simulated.status !== 'active') return;
       const team = simulated.teams[side];
       for (const [index, actor] of team.units.entries()) {
-        if (used & (1 << index) || initialTeam.units[index].hp <= 0 || actor.hp <= 0) continue;
+        if (used & (1 << index) || initialTeam.units[index].hp <= 0 || actor.hp <= 0 || actor.abilitiesBlockedExpiresAt != null) continue;
         for (const id of actor.abilityIds) {
           const ability = simulated.abilities[id];
           if (!ability || ability.energyCost > team.energy) continue;
