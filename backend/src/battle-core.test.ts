@@ -140,8 +140,10 @@ describe('motor determinístico de combate', () => {
   });
 
   it('cura coletiva recupera 30 por aliado vivo sem exceder o máximo nem ressuscitar', () => {
-    const initial = state(['legendary-beast-premium', ...STARTER_UNIT_IDS.slice(0, 2)]); initial.teams.player.energy = 45;
+    const initial = state(['legendary-beast-premium', ...STARTER_UNIT_IDS.slice(0, 2)]); initial.teams.player.energy = 49;
     initial.teams.player.units.forEach((unit, index) => { unit.hp = [40, 90, 0][index]; });
+    expect(() => previewActions(initial, [action(0, 'heal-plus')])).toThrow(/Energia insuficiente/);
+    initial.teams.player.energy = 50;
     const outcome = previewActions(initial, [action(0, 'heal-plus')]);
     expect(outcome.state.teams.player.units.map((unit) => unit.hp)).toEqual([70, 100, 0]);
     expect(outcome.state.teams.player.energy).toBe(0);

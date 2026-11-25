@@ -78,7 +78,7 @@ describe('catálogo compartilhado', () => {
       description: 'Causa 30 de dano a todos os inimigos vivos e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.',
       effects: [{ kind: 'drain', amount: 30 }] });
     expect(abilities.heal).toMatchObject({ energyCost: 35, effects: [{ kind: 'heal', amount: 25 }] });
-    expect(abilities['heal-plus']).toMatchObject({ energyCost: 45, effects: [{ kind: 'heal', amount: 30 }] });
+    expect(abilities['heal-plus']).toMatchObject({ energyCost: 50, effects: [{ kind: 'heal', amount: 30 }] });
     expect(abilities.resurrection).toMatchObject({ energyCost: 50 });
     expect(abilities['extra-turn']).toMatchObject({ energyCost: 40 });
     expect(abilities['fury-scream']).toMatchObject({ energyCost: 40, effects: [{ kind: 'damage', amount: 35 }] });

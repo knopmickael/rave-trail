@@ -67,7 +67,7 @@ it('migra conteúdo anterior mesmo com edições CMS, preservando campos alheios
   // Mesmo JSON persistido por partidas oficiais, em tabela isolada do teste.
   await pool.query('CREATE TABLE saved_snapshot (state jsonb NOT NULL)');
   await pool.query('INSERT INTO saved_snapshot VALUES ($1)', [JSON.stringify(snapshot)]);
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
@@ -90,7 +90,7 @@ it('migra conteúdo anterior mesmo com edições CMS, preservando campos alheios
 it('altera somente a quantidade de cura preservando efeitos adicionais e sua ordem no CMS', async () => {
   const heal = (await cms.catalog()).abilities.find((a) => a.id === 'heal')!;
   await cms.save('abilities', { ...heal, effects: [{ kind: 'guard', reduction: 7, teamTurns: 2 }, { kind: 'heal', amount: 20 }] }, false);
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   expect((await game.getCatalog()).abilities.find((a) => a.id === 'heal')?.effects)
@@ -100,7 +100,7 @@ it('altera somente a quantidade de cura preservando efeitos adicionais e sua ord
 it('resolve destinos já presentes no conjunto CMS sem violar unicidade nem perder os quatro slots', async () => {
   const drak = (await cms.catalog()).characters.find((u) => u.id === 'passage-guardian-base')!;
   await cms.save('characters', { ...drak, abilityIds: ['main-special', 'simple-strike-ii', 'retain-energy', 'retain-energy-plus'] }, false);
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   expect((await game.getCatalog()).units.find((u) => u.id === drak.id)?.abilityIds)

@@ -201,7 +201,7 @@ it('migra a habilidade de Drak e recalcula o histórico de Espinea com as novas 
   await history(user.id, ['protagonist-secondary-base'], 5);
   await history(user.id, ['rival-b-base'], 10, undefined, 'multiplayer');
   await pool.query("UPDATE unit_abilities SET ability_id = 'fast-move' WHERE unit_id = 'passage-guardian-base' AND slot_index=1");
-  await pool.query("DELETE FROM schema_migrations WHERE name = '046_chapter_one_expansion.sql'");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);

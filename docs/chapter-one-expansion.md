@@ -4,15 +4,18 @@
 
 | Habilidade | Energia | Regra atual |
 |---|---:|---|
-| Execução | 40 | 50 de dano imediato a um inimigo, respeitando Guarda e Invulnerabilidade. |
+| Execução | 50 | 50 de dano imediato a um inimigo, respeitando Guarda e Invulnerabilidade. |
 | Benção divina | 40 | Protege um aliado vivo, inclusive o usuário, contra um dano fatal. O aliado fica com 1 HP e a benção é consumida. |
 | Corte rápido | 30 | 20 de dano imediato e 5 de sangramento nos três próximos turnos da equipe alvo. |
 | Trazer dos mortos | 50 | Revive um aliado com o HP máximo e limpa efeitos anteriores. |
+| Recuperar muita vida | 50 | Restaura 30 HP de cada aliado vivo, até o HP máximo. |
 | Turno extra | 40 | Concede um turno adicional à equipe após encerrar o turno atual. |
 
 Benção divina não acumula cargas, não expira antes de ser consumida e pode impedir dano fatal direto, drenagem ou sangramento. Não é Guarda ou Invulnerabilidade, portanto Retaliação não a remove. Uma nova aplicação após o consumo concede uma nova proteção. O BOT e a prévia usam exatamente a regra oficial do servidor. Drenagem recupera somente o HP efetivamente perdido pelo alvo, inclusive quando a benção impede sua morte.
 
 Drak passa a usar Golpe simples, Guarda, Reter muita energia e Turno extra. Trinity troca Varredura tática por Benção divina. Jung II usa Retaliação, Invulnerabilidade, Reter muita energia e Execução.
+
+A migration **049** atualiza os custos de Execução e Recuperar muita vida para 50 de energia. Na batalha, habilidades aliadas e inimigas usam cursor de interação, inclusive ao consultar opções desabilitadas; os tooltips aparecem após **250 ms** com mouse ou foco de teclado.
 
 ## Personagens e encontros
 

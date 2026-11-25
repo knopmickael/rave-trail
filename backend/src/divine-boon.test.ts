@@ -62,13 +62,16 @@ it('ressuscita com HP máximo e limpa a proteção antiga', () => {
   expect(restored.teams.player.units[1].deathWardAbilityId).toBeNull();
 });
 
-it('Execução causa 50 de dano e custa 40 de energia', () => {
+it('Execução causa 50 de dano e exige 50 de energia', () => {
   const state = initial();
   state.teams.player.units[0].abilityIds = ['execution'];
+  state.teams.player.energy = 49;
+  expect(() => previewActions(state, [action('player-0', 'execution', 'enemy-0')])).toThrow(/Energia insuficiente/);
+  state.teams.player.energy = 100;
   expect(abilities.execution).toBeDefined();
   const result = previewActions(state, [action('player-0', 'execution', 'enemy-0')]).state;
   expect(result.teams.enemy.units[0].hp).toBe(50);
-  expect(result.teams.player.energy).toBe(60);
+  expect(result.teams.player.energy).toBe(50);
 });
 
 it('BOT considera a proteção contra morte e gera um combo válido', () => {

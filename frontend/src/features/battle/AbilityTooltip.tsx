@@ -26,7 +26,7 @@ export function AbilityTooltip({ ability, children, focusable = false, extra, re
       const width = Math.min(280, window.innerWidth - 24);
       setPosition({ width, left: Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2)),
         ...(rect.top >= 190 ? { bottom: window.innerHeight - rect.top + 8 } : { top: rect.bottom + 8 }) });
-    }, 1000);
+    }, 250);
   }
   function leave() { suppressed.current = false; hide(); }
   function clicked() { suppressed.current = true; hide(); }

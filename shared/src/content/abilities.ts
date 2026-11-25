@@ -87,7 +87,7 @@ export const abilities = {
     description: 'Causa 35 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 35 }],
   },
   'heal-plus': {
-    id: 'heal-plus', name: 'Recuperar muita vida', energyCost: 45, target: 'all-allies', icon: '/media/abilities/heal-plus.jpg',
+    id: 'heal-plus', name: 'Recuperar muita vida', energyCost: 50, target: 'all-allies', icon: '/media/abilities/heal-plus.jpg',
     description: 'Restaura 30 HP de cada aliado vivo, sem ultrapassar o HP máximo.', effects: [{ kind: 'heal', amount: 30 }],
   },
   resurrection: {
@@ -128,7 +128,7 @@ export const abilities = {
     effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 1 }],
   },
   execution: {
-    id: 'execution', name: 'Execução', energyCost: 40, target: 'enemy', icon: '/media/abilities/execution.png',
+    id: 'execution', name: 'Execução', energyCost: 50, target: 'enemy', icon: '/media/abilities/execution.png',
     description: 'Aplica um corte certeiro no peito do alvo causando 50 de dano instantaneamente.',
     effects: [{ kind: 'damage', amount: 50 }],
   },
