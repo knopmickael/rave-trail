@@ -107,7 +107,7 @@ Uma descrição que exige uma mecânica ausente do motor — por exemplo, alvos 
 
 - **Proteção divina (35 energia):** redução de 10 por golpe por 3 rodadas; cura 10 HP no início dos próximos 3 turnos da própria equipe, até o máximo de HP, somente em vivos. A última cura acontece antes da expiração do escudo. Turnos extras contam. Reaplicar/substituir Guarda não acumula os efeitos; o novo escudo substitui o anterior e sua cura.
 - **Retaliação (30 energia):** remove Guarda, Proteção coletiva/divina e Invulnerabilidade dos inimigos vivos, junto com a cura vinculada. Não remove sangramento, bônus de ataque ou bloqueios. Pode-se aplicar um novo escudo depois.
-- **Uivo do lobo (35 energia):** 20 de dano e bloqueio de qualquer habilidade durante 2 turnos da equipe alvo, incluindo turnos extras. Os aliados não atingidos continuam agindo; a equipe pode encerrar o turno sem ações. Vórtex negro continua bloqueando somente ataques.
+- **Uivo do lobo (35 energia):** 20 de dano e bloqueio de qualquer habilidade durante **1 turno** da equipe alvo, incluindo turno extra. A duração foi reduzida de 2 para 1 pela migration `045_wolfs_howl_one_turn.sql`. Os aliados não atingidos continuam agindo; a equipe pode encerrar o turno sem ações. Vórtex negro continua bloqueando somente ataques.
 - Invulnerabilidade passa a custar 25 de energia; Recuperar vida restaura 25 HP.
 - Conjuntos atualizados de Jung original, Drak, Trinity, Vlade, Passago, Ravi Berserk e Besta Lendária; os slots existentes são preservados.
 

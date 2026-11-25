@@ -143,7 +143,7 @@ it('migra a formação antiga e reaplica o balanceamento de Jung II sem alterar 
   await pool.query("UPDATE encounter_enemies SET unit_id = 'rival-a-base' WHERE encounter_id = 'path-1-encounter-6' AND slot_index = 0");
   await pool.query("DELETE FROM unit_abilities WHERE unit_id = 'jung-de-grimoria-ii'");
   await pool.query("DELETE FROM units WHERE id = 'jung-de-grimoria-ii'");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('020_jung_de_grimoria_ii.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '044_divine_protection_retaliation_and_wolfs_howl.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('020_jung_de_grimoria_ii.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '044_divine_protection_retaliation_and_wolfs_howl.sql', '045_wolfs_howl_one_turn.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);

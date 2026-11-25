@@ -224,7 +224,7 @@ it('reserva energia assim que escolhe a habilidade e bloqueia as demais opções
 it('desativa todas as habilidades sob Uivo do lobo e mantém o turno e os aliados disponíveis', () => {
   const record = initial();
   record.state.teams.player.energy = 100;
-  record.state.teams.player.units[0].abilitiesBlockedExpiresAt = 3;
+  record.state.teams.player.units[0].abilitiesBlockedExpiresAt = 2;
   record.state.teams.player.units[0].abilityBlockAbilityId = 'wolfs-howl';
   render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
   for (const name of ['Golpe simples', 'Guarda', 'Reter energia', 'Investida']) expect(skill(name)).toBeDisabled();

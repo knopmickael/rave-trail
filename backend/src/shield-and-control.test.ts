@@ -9,9 +9,7 @@ const divine: AbilityDefinition = { id: 'divine-protection', name: 'Proteção d
   effects: [{ kind: 'guard', reduction: 10, teamTurns: 3, healPerTurn: 10 }] };
 const retaliation: AbilityDefinition = { id: 'retaliation', name: 'Retaliação', description: 'Remove escudos.',
   energyCost: 30, target: 'all-enemies', icon: '/media/abilities/retaliation.png', effects: [{ kind: 'dispel-shields' }] };
-const howl: AbilityDefinition = { id: 'wolfs-howl', name: 'Uivo do lobo', description: 'Dano e bloqueio total.',
-  energyCost: 35, target: 'enemy', icon: '/media/abilities/wolfs-howl.png',
-  effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 2 }] };
+const howl = abilities['wolfs-howl'];
 const action = (actorId: string, abilityId: string, targetId?: string): BattleAction => ({ actorId, abilityId, ...(targetId ? { targetId } : {}) });
 function initial() {
   const state = createBattle(units.slice(0, 3), units.slice(3, 6), [...Object.values(abilities), divine, retaliation, howl]);
@@ -86,24 +84,21 @@ it('uma Guarda comum substitui o escudo divino e interrompe a cura', () => {
   expect(battle.teams.player.units[0].hp).toBe(40);
 });
 
-it('Uivo bloqueia qualquer habilidade por dois turnos do alvo, mantendo aliados livres', () => {
+it('Uivo bloqueia qualquer habilidade por apenas um turno do alvo, mantendo aliados livres', () => {
   let battle = executeTurn(initial(), [action('player-0', howl.id, 'enemy-0')]).state;
   expect(battle.teams.enemy.units[0].hp).toBe(80);
   expect(battle.teams.player.energy).toBe(65);
-  for (let turn = 0; turn < 2; turn++) {
-    for (const id of [divine.id, retaliation.id, howl.id, 'retain-energy']) {
-      expect(() => previewActions(battle, [action('enemy-0', id, id === howl.id ? 'player-0' : undefined)])).toThrow(/impedido de usar habilidades/);
-    }
-    expect(() => previewActions(battle, [action('enemy-1', 'retain-energy')])).not.toThrow();
-    battle = round(battle);
+  for (const id of [divine.id, retaliation.id, howl.id, 'retain-energy']) {
+    expect(() => previewActions(battle, [action('enemy-0', id, id === howl.id ? 'player-0' : undefined)])).toThrow(/impedido de usar habilidades/);
   }
+  expect(() => previewActions(battle, [action('enemy-1', 'retain-energy')])).not.toThrow();
+  battle = round(battle);
   expect(() => previewActions(battle, [action('enemy-0', 'retain-energy')])).not.toThrow();
 });
 
 it('bloqueio total expira com turnos extras e não impede o avanço automático da batalha', () => {
   let battle = executeTurn(initial(), [action('player-0', howl.id, 'enemy-0')]).state;
-  battle.teams.enemy.extraTurns = 2;
-  battle = executeTurn(battle, []).state;
+  battle.teams.enemy.extraTurns = 1;
   expect(() => previewActions(battle, [action('enemy-0', 'retain-energy')])).toThrow(/impedido/);
   battle = executeTurn(battle, []).state;
   expect(() => previewActions(battle, [action('enemy-0', 'retain-energy')])).not.toThrow();

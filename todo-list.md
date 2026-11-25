@@ -11,7 +11,7 @@
     - Ícone: /frontend/public/media/abilites/retaliation.png
 
 - Uivo do lobo:
-    - Descrição: Causa 20 de dano à um inimigo e impede que ele use qualquer habilidade pelos próximos 2 turnos do time dele.
+    - Descrição: Causa 20 de dano à um inimigo e impede que ele use qualquer habilidade pelo próximo turno do time dele.
     - Custo: 35 de energia
     - Ícone: /frontend/public/media/abilites/wolfs-howl.png
 

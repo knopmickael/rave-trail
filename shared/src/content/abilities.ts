@@ -123,8 +123,8 @@ export const abilities = {
   },
   'wolfs-howl': {
     id: 'wolfs-howl', name: 'Uivo do lobo', energyCost: 35, target: 'enemy', icon: '/media/abilities/wolfs-howl.png',
-    description: 'Causa 20 de dano a um inimigo e impede que ele use qualquer habilidade nos próximos 2 turnos da equipe dele.',
-    effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 2 }],
+    description: 'Causa 20 de dano a um inimigo e impede que ele use qualquer habilidade no próximo turno da equipe dele.',
+    effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 1 }],
   },
 } as const satisfies Record<string, AbilityDefinition>;
 
