@@ -237,7 +237,7 @@ describe('catálogo e equipe HTTP', () => {
     repository.progresses.get(first.json().user.id)!.unlockedUnitIds.push('road-raider-1-base');
     const response = await app.inject({ url: `/api/character-unlocks?userId=${first.json().user.id}`, headers: { cookie: cookie(second) } });
     expect(response.statusCode).toBe(200);
-    expect(response.json().unlocks.characters).toHaveLength(18);
+    expect(response.json().unlocks.characters).toHaveLength(23);
     const characters = response.json().unlocks.characters as { id: string; campaignAvailable: boolean; kind: string }[];
     expect(characters.find((unit) => unit.id === 'capitao-da-guarda-kalis-base')?.campaignAvailable).toBe(true);
     expect(characters.find((unit) => unit.id === 'capitao-da-guarda-ridan-base')?.campaignAvailable).toBe(true);

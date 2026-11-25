@@ -6,6 +6,7 @@ export type AbilityEffect =
   | { readonly kind: 'guard'; readonly reduction: number; readonly teamTurns: number; readonly healPerTurn?: number }
   | { readonly kind: 'dispel-shields' }
   | { readonly kind: 'ability-block'; readonly teamTurns: number }
+  | { readonly kind: 'prevent-defeat' }
   | { readonly kind: 'restore-energy'; readonly amount: number }
   | { readonly kind: 'extra-turn'; readonly count: number }
   | { readonly kind: 'bleed'; readonly amount: number; readonly turns: number }
@@ -55,9 +56,9 @@ export const abilities = {
     effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 2 }],
   },
   'quick-slash': {
-    id: 'quick-slash', name: 'Corte rápido', energyCost: 35, target: 'enemy', icon: '/media/abilities/quick-slash.png',
-    description: 'Causa 20 de dano a um inimigo instantaneamente e aplica sangramento: 10 de dano a cada turno dele por mais 3 turnos.',
-    effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 10, turns: 3 }],
+    id: 'quick-slash', name: 'Corte rápido', energyCost: 30, target: 'enemy', icon: '/media/abilities/quick-slash.png',
+    description: 'Causa 20 de dano a um inimigo instantaneamente e aplica sangramento: 5 de dano a cada turno dele por mais 3 turnos.',
+    effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 5, turns: 3 }],
   },
   'dark-vortex': {
     id: 'dark-vortex', name: 'Vórtex negro', energyCost: 30, target: 'all-enemies', icon: '/media/abilities/dark-vortex.png',
@@ -91,7 +92,7 @@ export const abilities = {
   },
   resurrection: {
     id: 'resurrection', name: 'Trazer dos mortos', energyCost: 50, target: 'defeated-ally', icon: '/media/abilities/resurrection.jpg',
-    description: 'Ressuscita um aliado derrotado com metade do HP máximo.', effects: [{ kind: 'revive', hpRatio: 0.5 }],
+    description: 'Ressuscita um aliado derrotado com o HP máximo.', effects: [{ kind: 'revive', hpRatio: 1 }],
   },
   'main-special': {
     id: 'main-special', name: 'Investida', energyCost: 25, target: 'enemy', icon: '/media/abilities/main-special.jpg',
@@ -108,7 +109,7 @@ export const abilities = {
   },
   'extra-turn': {
     id: 'extra-turn', name: 'Turno extra', energyCost: 40, target: 'team', icon: '/media/abilities/extra-turn.jpg',
-    description: 'Concede um turno adicional à equipe após o combo atual. Turnos adicionais são acumuláveis e cada um regenera 15 de energia.',
+    description: 'Concede um turno adicional à equipe após encerrar o turno atual.',
     effects: [{ kind: 'extra-turn', count: 1 }],
   },
   'divine-protection': {
@@ -125,6 +126,16 @@ export const abilities = {
     id: 'wolfs-howl', name: 'Uivo do lobo', energyCost: 35, target: 'enemy', icon: '/media/abilities/wolfs-howl.png',
     description: 'Causa 20 de dano a um inimigo e impede que ele use qualquer habilidade no próximo turno da equipe dele.',
     effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 1 }],
+  },
+  execution: {
+    id: 'execution', name: 'Execução', energyCost: 40, target: 'enemy', icon: '/media/abilities/execution.png',
+    description: 'Aplica um corte certeiro no peito do alvo causando 50 de dano instantaneamente.',
+    effects: [{ kind: 'damage', amount: 50 }],
+  },
+  'divine-boon': {
+    id: 'divine-boon', name: 'Benção divina', energyCost: 40, target: 'ally', icon: '/media/abilities/divine-boon.png',
+    description: 'Protege um aliado vivo contra o próximo dano fatal: ele permanece com 1 HP. A benção é consumida ao impedir a morte e não acumula.',
+    effects: [{ kind: 'prevent-defeat' }],
   },
 } as const satisfies Record<string, AbilityDefinition>;
 

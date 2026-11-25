@@ -189,7 +189,7 @@ it('exibe Jung e Exal na ordem aprovada no painel da sexta batalha', async () =>
   render(<CampaignMap {...props()} />);
   await user.click(await screen.findByRole('button', { name: /Batalha 6:/ }));
   expect(within(screen.getByRole('dialog')).getAllByRole('img').map((image) => image.getAttribute('alt')))
-    .toEqual(['Retrato de Jung de Grimória II', 'Retrato de Exal de Grimória']);
+    .toEqual(['Retrato de Jung de Grimória II', 'Retrato de Exal de Grimória II', 'Retrato de Monnica de Grimória II']);
 });
 
 it('trata erro de carregamento e sessão expirada sem inventar progresso', async () => {

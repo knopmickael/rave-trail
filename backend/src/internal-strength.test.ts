@@ -85,12 +85,12 @@ it('preserva o dano ampliado do sangramento criado pelo golpe e não altera sang
   let state = executeTurn(initial, [action(0, 'internal-strength', 'player-1')]).state;
   state = executeTurn(state, []).state;
   state = executeTurn(state, [action(1, 'quick-slash', 'enemy-0')]).state;
-  expect(state.teams.enemy.units[0]).toMatchObject({ hp: 50, bleedAmount: 20, bleedTurns: 2 });
+  expect(state.teams.enemy.units[0]).toMatchObject({ hp: 55, bleedAmount: 15, bleedTurns: 2 });
   expect(state.teams.enemy.units[1]).toMatchObject({ hp: 80, bleedAmount: 10 });
   state = executeTurn(state, []).state;
   expect(state.teams.player.units[1].damageBoostExpiresAt).toBe(4);
   state = executeTurn(state, []).state;
-  expect(state.teams.enemy.units[0].hp).toBe(30);
+  expect(state.teams.enemy.units[0].hp).toBe(40);
   state = executeTurn(state, []).state;
   expect(state.teams.player.units[1].damageBoostExpiresAt).toBeNull();
 });
@@ -110,5 +110,5 @@ it('remove o bônus e sua ativação pendente quando um personagem retorna dos m
   state = executeTurn(state, [{ actorId: 'enemy-0', abilityId: 'simple-strike', targetId: 'player-1' }]).state;
   expect(state.teams.player.units[1].hp).toBe(0);
   state = previewActions(state, [action(2, 'resurrection', 'player-1')]).state;
-  expect(state.teams.player.units[1]).toMatchObject({ hp: 50, damageBoostAmount: 0, damageBoostStartsAt: null, damageBoostExpiresAt: null });
+  expect(state.teams.player.units[1]).toMatchObject({ hp: 100, damageBoostAmount: 0, damageBoostStartsAt: null, damageBoostExpiresAt: null });
 });

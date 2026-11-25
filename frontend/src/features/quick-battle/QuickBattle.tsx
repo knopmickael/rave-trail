@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GameCatalog, PlayerProgress, QuickBattleData } from '@game/contracts';
 import type { BattleRecord } from '@game/core/battle';
+import { QUICK_BATTLE_COOLDOWN_MESSAGE } from '@game/content/quick-battle-rules';
 import { api, ApiError, gameDataCache } from '../../api';
 import { CharacterArt } from '../characters/CharacterArt';
 import { useI18n } from '../../i18n/LanguageProvider';
@@ -21,6 +22,17 @@ export function QuickBattle({ onBack, onOpenCharacters, onSessionExpired, onBatt
   const [startError, setStartError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(Date.now);
+  const [serverOffset, setServerOffset] = useState(0);
+  const availabilityVersion = useRef(0);
+
+  function acceptAvailability(available: QuickBattleData) {
+    setData(available);
+    const receivedAt = Date.now();
+    const offset = available.serverTime ? Date.parse(available.serverTime) - receivedAt : 0;
+    setServerOffset(Number.isFinite(offset) ? offset : 0);
+    setNow(receivedAt);
+  }
 
   useEffect(() => {
     let active = true;
@@ -28,27 +40,56 @@ export function QuickBattle({ onBack, onOpenCharacters, onSessionExpired, onBatt
     setData(gameDataCache.peek('quick-battle'));
     setCatalog(gameDataCache.peek('catalog'));
     setProgress(gameDataCache.peek('progress'));
-    Promise.all([api.quickBattle(), api.catalog(), api.progress()]).then(([available, content, saved]) => {
-      if (active) { setData(available); setCatalog(content); setProgress(saved); }
+    let refreshing = true;
+    const version = ++availabilityVersion.current;
+    Promise.all([api.quickBattle(true), api.catalog(), api.progress()]).then(([available, content, saved]) => {
+      if (active) {
+        if (version === availabilityVersion.current) acceptAvailability(available);
+        setCatalog(content); setProgress(saved);
+      }
     }).catch((cause: unknown) => {
       if (!active) return;
       if (cause instanceof ApiError && cause.status === 401) onSessionExpired();
       else setError(cause instanceof Error ? cause.message : 'Não foi possível carregar a Batalha rápida.');
-    });
-    return () => { active = false; };
+    }).finally(() => { refreshing = false; });
+    const refresh = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      const version = ++availabilityVersion.current;
+      try { const available = await api.quickBattle(true); if (active && version === availabilityVersion.current) acceptAvailability(available); }
+      catch (cause) { if (active && cause instanceof ApiError && cause.status === 401) onSessionExpired(); }
+      finally { refreshing = false; }
+    };
+    const visible = () => { if (!document.hidden) void refresh(); };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', visible);
+    return () => { active = false; window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', visible); };
   }, [attempt, onSessionExpired]);
 
   const loaded = !!data && !!catalog && !!progress;
   const hasOpponents = !!data?.opponents.length;
   const hasTeam = !!progress?.selectedTeam.some((id) => id !== null);
+  const deadline = data?.blockedUntil ? Date.parse(data.blockedUntil) : 0;
+  const remaining = Number.isFinite(deadline) ? Math.max(0, Math.ceil((deadline - now - serverOffset) / 1000)) : 0;
+  const blocked = remaining > 0;
+
+  useEffect(() => {
+    if (!blocked) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [blocked]);
 
   async function enterBattle() {
-    if (busy || !loaded || !hasOpponents || !hasTeam) return;
+    if (busy || !loaded || !hasOpponents || !hasTeam || blocked) return;
     setBusy(true);
     setStartError('');
     try { onBattleStarted(await api.startQuickBattle()); }
     catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) onSessionExpired();
+      else if (cause instanceof ApiError && cause.status === 429 && cause.retryAt && data) {
+        availabilityVersion.current++;
+        acceptAvailability({ ...data, blockedUntil: cause.retryAt, serverTime: cause.serverTime });
+      }
       else setStartError(cause instanceof Error ? cause.message : 'Não foi possível iniciar a Batalha rápida.');
     } finally { setBusy(false); }
   }
@@ -80,8 +121,15 @@ export function QuickBattle({ onBack, onOpenCharacters, onSessionExpired, onBatt
           {!hasTeam && <p role="status">{t('Monte sua equipe na Lista de personagens antes de entrar na batalha.')}</p>}
         </>}
         {startError && <p className="feedback" role="alert">{text(startError)}</p>}
-        <button type="button" className="fantasy-button compact" disabled={busy || !loaded || !hasOpponents || !hasTeam}
-          onClick={enterBattle}>{t(busy ? 'Preparando batalha…' : 'Entrar na batalha')}</button>
+        {blocked && <p id="quick-battle-cooldown" className="quick-battle-cooldown" role="status">{t(QUICK_BATTLE_COOLDOWN_MESSAGE)}</p>}
+        <div className="quick-battle-start">
+          <button type="button" className="fantasy-button compact" disabled={busy || !loaded || !hasOpponents || !hasTeam || blocked}
+            aria-describedby={blocked ? 'quick-battle-cooldown' : undefined}
+            onClick={enterBattle}>{t(busy ? 'Preparando batalha…' : 'Entrar na batalha')}</button>
+          {blocked && <span className="quick-battle-countdown" role="timer" aria-label={t('Tempo para iniciar nova batalha')}>
+            {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}
+          </span>}
+        </div>
       </section>
     </div>
 

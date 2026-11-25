@@ -84,7 +84,7 @@ O indicador de conexão mostra o rótulo configurado, a disponibilidade do banco
 
 Há dois modos de autoria, ambos produzindo o mesmo contrato validado de combate:
 
-1. **Configuração manual:** nome, imagem, descrição, custo de energia, alvo e lista ordenada de efeitos. São oferecidos os 7 alvos e os 13 efeitos existentes: dano, cura, dreno, ressurreição, guarda, recuperação de energia, turno extra, sangramento, invulnerabilidade, bloqueio de ataques, bônus de dano, remoção de escudos e bloqueio de todas as habilidades. Guarda aceita cura por turno vinculada ao escudo (zero significa sem cura). Valores e combinações de alvo são validados na API.
+1. **Configuração manual:** nome, imagem, descrição, custo de energia, alvo e lista ordenada de efeitos. São oferecidos os 7 alvos e os 14 efeitos existentes: dano, cura, dreno, ressurreição, guarda, recuperação de energia, turno extra, sangramento, invulnerabilidade, bloqueio de ataques, bônus de dano, remoção de escudos, bloqueio de todas as habilidades e proteção contra o próximo dano fatal. Guarda aceita cura por turno vinculada ao escudo (zero significa sem cura). Valores e combinações de alvo são validados na API.
 2. **Assistente de IA:** conversa com histórico e contexto do rascunho. A resposta pode gerar uma configuração nova usando os efeitos suportados. A ação **Aplicar ao formulário** preenche o rascunho; **Salvar alterações** persiste a habilidade.
 
 Configure um provedor compatível com **OpenAI Chat Completions**:
@@ -114,6 +114,8 @@ Uma descrição que exige uma mecânica ausente do motor — por exemplo, alvos 
 A migration `044_divine_protection_retaliation_and_wolfs_howl.sql` leva o conteúdo aos bancos existentes e é aplicada pela esteira normal de deploy, uma única vez. O catálogo compartilhado acompanha esses valores para novos bancos. Efeitos adicionais de Recuperar vida são preservados, ajustando apenas a quantidade de cura. Se uma troca gerar duplicidade porque a habilidade de destino já estava em outro slot editado no CMS, a troca solicitada tem prioridade; somente o slot duplicado é preenchido com uma habilidade ainda ausente do conjunto aprovado. Edições posteriores pelo CMS continuam protegidas do seed. Como os novos efeitos exigem o motor atualizado, publique a aplicação junto da migration. Partidas anteriores continuam com seus snapshots.
 
 ### Campanhas e confrontos
+
+A expansão da campanha 01 nas migrations **046–047** adiciona Execução, Benção divina e cinco personagens, atualiza as batalhas 4–6 e as missões e introduz o bloqueio por desistências rápidas. Regras e operação em [expansão da campanha 01](chapter-one-expansion.md).
 
 - Título, descrição, imagem principal do card, fundo do mapa, capítulo, ordem, publicação e confronto necessário para liberar a campanha.
 - A seção **01 Metadados** contém os dados de apresentação. O pergaminho do mapa mostra o título e a descrição gravados no CMS, incluindo múltiplos parágrafos e campanhas adicionais.

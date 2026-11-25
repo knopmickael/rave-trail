@@ -26,7 +26,7 @@ function cached<T>(key: string, fetcher: () => Promise<T>) {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) { super(message); }
+  constructor(message: string, public readonly status: number, public readonly retryAt?: string, public readonly serverTime?: string) { super(message); }
 }
 
 async function request<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
@@ -46,7 +46,7 @@ async function request<T>(path: string, body?: unknown, method = body === undefi
   const data = await response.json().catch(() => null);
   if (!response.ok) {
     if (response.status === 401 && current === generation) clearGameData();
-    throw new ApiError(data?.message ?? 'Não foi possível concluir a solicitação.', response.status);
+    throw new ApiError(data?.message ?? 'Não foi possível concluir a solicitação.', response.status, data?.retryAt, data?.serverTime);
   }
   return data as T;
 }
@@ -92,7 +92,9 @@ export const api = {
   async startBattle(encounterId: string, options: CampaignBattleOptions = {}): Promise<BattleRecord> {
     return requestBattle(`/encounters/${encodeURIComponent(encounterId)}/battles`, options);
   },
-  async quickBattle(): Promise<QuickBattleData> {
+  async quickBattle(refresh = false): Promise<QuickBattleData> {
+    // Revalidar ao abrir/retomar a tela; os demais consumidores compartilham o cache.
+    if (refresh) gameDataCache.delete('quick-battle');
     return cached('quick-battle', async () => (await request<{ quickBattle: QuickBattleData }>('/quick-battle')).quickBattle);
   },
   async startQuickBattle(): Promise<BattleRecord> {
@@ -137,6 +139,7 @@ async function requestBattle(path: string, body?: unknown) {
 
 function acceptBattle(battle: BattleRecord): BattleRecord {
   preloadDataAssets(battle.state);
+  if (battle.state.status === 'abandoned') gameDataCache.delete('quick-battle');
   if (battle.state.status === 'victory' && !finishedBattles.has(battle.id)) {
     finishedBattles.add(battle.id);
     const keys = ['progress', 'unlocks', 'quick-battle'];

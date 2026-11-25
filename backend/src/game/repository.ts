@@ -2,7 +2,7 @@ import type { CharacterUnlockData, GameCatalog, TeamSlots } from '@game/contract
 import type { CampaignOption } from '@game/content/campaigns.js';
 
 export class GameError extends Error {
-  constructor(public readonly statusCode: number, message: string) { super(message); }
+  constructor(public readonly statusCode: number, message: string, public readonly retryAt?: string, public readonly serverTime?: string) { super(message); }
 }
 
 export interface GameRepository {

@@ -77,21 +77,20 @@ it('coloca Jung II somente no encontro 6 e o disponibiliza no sorteio rápido de
   expect(second.portrait).toBe('/media/characters/jung-de-grimoria-ii-face.png');
   const map = await battles.getMap(user.id, 'path-1');
   expect(map.encounters[1].enemyUnitIds[0]).toBe('rival-a-base');
-  expect(map.encounters[4].enemyUnitIds[0]).toBe('rival-a-base');
-  expect(map.encounters[5].enemyUnitIds).toEqual(['jung-de-grimoria-ii', 'rival-b-base']);
+  expect(map.encounters[4].enemyUnitIds[0]).toBe('guerreiros-habilidosos-a');
+  expect(map.encounters[5].enemyUnitIds).toEqual(['jung-de-grimoria-ii', 'exal-de-grimoria-ii', 'monnica-de-grimoria-ii']);
   expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => unit.id === second.id)).toBe(false);
   expect(mission(await game.getCharacterUnlocks(user.id)).campaignAvailable).toBe(false);
   const sixth = await battles.startBattle(user.id, encounters[5].id);
-  expect(sixth.state.teams.enemy.units.map((unit) => unit.unitId)).toEqual(['jung-de-grimoria-ii', 'rival-b-base']);
+  expect(sixth.state.teams.enemy.units.map((unit) => unit.unitId)).toEqual(['jung-de-grimoria-ii', 'exal-de-grimoria-ii', 'monnica-de-grimoria-ii']);
   expect(sixth.state.teams.enemy.units[0].portrait).toBe(second.portrait);
   const won = await finish(user.id, sixth);
   expect(won.battle.state.status).toBe('victory');
   expect((await battles.getQuickBattle(user.id)).opponents.find((unit) => unit.id === second.id)?.portrait).toBe(second.portrait);
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ campaignAvailable: true, unlocked: false,
     requirements: [
-      expect.objectContaining({ current: 1, target: 1 }),
       expect.objectContaining({ current: 0, target: 25 }),
-      expect.objectContaining({ current: 0, target: 15 }),
+      expect.objectContaining({ current: 0, target: 20 }),
       expect.objectContaining({ current: 0, target: 10 }),
     ] });
   await expect(game.setTeamSlot(user.id, 1, second.id)).rejects.toMatchObject({ statusCode: 403 });
@@ -105,25 +104,23 @@ it('a 10ª vitória rápida contra Jung II usando Ravi base libera a unidade sem
   await history(user.id, 'jung-de-grimoria-ii', 30, 'protagonist-main-transformed');
   await history(user.id, 'jung-de-grimoria-ii', 30, undefined, 'multiplayer');
   await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'quick', 'defeat');
-  expect(mission(await game.getCharacterUnlocks(user.id)).requirements[3].current).toBe(0);
-  await history(user.id, 'rival-a-base', 9);
+  expect(mission(await game.getCharacterUnlocks(user.id)).requirements[2].current).toBe(0);
+  await history(user.id, 'jung-de-grimoria-ii', 9);
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ unlocked: false,
     requirements: [
-      expect.objectContaining({ current: 1, target: 1 }),
       expect.objectContaining({ current: 25, target: 25 }),
-      expect.objectContaining({ current: 15, target: 15 }),
+      expect.objectContaining({ current: 20, target: 20 }),
       expect.objectContaining({ current: 9, target: 10 }),
     ] });
   await expect(game.setTeamSlot(user.id, 1, 'jung-de-grimoria-ii')).rejects.toMatchObject({ statusCode: 403 });
-  const [last] = await history(user.id, 'rival-a-base', 1, undefined, 'quick', 'active');
+  const [last] = await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'quick', 'active');
   const requestId = randomUUID();
   const response = await finish(user.id, last, requestId);
   expect(response.battle.state.status).toBe('victory');
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ unlocked: true,
     requirements: [
-      expect.objectContaining({ current: 1, target: 1 }),
       expect.objectContaining({ current: 25, target: 25 }),
-      expect.objectContaining({ current: 15, target: 15 }),
+      expect.objectContaining({ current: 20, target: 20 }),
       expect.objectContaining({ current: 10, target: 10 }),
     ] });
   const repeated = await battles.submitTurn(user.id, last.id, 0, requestId,
@@ -143,16 +140,16 @@ it('migra a formação antiga e reaplica o balanceamento de Jung II sem alterar 
   await pool.query("UPDATE encounter_enemies SET unit_id = 'rival-a-base' WHERE encounter_id = 'path-1-encounter-6' AND slot_index = 0");
   await pool.query("DELETE FROM unit_abilities WHERE unit_id = 'jung-de-grimoria-ii'");
   await pool.query("DELETE FROM units WHERE id = 'jung-de-grimoria-ii'");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('020_jung_de_grimoria_ii.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '044_divine_protection_retaliation_and_wolfs_howl.sql', '045_wolfs_howl_one_turn.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('020_jung_de_grimoria_ii.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '044_divine_protection_retaliation_and_wolfs_howl.sql', '045_wolfs_howl_one_turn.sql', '046_chapter_one_expansion.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
   await seedDatabase(pool);
   const catalog = await game.getCatalog();
-  expect(catalog.units).toHaveLength(21);
+  expect(catalog.units).toHaveLength(26);
   expect(catalog.units.find((unit) => unit.id === 'rival-a-base')).toEqual(original);
   expect(catalog.units.find((unit) => unit.id === 'jung-de-grimoria-ii')?.abilityIds).toEqual(definition('jung-de-grimoria-ii').abilityIds);
-  expect((await battles.getMap(user.id, 'path-1')).encounters[5].enemyUnitIds).toEqual(['jung-de-grimoria-ii', 'rival-b-base']);
+  expect((await battles.getMap(user.id, 'path-1')).encounters[5].enemyUnitIds).toEqual(['jung-de-grimoria-ii', 'exal-de-grimoria-ii', 'monnica-de-grimoria-ii']);
   expect(await auth.getProgress(user.id)).toEqual(before);
 });
 

@@ -17,8 +17,8 @@ const game = new PostgresGameRepository(pool);
 const cms = new CmsRepository(pool);
 const loadouts = [
   ['rival-a-base', ['simple-strike', 'guard', 'retain-energy', 'retaliation']],
-  ['passage-guardian-base', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn']],
-  ['guerreiros-habilidosos-a', ['simple-strike-ii', 'guard', 'retain-energy-plus', 'secondary-special']],
+  ['passage-guardian-base', ['simple-strike', 'guard', 'retain-energy-plus', 'extra-turn']],
+  ['guerreiros-habilidosos-a', ['simple-strike-ii', 'guard', 'retain-energy-plus', 'divine-boon']],
   ['guerreiros-habilidosos-b', ['simple-strike-ii', 'guard', 'retain-energy', 'divine-protection']],
   ['guerreiros-habilidosos-c', ['simple-strike-ii', 'guard', 'retain-energy', 'wolfs-howl']],
   ['protagonist-main-transformed', ['quick-slash', 'female-special', 'retain-energy-plus', 'fury-scream']],
@@ -56,7 +56,6 @@ it('migra conteúdo anterior mesmo com edições CMS, preservando campos alheios
     await pool.query('DELETE FROM unit_abilities WHERE unit_id=$1', [id]);
     for (const [slot, abilityId] of ids.entries()) await pool.query('INSERT INTO unit_abilities VALUES ($1,$2,$3)', [id, slot, abilityId]);
   }
-  await pool.query("DELETE FROM abilities WHERE id IN ('divine-protection','retaliation','wolfs-howl')");
   await pool.query("UPDATE abilities SET energy_cost=15 WHERE id='fast-move'");
   await pool.query(`UPDATE abilities SET effects='[{"kind":"heal","amount":20}]', description='Cura antiga' WHERE id='heal'`);
   const drak = (await cms.catalog()).characters.find((u) => u.id === 'passage-guardian-base')!;
@@ -68,7 +67,7 @@ it('migra conteúdo anterior mesmo com edições CMS, preservando campos alheios
   // Mesmo JSON persistido por partidas oficiais, em tabela isolada do teste.
   await pool.query('CREATE TABLE saved_snapshot (state jsonb NOT NULL)');
   await pool.query('INSERT INTO saved_snapshot VALUES ($1)', [JSON.stringify(snapshot)]);
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
@@ -91,7 +90,7 @@ it('migra conteúdo anterior mesmo com edições CMS, preservando campos alheios
 it('altera somente a quantidade de cura preservando efeitos adicionais e sua ordem no CMS', async () => {
   const heal = (await cms.catalog()).abilities.find((a) => a.id === 'heal')!;
   await cms.save('abilities', { ...heal, effects: [{ kind: 'guard', reduction: 7, teamTurns: 2 }, { kind: 'heal', amount: 20 }] }, false);
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   expect((await game.getCatalog()).abilities.find((a) => a.id === 'heal')?.effects)
@@ -101,11 +100,11 @@ it('altera somente a quantidade de cura preservando efeitos adicionais e sua ord
 it('resolve destinos já presentes no conjunto CMS sem violar unicidade nem perder os quatro slots', async () => {
   const drak = (await cms.catalog()).characters.find((u) => u.id === 'passage-guardian-base')!;
   await cms.save('characters', { ...drak, abilityIds: ['main-special', 'simple-strike-ii', 'retain-energy', 'retain-energy-plus'] }, false);
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   expect((await game.getCatalog()).units.find((u) => u.id === drak.id)?.abilityIds)
-    .toEqual(['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn']);
+    .toEqual(['simple-strike', 'guard', 'retain-energy-plus', 'extra-turn']);
 });
 
 it('reduz somente o stun do Uivo para um turno e preserva demais edições do CMS após o seed', async () => {

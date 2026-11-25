@@ -119,7 +119,7 @@ describe('motor determinístico de combate', () => {
     expect(guarded.teams.player.units[0].hp).toBe(25 + amount);
     initial.teams.enemy.units[0].hp = 1;
     initial.teams.player.units[0].hp = 95;
-    expect(previewActions(initial, [drain(abilityId === 'soul-drain-plus' ? undefined : 'enemy-0')]).state.teams.player.units[0].hp).toBe(100);
+    expect(previewActions(initial, [drain(abilityId === 'soul-drain-plus' ? undefined : 'enemy-0')]).state.teams.player.units[0].hp).toBe(96);
   });
 
   it('drenagem em alvo derrotado antes no combo gera MISS, cobra energia e não cura', () => {
@@ -147,11 +147,11 @@ describe('motor determinístico de combate', () => {
     expect(outcome.state.teams.player.energy).toBe(0);
   });
 
-  it('ressuscita somente aliado derrotado com metade do HP e sem Guarda antiga', () => {
+  it('ressuscita somente aliado derrotado com HP máximo e sem Guarda antiga', () => {
     const initial = state(['legendary-beast-premium', STARTER_UNIT_IDS[0]]); initial.teams.player.energy = 50;
     initial.teams.player.units[1].hp = 0; initial.teams.player.units[1].guardExpiresAt = 3;
     const outcome = previewActions(initial, [action(0, 'resurrection', 'player-1')]);
-    expect(outcome.state.teams.player.units[1].hp).toBe(50);
+    expect(outcome.state.teams.player.units[1].hp).toBe(100);
     expect(outcome.state.teams.player.units[1].guardExpiresAt).toBeNull();
     expect(outcome.state.teams.player.units[1].guardAbilityId).toBeNull();
     expect(outcome.state.teams.player.energy).toBe(0);
@@ -171,7 +171,7 @@ describe('motor determinístico de combate', () => {
     initial.teams.player.units[0].abilityIds = ['resurrection'];
     initial.abilities.resurrection = { ...initial.abilities.resurrection, energyCost: 40 };
     const outcome = previewActions(initial, [action(0, 'resurrection', 'player-1'), action(2, 'resurrection', 'player-1')]);
-    expect(outcome.state.teams.player.units[1].hp).toBe(50);
+    expect(outcome.state.teams.player.units[1].hp).toBe(100);
     expect(outcome.state.teams.player.energy).toBe(20);
     expect(outcome.events.some((event) => event.kind === 'miss')).toBe(true);
     expect(() => previewActions(initial, [action(0, 'resurrection', 'player-1'), action(1, 'retain-energy')])).toThrow(/inválidos/);
@@ -303,7 +303,7 @@ describe('motor determinístico de combate', () => {
     const planned = planEnemyTurn(initial);
     expect(planned[0]).toEqual({ actorId: 'enemy-0', abilityId: 'resurrection', targetId: 'enemy-1' });
     expect(planned.some((entry) => entry.actorId === 'enemy-1')).toBe(false);
-    expect(previewActions(initial, planned).state.teams.enemy.units[1].hp).toBe(50);
+    expect(previewActions(initial, planned).state.teams.enemy.units[1].hp).toBe(100);
   });
 
   it('IA considera cura coletiva e drenagem de vida', () => {
@@ -331,17 +331,17 @@ describe('motor determinístico de combate', () => {
   });
 
   it('Corte rápido causa dano imediato e sangra por três turnos do alvo', () => {
-    const initial = state(['jung-de-grimoria-ii']); initial.teams.player.energy = 100;
+    const initial = state(['protagonist-main-transformed']); initial.teams.player.energy = 100;
     let battle = executeTurn(initial, [action(0, 'quick-slash', 'enemy-0')]).state;
+    expect(battle.teams.enemy.units[0].hp).toBe(75);
+    expect(battle.teams.enemy.units[0]).toMatchObject({ bleedTurns: 2, bleedAmount: 5 });
+    battle = executeTurn(battle, []).state;
+    battle = executeTurn(battle, []).state;
     expect(battle.teams.enemy.units[0].hp).toBe(70);
-    expect(battle.teams.enemy.units[0]).toMatchObject({ bleedTurns: 2, bleedAmount: 10 });
-    battle = executeTurn(battle, []).state;
-    battle = executeTurn(battle, []).state;
-    expect(battle.teams.enemy.units[0].hp).toBe(60);
     expect(battle.teams.enemy.units[0].bleedTurns).toBe(1);
     battle = executeTurn(battle, []).state;
     battle = executeTurn(battle, []).state;
-    expect(battle.teams.enemy.units[0].hp).toBe(50);
+    expect(battle.teams.enemy.units[0].hp).toBe(65);
     expect(battle.teams.enemy.units[0]).toMatchObject({ bleedTurns: 0, bleedAmount: 0 });
   });
 
@@ -361,7 +361,7 @@ describe('motor determinístico de combate', () => {
   });
 
   it('Invulnerabilidade anula o próximo turno inimigo e expira no seguinte', () => {
-    const initial = state(['passage-guardian-base']); initial.teams.player.energy = 100;
+    const initial = state(['rival-b-final-mode']); initial.teams.player.energy = 100;
     let battle = executeTurn(initial, [action(0, 'fast-move')]).state;
     expect(battle.teams.player.units[0].invulnerableExpiresAt).toBe(2);
     const enemyAttack = [{ actorId: 'enemy-0', abilityId: 'simple-strike', targetId: 'player-0' }];

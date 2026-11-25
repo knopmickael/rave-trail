@@ -61,7 +61,7 @@ beforeEach(() => {
 
 afterEach(() => { cleanup(); clearGameData(); vi.unstubAllGlobals(); });
 
-it('baixa os dados no boot e navega repetidamente sem GETs extras nem loading intermediário', async () => {
+it('reutiliza os dados no boot e na navegação, revalidando somente o cooldown de rápidas ao abrir a tela', async () => {
   const user = userEvent.setup();
   render(<App />);
   await vi.waitFor(() => expect(gameDataCache.peek('map:path-1')).not.toBeNull());
@@ -83,7 +83,9 @@ it('baixa os dados no boot e navega repetidamente sem GETs extras nem loading in
       await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
     }
   }
-  expect(paths()).toHaveLength(requests);
+  expect(paths()).toHaveLength(requests + 2);
+  expect(count('/quick-battle')).toBe(3);
+  expect(count('/catalog')).toBe(1);
 });
 
 it('compartilha requisições em andamento e usa o time retornado pelo PUT sem GET extra', async () => {
@@ -184,5 +186,6 @@ it('não recarrega recompensas na derrota ou desistência', async () => {
   record.state.status = 'abandoned';
   await api.abandonBattle(record.id);
   await preloadGameData();
-  for (const path of ['/progress', '/character-unlocks', '/quick-battle', '/campaigns', '/campaigns/path-1/map', '/catalog']) expect(count(path)).toBe(1);
+  for (const path of ['/progress', '/character-unlocks', '/campaigns', '/campaigns/path-1/map', '/catalog']) expect(count(path)).toBe(1);
+  expect(count('/quick-battle')).toBe(2);
 });

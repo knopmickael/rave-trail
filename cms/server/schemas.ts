@@ -14,6 +14,7 @@ export const effectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('guard'), reduction: amount, teamTurns, healPerTurn: integer(0, 10000).optional() }).strict(),
   z.object({ kind: z.literal('dispel-shields') }).strict(),
   z.object({ kind: z.literal('ability-block'), teamTurns }).strict(),
+  z.object({ kind: z.literal('prevent-defeat') }).strict(),
   z.object({ kind: z.literal('restore-energy'), amount: integer(1, 100) }).strict(),
   z.object({ kind: z.literal('extra-turn'), count: integer(1, 3) }).strict(),
   z.object({ kind: z.literal('bleed'), amount, turns: teamTurns }).strict(),

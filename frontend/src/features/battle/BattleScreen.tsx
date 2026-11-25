@@ -332,6 +332,12 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired, m
                       <img src={state.abilities['quick-slash'].icon} alt={t('Efeito ativo: sangramento')} />
                     </AbilityTooltip>
                   </li>}
+                  {unit.deathWardAbilityId && state.abilities[unit.deathWardAbilityId] && <li>
+                    <AbilityTooltip ability={state.abilities[unit.deathWardAbilityId]} resetKey={tooltipReset} focusable
+                      extra={t('Sobrevive ao próximo dano fatal com 1 HP.')}>
+                      <img src={state.abilities[unit.deathWardAbilityId].icon} alt={t('Efeito ativo: Benção divina')} />
+                    </AbilityTooltip>
+                  </li>}
                   {unit.damageBoostExpiresAt != null && state.abilities['internal-strength'] && <li>
                     <AbilityTooltip ability={state.abilities['internal-strength']} resetKey={tooltipReset} focusable
                       extra={t(state.teams[side].turns < (unit.damageBoostStartsAt ?? 0) ? '+{damage} de dano no próximo turno da equipe.' : '+{damage} de dano neste turno da equipe.', { damage: unit.damageBoostAmount ?? 0 })}>

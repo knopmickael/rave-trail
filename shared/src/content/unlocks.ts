@@ -37,10 +37,11 @@ const encounter = (encounterId: string, battle: number): EncounterUnlockRequirem
   ({ kind: 'encounter', encounterId, target: 1, description: `Finalize a batalha ${battle} da campanha 1` });
 const rule = (unitId: string, requirements: readonly UnlockRequirement[],
   options: Pick<BattleUnlockRule, 'availableAfterEncounterId' | 'availableFromStart'> = {}): BattleUnlockRule => {
-  const gate = requirements.find((r) => r.kind === 'encounter')?.encounterId
+  const gate = options.availableFromStart ? undefined : options.availableAfterEncounterId
+    ?? requirements.find((r) => r.kind === 'encounter')?.encounterId
     ?? encounters.find((e) => e.enemyUnitIds.includes(unitId))?.id;
   return { unitId, description: requirements.map((requirement) => requirement.description).join(' '), requirements,
-    ...(gate ? { availableAfterEncounterId: gate } : { availableFromStart: true }), ...options };
+    ...(gate ? { availableAfterEncounterId: gate } : { availableFromStart: true }) };
 };
 const single = (unitId: string, requirement: UnlockRequirement): BattleUnlockRule => rule(unitId, [requirement]);
 
@@ -76,11 +77,10 @@ export const battleUnlockRules: readonly BattleUnlockRule[] = [
     wins('rival-a-base', 3, 'Derrote Jung de Grimória na Batalha rápida 3 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
   ]),
   rule('jung-de-grimoria-ii', [
-    encounter('path-1-encounter-6', 6),
     quickWins(25),
-    defeat('rival-a-base', 15, 'Jung de Grimória'),
-    wins('rival-a-base', 10, 'Derrote Jung de Grimória na Batalha rápida 10 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
-  ]),
+    defeat('jung-de-grimoria-ii', 20, 'Jung de Grimória II'),
+    wins('jung-de-grimoria-ii', 10, 'Derrote Jung de Grimória II na Batalha rápida 10 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
+  ], { availableAfterEncounterId: 'path-1-encounter-6' }),
   rule('rival-b-base', [
     encounter('path-1-encounter-2', 2),
     quickWins(10),
@@ -108,26 +108,29 @@ export const battleUnlockRules: readonly BattleUnlockRule[] = [
     wins('passage-guardian-base', 5, 'Derrote Drak de Pontes na Batalha rápida 5 vezes utilizando Saqueadores da estrada.', 'quick', raiderUnits),
   ]),
   rule('guerreiros-habilidosos-a', [
-    encounter('path-1-encounter-4', 4),
-    quickWins(15),
+    quickWins(20),
     defeat('guerreiros-habilidosos-a', 15, 'Trinity de Espinea'),
-  ]),
+  ], { availableAfterEncounterId: 'path-1-encounter-5' }),
   rule('guerreiros-habilidosos-b', [
-    encounter('path-1-encounter-4', 4),
-    quickWins(15),
+    quickWins(20),
     defeat('guerreiros-habilidosos-b', 15, 'Vlade de Espinea'),
-  ]),
+  ], { availableAfterEncounterId: 'path-1-encounter-5' }),
   rule('guerreiros-habilidosos-c', [
-    encounter('path-1-encounter-4', 4),
-    quickWins(15),
+    quickWins(20),
     defeat('guerreiros-habilidosos-c', 15, 'Passago de Espinea'),
-  ]),
+  ], { availableAfterEncounterId: 'path-1-encounter-5' }),
   rule('protagonist-main-transformed', [
-    encounter('path-1-encounter-7', 7),
     quickWins(30),
-    defeat('rival-a-base', 20, 'Jung de Grimória'),
-    wins('jung-de-grimoria-ii', 10, 'Derrote Jung de Grimória II na Batalha rápida 10 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
+    wins('jung-de-grimoria-ii', 20, 'Derrote Jung de Grimória II na Batalha rápida 20 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
+    wins('exal-de-grimoria-ii', 20, 'Derrote Exal de Grimória II na Batalha rápida 20 vezes utilizando Ravi de Berdal.', 'quick', ['protagonist-main-base']),
   ], { availableAfterEncounterId: 'path-1-encounter-7' }),
+  ...([
+    ['saqueador-da-estrada-iii', 'Saqueador da estrada III'], ['saqueador-da-estrada-iv', 'Saqueador da estrada IV'],
+    ['saqueadora-da-estrada-ii', 'Saqueadora da estrada II'],
+  ] as const).map(([id, name]) => rule(id, [quickWins(15), defeat(id, 10, name)], { availableAfterEncounterId: 'path-1-encounter-4' })),
+  ...([
+    ['exal-de-grimoria-ii', 'Exal de Grimória II'], ['monnica-de-grimoria-ii', 'Monnica de Grimória II'],
+  ] as const).map(([id, name]) => rule(id, [quickWins(25), defeat(id, 20, name)], { availableAfterEncounterId: 'path-1-encounter-6' })),
 ];
 
 export const premiumUnitPrices: Readonly<Record<string, number>> = {

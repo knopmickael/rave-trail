@@ -77,7 +77,7 @@ it('abre mão do dano imediato para ressuscitar um aliado que pode sobreviver e 
   initial.teams.player.units.forEach((unit, index) => { unit.hp = index === 0 ? 100 : 0; unit.abilityIds = ['simple-strike']; });
   const planned = planEnemyTurn(initial);
   expect(planned).toEqual([{ actorId: 'enemy-0', abilityId: 'resurrection', targetId: 'enemy-1' }]);
-  expect(previewActions(initial, planned).state.teams.enemy.units[1].hp).toBe(50);
+  expect(previewActions(initial, planned).state.teams.enemy.units[1].hp).toBe(100);
 });
 
 it('aproveita suporte quando o mesmo combo continua causando o dano máximo', () => {
@@ -88,7 +88,7 @@ it('aproveita suporte quando o mesmo combo continua causando o dano máximo', ()
   const outcome = previewActions(initial, planned).state;
   expect(damage(initial, planned)).toBe(30);
   expect(planned.some((action) => action.abilityId === 'resurrection')).toBe(true);
-  expect(outcome.teams.enemy.units[2].hp).toBe(50);
+  expect(outcome.teams.enemy.units[2].hp).toBe(100);
   expect(planned.some((action) => action.actorId === 'enemy-2')).toBe(false);
 });
 
@@ -234,7 +234,7 @@ it.each(['heal', 'guard', 'fast-move'])('usa %s quando atacar deixaria o último
 });
 
 it('considera o dano futuro do sangramento em vez de escolher apenas o golpe de maior impacto', () => {
-  const initial = duel(['main-special', 'quick-slash'], 100);
+  const initial = duel(['simple-strike-ii', 'quick-slash'], 100);
   initial.teams.player.units[0].abilityIds = [];
   expect(planEnemyTurn(initial)).toEqual([{ actorId: 'enemy-0', abilityId: 'quick-slash', targetId: 'player-0' }]);
 });

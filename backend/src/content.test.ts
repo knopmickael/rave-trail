@@ -19,15 +19,15 @@ describe('catálogo compartilhado', () => {
     ]);
     expect(second.every((entry) => entry.story.length > 100)).toBe(true);
   });
-  it('define as sete equipes aprovadas em ordem, incluindo dois inimigos na sexta e o duelo final', () => {
+  it('define as sete equipes aprovadas em ordem, incluindo o trio II na sexta e o duelo final', () => {
     expect(encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => entry.position)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(encounters.filter((entry) => entry.campaignId === 'path-1').map((entry) => entry.enemyUnitIds)).toEqual([
       ['road-raider-1-base', 'road-raider-2-base', 'road-raider-3-base'],
       ['rival-a-base', 'rival-b-base', 'rival-female-base'],
       ['passage-guardian-base', 'guardian-healer-male-base', 'guardian-healer-female-base'],
+      ['saqueador-da-estrada-iii', 'saqueador-da-estrada-iv', 'saqueadora-da-estrada-ii'],
       ['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'],
-      ['rival-a-base', 'rival-b-base', 'rival-female-base'],
-      ['jung-de-grimoria-ii', 'rival-b-base'],
+      ['jung-de-grimoria-ii', 'exal-de-grimoria-ii', 'monnica-de-grimoria-ii'],
       ['rival-b-final-mode'],
     ]);
     for (const entry of encounters) {
@@ -54,7 +54,7 @@ describe('catálogo compartilhado', () => {
 
   it('preserva os conjuntos aprovados do chefão, curandeiros e protagonistas', () => {
     const guardian = units.find((unit) => unit.id === 'passage-guardian-base')!;
-    expect(guardian.abilityIds).toEqual(['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn']);
+    expect(guardian.abilityIds).toEqual(['simple-strike', 'guard', 'retain-energy-plus', 'extra-turn']);
     for (const unit of units.filter((unit) => unit.characterId.startsWith('guardian-healer'))) {
       expect(unit.abilityIds).toEqual(['simple-strike', 'female-special', 'retain-energy', 'heal']);
     }
@@ -84,8 +84,8 @@ describe('catálogo compartilhado', () => {
     expect(abilities['fury-scream']).toMatchObject({ energyCost: 40, effects: [{ kind: 'damage', amount: 35 }] });
     expect(abilities['simple-strike-ii']).toMatchObject({ name: 'Golpe simples II', energyCost: 20, target: 'enemy',
       icon: '/media/abilities/simple-strike-II.png', effects: [{ kind: 'damage', amount: 30 }] });
-    expect(abilities['quick-slash']).toMatchObject({ energyCost: 35, target: 'enemy',
-      effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 10, turns: 3 }] });
+    expect(abilities['quick-slash']).toMatchObject({ energyCost: 30, target: 'enemy',
+      effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 5, turns: 3 }] });
     expect(abilities['dark-vortex']).toMatchObject({ energyCost: 30, target: 'all-enemies',
       effects: [{ kind: 'damage', amount: 15 }, { kind: 'attack-block', teamTurns: 1 }] });
     expect(abilities['fast-move']).toMatchObject({ name: 'Invulnerabilidade', energyCost: 25, target: 'self',
@@ -122,11 +122,11 @@ describe('catálogo compartilhado', () => {
     ['road-raider-1-base', ['simple-strike', 'guard', 'retain-energy', 'strong-strike']],
     ['road-raider-2-base', ['simple-strike', 'guard', 'retain-energy', 'secondary-special']],
     ['rival-a-base', ['simple-strike', 'guard', 'retain-energy', 'retaliation']],
-    ['jung-de-grimoria-ii', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash']],
+    ['jung-de-grimoria-ii', ['retaliation', 'fast-move', 'retain-energy-plus', 'execution']],
     ['rival-b-base', ['simple-strike', 'guard', 'retain-energy', 'soul-drain']],
     ['rival-female-base', ['simple-strike', 'guard', 'retain-energy', 'heal']],
-    ['passage-guardian-base', ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn']],
-    ['guerreiros-habilidosos-a', ['simple-strike-ii', 'guard', 'retain-energy-plus', 'secondary-special']],
+    ['passage-guardian-base', ['simple-strike', 'guard', 'retain-energy-plus', 'extra-turn']],
+    ['guerreiros-habilidosos-a', ['simple-strike-ii', 'guard', 'retain-energy-plus', 'divine-boon']],
     ['guerreiros-habilidosos-b', ['simple-strike-ii', 'guard', 'retain-energy', 'divine-protection']],
     ['guerreiros-habilidosos-c', ['simple-strike-ii', 'guard', 'retain-energy', 'wolfs-howl']],
     ['protagonist-main-transformed', ['quick-slash', 'female-special', 'retain-energy-plus', 'fury-scream']],
@@ -146,6 +146,7 @@ describe('catálogo compartilhado', () => {
       'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
       'Jung de Grimória II', 'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
       ...SECOND_CAMPAIGN_CHARACTERS.map((character) => character.name),
+      'Saqueador da estrada III', 'Saqueador da estrada IV', 'Saqueadora da estrada II', 'Exal de Grimória II', 'Monnica de Grimória II',
     ]);
     expect(rosterUnits.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));
     expect(rosterUnits.findIndex((unit) => unit.id === 'combatente-demonio')).toBe(33);
@@ -157,7 +158,7 @@ describe('catálogo compartilhado', () => {
     const second = units.find((unit) => unit.id === 'jung-de-grimoria-ii')!;
     expect(second.characterId).toBe(original.characterId);
     expect(second.id).not.toBe(original.id);
-    expect(second.abilityIds).toEqual(['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash']);
+    expect(second.abilityIds).toEqual(['retaliation', 'fast-move', 'retain-energy-plus', 'execution']);
     expect(second.abilityIds).not.toEqual(original.abilityIds);
     expect(second.maxHp).toBe(original.maxHp);
     expect(second.portrait).toBe('/media/characters/jung-de-grimoria-ii-face.png');
@@ -168,6 +169,10 @@ describe('catálogo compartilhado', () => {
       if (unit.version === 'Além das Fronteiras') {
         expect(unit.portrait).toBe(`/media/characters/02/${unit.id}-face.png`);
         expect(unit.illustration).toBe(`/media/characters/02/${unit.id}.png`);
+        continue;
+      }
+      if (['saqueador-da-estrada-iii', 'saqueador-da-estrada-iv', 'saqueadora-da-estrada-ii', 'exal-de-grimoria-ii', 'monnica-de-grimoria-ii'].includes(unit.id)) {
+        expect(unit.illustration).toMatch(/^\/media\/characters\/(saqueador-iii|saqueador-iv|saqueadora-ii|exal-ii|monnica-ii)\.png$/);
         continue;
       }
       expect(unit.portrait).toMatch(/^\/media\/characters\/[a-z0-9-]+-face\.png$/);

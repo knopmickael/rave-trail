@@ -61,7 +61,7 @@ it('exige Ravi base e transforma seu próprio slot ao entrar, mantendo a equipe 
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || '[\"protagonist-main-transformed\"]'::jsonb) WHERE user_id = $1", [user.id]);
   await game.setTeamSlot(user.id, 0, 'protagonist-main-transformed');
   const sixth = await battles.startBattle(user.id, encounters[5].id);
-  expect(sixth.state.teams.enemy.units).toHaveLength(2);
+  expect(sixth.state.teams.enemy.units).toHaveLength(3);
   await expect(battles.startBattle(user.id, FINAL_ENCOUNTER_ID)).rejects.toThrow(FINAL_BATTLE_REQUIREMENT);
   expect((await battles.getBattle(user.id, sixth.id)).state.status).toBe('active');
   await game.setTeamSlot(user.id, 0, 'protagonist-female-base');

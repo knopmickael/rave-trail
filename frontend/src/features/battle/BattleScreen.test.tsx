@@ -205,6 +205,14 @@ it('mostra o ícone do efeito de Proteção coletiva acima das habilidades em ve
   expect(within(row).queryByText('Guarda ativa')).not.toBeInTheDocument();
 });
 
+it('mostra Benção divina como proteção contra o próximo dano fatal', async () => {
+  const record = initial();
+  record.state.teams.player.units[0].deathWardAbilityId = 'divine-boon';
+  render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
+  const icon = screen.getByRole('img', { name: 'Efeito ativo: Benção divina' });
+  expect(icon).toHaveAttribute('src', '/media/abilities/divine-boon.png');
+});
+
 it('reserva energia assim que escolhe a habilidade e bloqueia as demais opções do personagem', async () => {
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={initial()} title="Batalha" {...handlers()} />);
@@ -328,7 +336,7 @@ it('ressurreição reserva 50 de energia e permite selecionar somente um aliado 
   expect(screen.getByRole('button', { name: 'Adversário: Saqueador da estrada I' })).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Alvo: Ravi de Berdal' }));
   await user.click(endTurn());
-  await vi.waitFor(() => expect(screen.getByRole('progressbar', { name: 'HP de Ravi de Berdal' })).toHaveAttribute('aria-valuenow', '50'));
+  await vi.waitFor(() => expect(screen.getByRole('progressbar', { name: 'HP de Ravi de Berdal' })).toHaveAttribute('aria-valuenow', '100'));
   expect(api.turn).toHaveBeenCalledWith(record.id, 0, expect.any(String), [{ actorId: 'player-0', abilityId: 'resurrection', targetId: 'player-1' }]);
 });
 

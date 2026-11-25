@@ -44,6 +44,8 @@ Multiplayer implementado para um único processo Fastify: fila global, equipes d
 
 O balanceamento da migração **044** adiciona Proteção divina, Retaliação e Uivo do lobo, recalibra Invulnerabilidade/Recuperar vida e redistribui habilidades de sete personagens. Requer o motor atualizado; detalhes de duração, cura e bloqueios em [CMS — balanceamento](docs/cms.md#balanceamento-da-migração-044). O deploy aplica a migration automaticamente; não há sincronização automática de edições locais do CMS.
 
+As migrations **046–047** expandem a campanha 01 com Execução, Benção divina, cinco personagens, novas formações e missões e bloqueio de cinco minutos após dez desistências rápidas em menos de cinco minutos. Consulte [regras e atualização dos bancos](docs/chapter-one-expansion.md).
+
 `frontend/public/media/` é a única fonte dos arquivos usados pelo jogo. `frontend/dist/media/` é a cópia **gerada** para publicação. Os templates estão em `docs/design/templates/`.
 
 ## Executar localmente
@@ -108,7 +110,7 @@ O `.env` permanece na raiz; somente o backend o carrega. A configuração é enc
 - O progresso de metas usa vitórias oficiais rápidas/Multiplayer, considerando a equipe registrada na partida e o modo correto. Conclusões são automáticas e sem notificações de resgate.
 - A correção de progresso solicitada para uma conta foi aplicada pela migração 019, com marcos por missão. Partidas e progresso das outras missões não foram apagados; o seed não restaura os contadores zerados.
 - As regras padrão estão em `shared/src/content/unlocks.ts`; regras editadas no CMS são persistidas e avaliadas a partir do banco. Premium têm aquisição desabilitada; o preço padrão é US$ 9,90.
-- **Jung de Grimória II** é uma unidade independente, com o mesmo HP e habilidades do Jung original. Após vencer a batalha 6, passa a integrar o sorteio da Batalha rápida e sua missão é habilitada. Para escalá-lo, vença **25 batalhas rápidas contra Jung II usando Ravi de Berdal base**. O contador é separado do Jung original; as duas versões contam nas metas gerais de Grimorianos.
+- **Jung de Grimória II** é uma unidade independente com Retaliação e Execução. Após vencer a batalha 6, ele, Exal II e Monnica II entram no sorteio rápido e revelam suas missões. Jung II exige **25 vitórias rápidas, 20 derrotas de Jung II e 10 derrotas de Jung II usando Ravi base**. As versões originais têm contadores separados. Berserk exige 30 vitórias e 20 derrotas de cada Jung II e Exal II usando Ravi base.
 - As imagens usam o nome real da unidade: `<nome>-face.png` e `<nome>-body.png`, em minúsculas e sem acentos. Os IDs de unidades permanecem estáveis. Detalhes em [docs/assets/characters.md](docs/assets/characters.md).
 
 ### Campanha e batalhas
@@ -120,9 +122,9 @@ O primeiro capítulo tem sete encontros sequenciais:
 | 1 | Saqueador da estrada I, Saqueador da estrada II, Saqueadora da estrada |
 | 2 | Jung, Exal e Monnica de Grimória |
 | 3 | Drak, Curandeiro e Curandeira de Pontes |
-| 4 | Trinity, Vlade e Passago de Espinea |
-| 5 | Jung, Exal e Monnica de Grimória |
-| 6 | Jung de Grimória II e Exal de Grimória |
+| 4 | Saqueador da estrada III, Saqueador da estrada IV, Saqueadora da estrada II |
+| 5 | Trinity, Vlade e Passago de Espinea |
+| 6 | Jung de Grimória II, Exal de Grimória II, Monnica de Grimória II |
 | 7 | Exal — Verdadeiro poder |
 
 O mapa usa o vídeo fornecido de 8 segundos em loop. O ponto 6 está na fronteira com as trevas. O duelo final exige Ravi de Berdal na equipe e coloca somente Ravi contra Exal; Ravi é substituído por Berserk no início do segundo turno dele, preservando HP proporcional e efeitos. Essa substituição pertence à partida e não concede o desbloqueio permanente.

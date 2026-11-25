@@ -60,7 +60,8 @@ export async function createApp({ repository, gameRepository, battleRepository, 
     if (error instanceof EmailAlreadyUsedError) {
       return reply.code(409).send({ message: 'Já existe uma conta com este e-mail.' });
     }
-    if (error instanceof GameError) return reply.code(error.statusCode).send({ message: error.message });
+    if (error instanceof GameError) return reply.code(error.statusCode).send({ message: error.message,
+      ...(error.retryAt ? { retryAt: error.retryAt, serverTime: error.serverTime } : {}) });
     if (error instanceof BattleRuleError) return reply.code(400).send({ message: error.message });
     const status = error && typeof error === 'object' && 'statusCode' in error ? error.statusCode : undefined;
     if (typeof status === 'number' && status >= 400 && status < 500) {

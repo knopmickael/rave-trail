@@ -11,6 +11,7 @@ import { GameError } from '../game/repository.js';
 import { PostgresGameRepository, readTeam } from './game-repository.js';
 import { synchronizeCharacterUnlocks } from './character-unlocks.js';
 import type { UnlockBattleMode } from '@game/content/unlocks.js';
+import { quickBattleBlocked, readQuickBattleBlock, recordQuickBattleSurrenders } from './quick-battle-limit.js';
 
 const encounterQuery = `SELECT e.id, e.campaign_id AS "campaignId", e.position, e.title, e.story,
   e.map_x::float AS "mapX", e.map_y::float AS "mapY",
@@ -123,10 +124,11 @@ export class PostgresBattleRepository implements BattleRepository {
   }
 
   private async closeActiveBattles(client: PoolClient, userId: string) {
-    await client.query(`UPDATE battles SET status = 'abandoned', state = jsonb_set(state, '{status}', '"abandoned"'),
+    const closed = await client.query<{ mode: BattleMode }>(`UPDATE battles SET status = 'abandoned', state = jsonb_set(state, '{status}', '"abandoned"'),
       combo = NULL, turn_deadline_at = NULL, bot_acts_at = NULL, revision = revision + 1, updated_at = now(),
       log = log || '[{"kind":"result","message":"Batalha encerrada ao iniciar uma nova partida."}]'::jsonb
-      WHERE user_id = $1 AND status = 'active'`, [userId]);
+       WHERE user_id = $1 AND status = 'active' RETURNING mode`, [userId]);
+    await recordQuickBattleSurrenders(client, userId, this.now(), closed.rows.filter((row) => row.mode === 'quick').length);
   }
 
   async abandonBattle(userId: string, battleId: string): Promise<BattleRecord> {
@@ -134,9 +136,9 @@ export class PostgresBattleRepository implements BattleRepository {
     try {
       await client.query('BEGIN');
       await this.lockProgress(client, userId);
-      const found = await client.query<BattleRecord>(`SELECT ${recordColumns} FROM battles WHERE id = $1 AND user_id = $2 FOR UPDATE`, [battleId, userId]);
-      const battle = found.rows[0];
-      if (!battle) throw new GameError(404, 'Batalha não encontrada.');
+      const found = await client.query<BattleRecord & { mode: BattleMode }>(`SELECT ${recordColumns}, mode FROM battles WHERE id = $1 AND user_id = $2 FOR UPDATE`, [battleId, userId]);
+      if (!found.rows[0]) throw new GameError(404, 'Batalha não encontrada.');
+      const { mode, ...battle } = found.rows[0];
       if (battle.state.status === 'abandoned') { await client.query('COMMIT'); return battle; }
       if (battle.state.status !== 'active') throw new GameError(409, 'Esta batalha já terminou.');
       const updated: BattleRecord = { ...battle, revision: battle.revision + 1,
@@ -144,7 +146,8 @@ export class PostgresBattleRepository implements BattleRepository {
         log: [...(battle.log ?? []), { kind: 'result', message: 'Batalha encerrada por desistência.' }] };
       await client.query(`UPDATE battles SET state = $2, status = 'abandoned', revision = $3, log = $4, combo = NULL,
         turn_deadline_at = NULL, bot_acts_at = NULL, updated_at = now() WHERE id = $1`,
-        [battleId, JSON.stringify(updated.state), updated.revision, JSON.stringify(updated.log)]);
+         [battleId, JSON.stringify(updated.state), updated.revision, JSON.stringify(updated.log)]);
+      if (mode === 'quick') await recordQuickBattleSurrenders(client, userId, this.now());
       await client.query('COMMIT');
       return updated;
     } catch (error) { await client.query('ROLLBACK'); throw error; }
@@ -178,15 +181,19 @@ export class PostgresBattleRepository implements BattleRepository {
   async getQuickBattle(userId: string): Promise<QuickBattleData> {
     const progress = await this.pool.query<{ data: PlayerProgress }>('SELECT data FROM player_progress WHERE user_id = $1', [userId]);
     if (!progress.rows[0]) throw new GameError(404, 'Progresso não encontrado.');
+    const now = this.now();
     return { opponents: await this.quickBattleOpponents(this.pool, progress.rows[0].data.completedEncounters,
-      progress.rows[0].data.unlockedUnitIds) };
+      progress.rows[0].data.unlockedUnitIds), blockedUntil: await readQuickBattleBlock(this.pool, userId, now), serverTime: new Date(now).toISOString() };
   }
 
   async startQuickBattle(userId: string): Promise<BattleRecord> {
     const client = await this.pool.connect();
+    let committed = false;
     try {
       await client.query('BEGIN');
       const progress = await this.lockProgress(client, userId);
+      const blockedUntil = await readQuickBattleBlock(client, userId, this.now());
+      if (blockedUntil) throw quickBattleBlocked(blockedUntil, this.now());
       await this.requireNoMultiplayer(client, userId);
       const opponents = await this.quickBattleOpponents(client, progress.completedEncounters, progress.unlockedUnitIds);
       if (!opponents.length) throw new GameError(503, 'Adversários indisponíveis no catálogo.');
@@ -204,13 +211,19 @@ export class PostgresBattleRepository implements BattleRepository {
         combo: { side: 'player', actions: [] }, state: createBattle(team.map(findUnit), enemies, catalog.abilities) };
       Object.assign(battle, this.clocks(battle.state, 'quick'));
       await this.closeActiveBattles(client, userId);
+      const newlyBlockedUntil = await readQuickBattleBlock(client, userId, this.now());
+      if (newlyBlockedUntil) {
+        // A décima desistência implícita precisa persistir mesmo sem criar a nova partida.
+        await client.query('COMMIT'); committed = true;
+        throw quickBattleBlocked(newlyBlockedUntil, this.now());
+      }
       await client.query("INSERT INTO battles (id, user_id, encounter_id, state, status, mode, log, combo, turn_deadline_at) VALUES ($1,$2,NULL,$3,$4,'quick',$5,$6,$7)",
         [battle.id, userId, JSON.stringify(battle.state), battle.state.status, JSON.stringify(battle.log),
           JSON.stringify(battle.combo), battle.turnDeadlineAt]);
       await this.initializeCounters(client, battle);
       await client.query('COMMIT');
       return battle;
-    } catch (error) { await client.query('ROLLBACK'); throw error; }
+    } catch (error) { if (!committed) await client.query('ROLLBACK'); throw error; }
     finally { client.release(); }
   }
 

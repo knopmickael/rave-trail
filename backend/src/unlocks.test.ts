@@ -11,19 +11,21 @@ const progress = (id: string, wins: readonly BattleVictory[], completed = allEnc
   if (unit.kind !== 'battle-wins') throw new Error('Esperada uma meta de combate.');
   return unit.requirements;
 };
+const quickIndex = (id: string) => battleUnlockRules.find((r) => r.unitId === id)!.requirements.findIndex((r) => r.kind === 'battle-wins' && !r.opponentUnitIds);
+const opponentIndex = (id: string, opponent: string) => battleUnlockRules.find((r) => r.unitId === id)!.requirements.findIndex((r) => r.kind === 'battle-wins' && r.opponentUnitIds?.includes(opponent));
 
 it.each([
   ['road-raider-1-base', 5], ['road-raider-2-base', 5], ['road-raider-3-base', 5],
   ['rival-a-base', 10], ['jung-de-grimoria-ii', 25], ['rival-b-base', 10],
   ['rival-female-base', 10], ['guardian-healer-male-base', 10], ['guardian-healer-female-base', 10],
-  ['passage-guardian-base', 20], ['guerreiros-habilidosos-a', 15],
-  ['guerreiros-habilidosos-b', 15], ['guerreiros-habilidosos-c', 15],
+  ['passage-guardian-base', 20], ['guerreiros-habilidosos-a', 20],
+  ['guerreiros-habilidosos-b', 20], ['guerreiros-habilidosos-c', 20],
   ['protagonist-main-transformed', 30],
 ] as const)('exige o n�mero correto de vit�rias r�pidas para %s', (id, count) => {
-  const requirement = progress(id, victories('protagonist-main-base', count - 1))[1];
+  const requirement = progress(id, victories('protagonist-main-base', count - 1))[quickIndex(id)];
   expect(requirement).toMatchObject({ current: count - 1, target: count });
-  expect(progress(id, victories('protagonist-main-base', count))[1]).toMatchObject({ current: count, target: count });
-  expect(progress(id, victories('protagonist-main-base', count + 5))[1].current).toBe(count);
+  expect(progress(id, victories('protagonist-main-base', count))[quickIndex(id)]).toMatchObject({ current: count, target: count });
+  expect(progress(id, victories('protagonist-main-base', count + 5))[quickIndex(id)].current).toBe(count);
 });
 
 it.each([
@@ -36,11 +38,11 @@ it.each([
   ['guerreiros-habilidosos-a', 'guerreiros-habilidosos-a', 15],
   ['guerreiros-habilidosos-b', 'guerreiros-habilidosos-b', 15],
   ['guerreiros-habilidosos-c', 'guerreiros-habilidosos-c', 15],
-  ['jung-de-grimoria-ii', 'rival-a-base', 15],
-  ['protagonist-main-transformed', 'rival-a-base', 20],
+  ['jung-de-grimoria-ii', 'jung-de-grimoria-ii', 20],
+  ['protagonist-main-transformed', 'jung-de-grimoria-ii', 20],
 ] as const)('%s exige derrotar o oponente espec�fico %s vezes', (id, opponent, target) => {
-  expect(progress(id, victories(opponent, target - 1))[2]).toMatchObject({ current: target - 1, target });
-  expect(progress(id, victories(opponent, target))[2]).toMatchObject({ current: target, target });
+  expect(progress(id, victories(opponent, target - 1))[opponentIndex(id, opponent)]).toMatchObject({ current: target - 1, target });
+  expect(progress(id, victories(opponent, target))[opponentIndex(id, opponent)]).toMatchObject({ current: target, target });
 });
 
 it('Jung exige Ravi de Berdal base na meta adicional', () => {
@@ -57,17 +59,16 @@ it('Drak exige Saqueadores da estrada na meta adicional', () => {
 });
 
 it('Jung II exige Ravi base e Berserk exige Jung II com Ravi base', () => {
-  expect(progress('jung-de-grimoria-ii', victories('rival-a-base', 10, ['protagonist-main-transformed']))[3].current).toBe(0);
-  expect(progress('jung-de-grimoria-ii', victories('rival-a-base', 10))[3].current).toBe(10);
-  expect(progress('protagonist-main-transformed', victories('jung-de-grimoria-ii', 10, ['protagonist-secondary-base']))[3].current).toBe(0);
-  expect(progress('protagonist-main-transformed', victories('jung-de-grimoria-ii', 10))[3].current).toBe(10);
+  expect(progress('jung-de-grimoria-ii', victories('jung-de-grimoria-ii', 10, ['protagonist-main-transformed']))[2].current).toBe(0);
+  expect(progress('jung-de-grimoria-ii', victories('jung-de-grimoria-ii', 10))[2].current).toBe(10);
+  expect(progress('protagonist-main-transformed', victories('jung-de-grimoria-ii', 20, ['protagonist-secondary-base']))[1].current).toBe(0);
+  expect(progress('protagonist-main-transformed', victories('jung-de-grimoria-ii', 20))[1].current).toBe(20);
 });
 
 it('exige concluir a batalha de campanha correspondente', () => {
   expect(progress('road-raider-1-base', [], [])[0]).toMatchObject({ current: 0, target: 1 });
   expect(progress('road-raider-1-base', [], ['path-1-encounter-1'])[0]).toMatchObject({ current: 1, target: 1 });
-  expect(progress('protagonist-main-transformed', [], ['path-1-encounter-6'])[0].current).toBe(0);
-  expect(progress('protagonist-main-transformed', [], ['path-1-encounter-7'])[0].current).toBe(1);
+  expect(battleUnlockRules.find((r) => r.unitId === 'protagonist-main-transformed')?.availableAfterEncounterId).toBe('path-1-encounter-7');
 });
 
 it('marca Kalis e Ridan como dispon�veis desde o in�cio e Ravi Berserk ap�s a batalha 7', () => {
@@ -85,7 +86,7 @@ it('conta uma batalha uma �nica vez para cada oponente mesmo com unidades repe
 
 it('lista as metas e os tr�s Premium a US$ 9,90, refletindo os desbloqueios persistidos', () => {
   const data = characterUnlockProgress(units, ['road-raider-1-base'], []);
-  expect(data.characters).toHaveLength(35);
+  expect(data.characters).toHaveLength(40);
   expect(data.characters.find((unit) => unit.id === 'road-raider-1-base')?.unlocked).toBe(true);
   expect(data.characters.filter((unit) => unit.kind === 'premium')).toEqual([
     expect.objectContaining({ id: 'rival-b-final-mode', priceUsd: 9.9, unlocked: false }),
@@ -122,7 +123,7 @@ it('zera somente a miss�o indicada e conta novas vit�rias ap�s o marco sem
   const trinity = result.characters.find((unit) => unit.id === 'guerreiros-habilidosos-a')!;
   const vlade = result.characters.find((unit) => unit.id === 'guerreiros-habilidosos-b')!;
   const jungle = result.characters.find((unit) => unit.id === 'rival-a-base')!;
-  expect(trinity.kind === 'battle-wins' && trinity.requirements[2].current).toBe(1);
-  expect(vlade.kind === 'battle-wins' && vlade.requirements[2].current).toBe(3);
+  expect(trinity.kind === 'battle-wins' && trinity.requirements[1].current).toBe(1);
+  expect(vlade.kind === 'battle-wins' && vlade.requirements[1].current).toBe(3);
   expect(jungle.kind === 'battle-wins' && jungle.requirements[2].current).toBe(3);
 });

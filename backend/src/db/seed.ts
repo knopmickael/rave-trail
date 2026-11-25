@@ -33,6 +33,20 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
   // Libera somente as posições do catálogo gerenciado antes de reordená-lo.
   // A transação do seed impede estados intermediários visíveis e conflitos UNIQUE em trocas de posição.
   await client.query('UPDATE units SET roster_order = NULL WHERE id = ANY($1::text[])', [units.filter((unit) => !managed.has(`characters:${unit.id}`)).map((unit) => unit.id)]);
+  // Posições de autoria (incluindo personagens adicionais) ficam reservadas.
+  // A expansão do catálogo não pode disputar esses índices UNIQUE com o CMS.
+  const reserved = await client.query<{ roster_order: number }>('SELECT roster_order FROM units WHERE roster_order IS NOT NULL');
+  const occupied = new Set(reserved.rows.map((row) => row.roster_order));
+  const rosterOrders = new Map<string, number>();
+  let nextOrder = 0;
+  for (const unit of units.filter((entry) => !managed.has(`characters:${entry.id}`))
+    .sort((a, b) => (a.rosterOrder ?? Infinity) - (b.rosterOrder ?? Infinity))) {
+    let order = Math.max(unit.rosterOrder ?? nextOrder, nextOrder);
+    while (occupied.has(order)) order++;
+    rosterOrders.set(unit.id, order);
+    occupied.add(order);
+    nextOrder = order + 1;
+  }
   for (const unit of units) {
     if (managed.has(`characters:${unit.id}`)) continue;
     await client.query(`INSERT INTO units (id, character_id, name, version, description, max_hp, portrait_path, illustration_path, unlock_condition, roster_order, enabled)
@@ -40,7 +54,7 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
       name = EXCLUDED.name, version = EXCLUDED.version, description = EXCLUDED.description,
       portrait_path = EXCLUDED.portrait_path, illustration_path = EXCLUDED.illustration_path, roster_order = EXCLUDED.roster_order,
       unlock_condition = EXCLUDED.unlock_condition`,
-    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), unit.rosterOrder, !SECOND_CAMPAIGN_UNIT_IDS.includes(unit.id as typeof SECOND_CAMPAIGN_UNIT_IDS[number])]);
+    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), rosterOrders.get(unit.id), !SECOND_CAMPAIGN_UNIT_IDS.includes(unit.id as typeof SECOND_CAMPAIGN_UNIT_IDS[number])]);
     for (const [slot, abilityId] of unit.abilityIds.entries()) {
       await client.query('INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING', [unit.id, slot, abilityId]);
     }

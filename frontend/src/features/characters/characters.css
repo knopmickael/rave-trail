@@ -76,7 +76,14 @@
 .character-nameplate::after { right: 17px; }
 .character-nameplate h2 { margin: 0; overflow-wrap: anywhere; color: #3d1b08; font: 800 clamp(20px, 2vw, 26px) / 1.15 var(--font-ui); letter-spacing: .055em; text-shadow: 0 1px 0 #ffe8bd; text-transform: uppercase; }
 .character-information { display: grid; justify-self: end; width: min(100%, 460px); grid-template-rows: minmax(0, 1.3fr) minmax(200px, .8fr); gap: 18px; min-width: 0; min-height: 0; }
-.character-skills { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 18px; border: 1px solid #9a7651; border-radius: 8px; background: #fff9ef; }
+.character-skills { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #9a7651 #efe2ca; scrollbar-gutter: stable; padding: 18px; border: 1px solid #9a7651; border-radius: 8px; background: #fff9ef; }
+.character-skills::-webkit-scrollbar { width: 10px; }
+.character-skills::-webkit-scrollbar-track { margin-block: 12px; border-radius: 10px; background: #efe2ca; }
+.character-skills::-webkit-scrollbar-thumb { border: 2px solid #efe2ca; border-radius: 10px; background: #9a7651; }
+.character-skills::-webkit-scrollbar-thumb:hover { background: #795535; }
+@supports selector(::-webkit-scrollbar) {
+  .character-skills { scrollbar-width: auto; scrollbar-color: auto; }
+}
 .ability-list { display: grid; grid-template-rows: repeat(4, minmax(80px, auto)); gap: 14px; list-style: none; margin: 0; padding: 0; }
 .ability-row { display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 15px; }
 .ability-icon { --ability-icon-size: 68px; display: grid; place-items: center; width: var(--ability-icon-size); height: var(--ability-icon-size); aspect-ratio: 1; border: 1px solid #9a7651; border-radius: 6px; color: #815c33; background: linear-gradient(145deg, #fff9e9, #dfcba3); }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createInitialProgress } from '@game/contracts';
@@ -28,7 +28,58 @@ beforeEach(() => {
   vi.mocked(api.progress).mockResolvedValue(progress);
   vi.mocked(api.startQuickBattle).mockResolvedValue(battle());
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+it('desabilita a entrada e conta o cooldown pelo relógio do servidor até liberar o botão', async () => {
+  vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+  vi.mocked(api.quickBattle).mockResolvedValue({ opponents: enemies, serverTime: '2026-11-25T10:00:00Z', blockedUntil: '2026-11-25T10:00:02Z' });
+  render(<QuickBattle {...props()} />);
+  await act(async () => {});
+  expect(screen.getByRole('button', { name: 'Entrar na batalha' })).toBeDisabled();
+  expect(screen.getByRole('timer')).toHaveTextContent('0:02');
+  await act(async () => { vi.advanceTimersByTime(1000); });
+  expect(screen.getByRole('timer')).toHaveTextContent('0:01');
+  await act(async () => { vi.advanceTimersByTime(1000); });
+  expect(screen.getByRole('button', { name: 'Entrar na batalha' })).toBeEnabled();
+  expect(screen.queryByRole('timer')).not.toBeInTheDocument();
+});
+
+it('atualiza o bloqueio ao recuperar foco e ao receber rejeição de início em outra aba', async () => {
+  const now = new Date().toISOString();
+  const until = new Date(Date.now() + 300000).toISOString();
+  render(<QuickBattle {...props()} />);
+  await screen.findByRole('list', { name: 'Adversários disponíveis' });
+  vi.mocked(api.quickBattle).mockResolvedValue({ opponents: enemies, blockedUntil: until, serverTime: now });
+  fireEvent.focus(window);
+  await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Entrar na batalha' })).toBeDisabled());
+  expect(screen.getByRole('timer')).toBeInTheDocument();
+});
+
+it('mostra o prazo retornado no erro 429 e impede novas tentativas durante o bloqueio', async () => {
+  const user = userEvent.setup();
+  const now = new Date().toISOString();
+  vi.mocked(api.startQuickBattle).mockRejectedValue(new ApiError('Como você desistiu de muitas batalhas, terá de esperar 5 minutos para iniciar uma nova batalha.', 429, new Date(Date.now() + 300000).toISOString(), now));
+  render(<QuickBattle {...props()} />);
+  await screen.findByRole('list', { name: 'Adversários disponíveis' });
+  await user.click(screen.getByRole('button', { name: 'Entrar na batalha' }));
+  expect(await screen.findByRole('timer')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Entrar na batalha' })).toBeDisabled();
+});
+
+it('uma consulta antiga não pode apagar o cooldown retornado por uma tentativa mais recente', async () => {
+  const user = userEvent.setup();
+  render(<QuickBattle {...props()} />);
+  await screen.findByRole('list', { name: 'Adversários disponíveis' });
+  let finish!: (value: { opponents: typeof enemies }) => void;
+  vi.mocked(api.quickBattle).mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+  fireEvent.focus(window);
+  vi.mocked(api.startQuickBattle).mockRejectedValueOnce(new ApiError('Bloqueado.', 429, new Date(Date.now() + 300000).toISOString(), new Date().toISOString()));
+  await user.click(screen.getByRole('button', { name: 'Entrar na batalha' }));
+  await screen.findByRole('timer');
+  await act(async () => { finish({ opponents: enemies }); });
+  expect(screen.getByRole('button', { name: 'Entrar na batalha' })).toBeDisabled();
+  expect(screen.getByRole('timer')).toBeInTheDocument();
+});
 
 it('mostra a explicação, somente os adversários retornados e a equipe nos slots corretos', async () => {
   const handlers = props(); const user = userEvent.setup();

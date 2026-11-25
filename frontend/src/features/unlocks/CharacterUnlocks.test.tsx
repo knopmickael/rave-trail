@@ -36,20 +36,20 @@ it('mostra todos os requisitos dentro dos cartões e oculta as unidades premium'
   expect(within(jung).getByText(/utilizando Ravi de Berdal/)).toBeInTheDocument();
   expect(within(screen.getByRole('region', { name: 'Exal de Grimória' })).getByText(/Derrote Exal de Grimória na Batalha rápida 5 vezes/)).toBeInTheDocument();
   const berserk = screen.getByRole('region', { name: 'Ravi Berserk' });
-  expect(within(berserk).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['1', '30', '20', '10']);
+  expect(within(berserk).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['30', '20', '20']);
   expect(within(berserk).getByRole('list', { name: 'Requisitos de Ravi Berserk' })).toHaveAttribute('tabindex', '0');
   expect(screen.queryByRole('button', { name: /Ver requisitos/ })).not.toBeInTheDocument();
   expect(screen.queryByText(/requisitos? concluídos?/)).not.toBeInTheDocument();
   for (const name of ['Trinity de Espinea', 'Vlade de Espinea']) {
     const card = screen.getByRole('region', { name });
-    expect(within(card).getAllByRole('progressbar')[2]).toHaveAttribute('aria-valuemax', '15');
+    expect(within(card).getAllByRole('progressbar')[1]).toHaveAttribute('aria-valuemax', '15');
     expect(within(card).getByText(/Derrote Trinity de Espinea na Batalha rápida 15 vezes|Derrote Vlade de Espinea na Batalha rápida 15 vezes/)).toBeInTheDocument();
   }
   const drak = screen.getByRole('region', { name: 'Drak de Pontes' });
   expect(within(drak).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['1', '20', '10', '5']);
   expect(within(drak).getByText(/Derrote Drak de Pontes na Batalha rápida 5 vezes utilizando Saqueadores da estrada/)).toBeInTheDocument();
   const passago = screen.getByRole('region', { name: 'Passago de Espinea' });
-  expect(within(passago).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['1', '15', '15']);
+  expect(within(passago).getAllByRole('progressbar').map((bar) => bar.getAttribute('aria-valuemax'))).toEqual(['20', '15']);
   expect(within(passago).getByText(/Derrote Passago de Espinea na Batalha rápida 15 vezes/)).toBeInTheDocument();
   for (const name of ['Exal - Verdadeiro poder', 'Besta Lendária']) {
     expect(screen.queryByRole('region', { name })).not.toBeInTheDocument();
@@ -91,7 +91,9 @@ it('mostra no cadeado a batalha de revelação configurada, mesmo diferente dos 
 });
 
 it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado', async () => {
-  vi.mocked(api.characterUnlocks).mockResolvedValue(characterUnlockProgress(units, [], [], {}, ['road-raider-1-base']));
+  const data = characterUnlockProgress(units, [], [], {}, ['road-raider-1-base']);
+  vi.mocked(api.characterUnlocks).mockResolvedValue({ characters: data.characters.map((unit) => unit.id === 'protagonist-main-transformed' && unit.kind === 'battle-wins'
+    ? { ...unit, revealRequirement: 'Finalize a batalha 7 da campanha 1' } : unit) });
   render(<CharacterUnlocks {...props()} />);
   const enabled = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
   expect(enabled).toHaveAttribute('aria-disabled', 'false');

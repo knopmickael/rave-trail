@@ -26,6 +26,11 @@ export const ROSTER_UNIT_IDS = [
   'rival-b-final-mode',
   'legendary-beast-premium',
   ...SECOND_CAMPAIGN_UNIT_IDS,
+  'saqueador-da-estrada-iii',
+  'saqueador-da-estrada-iv',
+  'saqueadora-da-estrada-ii',
+  'exal-de-grimoria-ii',
+  'monnica-de-grimoria-ii',
 ] as const;
 
 export interface NarrativeCharacter {
@@ -44,6 +49,9 @@ export const narrativeCharacters = {
   'road-raider-1': { id: 'road-raider-1', name: 'Saqueador da estrada I' },
   'road-raider-2': { id: 'road-raider-2', name: 'Saqueador da estrada II' },
   'road-raider-3': { id: 'road-raider-3', name: 'Saqueadora da estrada' },
+  'saqueador-da-estrada-iii': { id: 'saqueador-da-estrada-iii', name: 'Saqueador da estrada III' },
+  'saqueador-da-estrada-iv': { id: 'saqueador-da-estrada-iv', name: 'Saqueador da estrada IV' },
+  'saqueadora-da-estrada-ii': { id: 'saqueadora-da-estrada-ii', name: 'Saqueadora da estrada II' },
   'rival-a': { id: 'rival-a', name: 'Jung de Grimória' },
   'rival-b': { id: 'rival-b', name: 'Exal de Grimória' },
   'rival-female': { id: 'rival-female', name: 'Monnica de Grimória' },
@@ -81,8 +89,14 @@ const unitNameOverrides: Readonly<Record<string, string>> = {
   'jung-de-grimoria-ii': 'Jung de Grimória II',
   'protagonist-main-transformed': 'Ravi Berserk',
   'rival-b-final-mode': 'Exal - Verdadeiro poder',
+  'exal-de-grimoria-ii': 'Exal de Grimória II',
+  'monnica-de-grimoria-ii': 'Monnica de Grimória II',
 };
 const unitAssetOverrides: Readonly<Record<string, { portrait: string; illustration: string }>> = {
+  ...Object.fromEntries([
+    ['saqueador-da-estrada-iii', 'saqueador-iii'], ['saqueador-da-estrada-iv', 'saqueador-iv'],
+    ['saqueadora-da-estrada-ii', 'saqueadora-ii'], ['exal-de-grimoria-ii', 'exal-ii'], ['monnica-de-grimoria-ii', 'monnica-ii'],
+  ].map(([id, asset]) => [id, { portrait: `/media/characters/${asset}-face.png`, illustration: `/media/characters/${asset}.png` }])),
   'legendary-beast-premium': {
     portrait: '/media/characters/fera-lendaria-face.png',
     illustration: '/media/characters/fera-lendaria-body.png',
@@ -144,8 +158,8 @@ export const units: readonly UnitDefinition[] = [
   })),
   defineUnit({
     id: 'jung-de-grimoria-ii', characterId: 'rival-a', version: 'Versão II',
-    description: 'Segunda versão jogável de Jung de Grimória, enfrentada na fronteira das trevas. Utiliza as mesmas técnicas da versão original.',
-    abilityIds: ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'quick-slash'], unlock: battleUnlock('jung-de-grimoria-ii'),
+    description: 'Segunda versão jogável de Jung de Grimória, enfrentada na fronteira das trevas. Remove as defesas inimigas e desfere um corte de execução.',
+    abilityIds: ['retaliation', 'fast-move', 'retain-energy-plus', 'execution'], unlock: battleUnlock('jung-de-grimoria-ii'),
   }),
   defineUnit({
     id: 'rival-female-base', characterId: 'rival-female', version: 'Primeiro encontro',
@@ -155,7 +169,7 @@ export const units: readonly UnitDefinition[] = [
   defineUnit({
     id: 'passage-guardian-base', characterId: 'passage-guardian', version: 'Guardião',
     description: 'Um combatente experiente que controla a passagem. Combina golpes fortes e uma técnica capaz de conceder turnos adicionais à própria equipe.',
-    abilityIds: ['simple-strike-ii', 'fast-move', 'retain-energy-plus', 'extra-turn'],
+    abilityIds: ['simple-strike', 'guard', 'retain-energy-plus', 'extra-turn'],
     unlock: battleUnlock('passage-guardian-base'),
   }),
   ...(['guardian-healer-male', 'guardian-healer-female'] as const).map((characterId) => defineUnit({
@@ -166,7 +180,7 @@ export const units: readonly UnitDefinition[] = [
   ...(['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'] as const).map((characterId) => defineUnit({
     id: characterId, characterId, version: 'Após a passagem',
     description: 'Integrante do trio de guerreiros habilidosos encontrado após o confronto com Drak de Pontes.',
-    abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['simple-strike-ii', 'guard', 'retain-energy-plus', 'secondary-special']
+    abilityIds: characterId === 'guerreiros-habilidosos-a' ? ['simple-strike-ii', 'guard', 'retain-energy-plus', 'divine-boon']
       : characterId === 'guerreiros-habilidosos-b' ? ['simple-strike-ii', 'guard', 'retain-energy', 'divine-protection']
         : ['simple-strike-ii', 'guard', 'retain-energy', 'wolfs-howl'], unlock: battleUnlock(characterId),
   })),
@@ -187,6 +201,31 @@ export const units: readonly UnitDefinition[] = [
     description: 'Uma presença rara que sugere forças muito além das conhecidas no vilarejo.',
     abilityIds: ['heal-plus', 'divine-protection', 'retain-energy-plus', 'resurrection'],
     unlock: { kind: 'premium', description: 'Personagem premium: US$ 9,90.' },
+  }),
+  defineUnit({
+    id: 'saqueador-da-estrada-iii', characterId: 'saqueador-da-estrada-iii', version: 'Reforços da estrada',
+    description: 'Saqueador veterano que lidera os reforços na estrada. Protege o grupo e acumula energia para manter a ofensiva.',
+    abilityIds: ['simple-strike-ii', 'guard', 'retain-energy-plus', 'female-special'], unlock: battleUnlock('saqueador-da-estrada-iii'),
+  }),
+  defineUnit({
+    id: 'saqueador-da-estrada-iv', characterId: 'saqueador-da-estrada-iv', version: 'Reforços da estrada',
+    description: 'Combatente dos reforços da estrada. Seus cortes rápidos desgastam os viajantes com ferimentos persistentes.',
+    abilityIds: ['simple-strike-ii', 'guard', 'retain-energy', 'quick-slash'], unlock: battleUnlock('saqueador-da-estrada-iv'),
+  }),
+  defineUnit({
+    id: 'saqueadora-da-estrada-ii', characterId: 'saqueadora-da-estrada-ii', version: 'Reforços da estrada',
+    description: 'Saqueadora experiente que acompanha os reforços. Alterna defesa e cortes rápidos para pressionar a equipe adversária.',
+    abilityIds: ['simple-strike-ii', 'guard', 'retain-energy', 'quick-slash'], unlock: battleUnlock('saqueadora-da-estrada-ii'),
+  }),
+  defineUnit({
+    id: 'exal-de-grimoria-ii', characterId: 'rival-b', version: 'Versão II',
+    description: 'Exal retorna à fronteira das trevas com técnicas de drenagem e um vórtex capaz de impedir os ataques inimigos.',
+    abilityIds: ['soul-drain', 'guard', 'retain-energy-plus', 'dark-vortex'], unlock: battleUnlock('exal-de-grimoria-ii'),
+  }),
+  defineUnit({
+    id: 'monnica-de-grimoria-ii', characterId: 'rival-female', version: 'Versão II',
+    description: 'Monnica retorna ao lado dos Grimorianos. Suas técnicas de cura individual e coletiva sustentam o trio na fronteira das trevas.',
+    abilityIds: ['heal', 'guard', 'retain-energy-plus', 'heal-plus'], unlock: battleUnlock('monnica-de-grimoria-ii'),
   }),
   ...SECOND_CAMPAIGN_CHARACTERS.map((character) => ({
     ...defineUnit({

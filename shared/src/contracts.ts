@@ -40,6 +40,8 @@ export interface CampaignMapData {
 }
 export interface QuickBattleData {
   opponents: readonly Pick<UnitDefinition, 'id' | 'name' | 'portrait'>[];
+  blockedUntil?: string | null;
+  serverTime?: string;
 }
 export type CharacterUnlockProgress = Pick<UnitDefinition, 'id' | 'name' | 'portrait'> & {
   unlocked: boolean;

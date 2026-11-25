@@ -25,7 +25,7 @@ function positionKey(state: BattleState) {
       return [team.energy, team.turns, team.extraTurns, team.units.map((unit) =>
         [unit.unitId, unit.hp, unit.guardExpiresAt, unit.guardAbilityId, unit.guardReduction, unit.guardHealPerTurn,
           unit.bleedTurns, unit.bleedAmount, unit.invulnerableExpiresAt, unit.attackBlockedExpiresAt,
-          unit.abilitiesBlockedExpiresAt, unit.abilityBlockAbilityId,
+          unit.abilitiesBlockedExpiresAt, unit.abilityBlockAbilityId, unit.deathWardAbilityId,
           unit.damageBoostAmount, unit.damageBoostStartsAt, unit.damageBoostExpiresAt])];
     })]);
 }
@@ -71,6 +71,7 @@ function teamValue(state: BattleState, side: BattleSide) {
       value += Math.min(unit.maxHp - unit.hp, (unit.guardHealPerTurn ?? 0) * (unit.guardExpiresAt - team.turns)) * .6;
     }
     if ((unit.invulnerableExpiresAt ?? 0) > nextTurn(state, opponent)) value += Math.min(unit.hp, incoming) * .5;
+    if (unit.deathWardAbilityId) value += incoming >= unit.hp ? 100 : 20;
     if (blocked(state, side, unit)) {
       // Mede a ofensiva perdida sem considerar o próprio bloqueio duas vezes.
       const available = { ...unit, attackBlockedExpiresAt: null, abilitiesBlockedExpiresAt: null };

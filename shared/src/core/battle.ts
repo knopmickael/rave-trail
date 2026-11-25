@@ -25,6 +25,7 @@ export interface Fighter {
   attackBlockedExpiresAt?: number | null;
   abilitiesBlockedExpiresAt?: number | null;
   abilityBlockAbilityId?: string | null;
+  deathWardAbilityId?: string | null;
   damageBoostAmount?: number;
   damageBoostStartsAt?: number | null;
   damageBoostExpiresAt?: number | null;
@@ -91,6 +92,7 @@ function clearEffects(unit: Fighter) {
   unit.attackBlockedExpiresAt = null;
   unit.abilitiesBlockedExpiresAt = null;
   unit.abilityBlockAbilityId = null;
+  unit.deathWardAbilityId = null;
   unit.damageBoostAmount = 0;
   unit.damageBoostStartsAt = null;
   unit.damageBoostExpiresAt = null;
@@ -107,6 +109,18 @@ function heal(unit: Fighter, amount: number, events: BattleEvent[], metadata: Pi
   const recovered = Math.min(amount, unit.maxHp - unit.hp);
   unit.hp += recovered;
   events.push({ kind: 'heal', message: `${unit.name} recupera ${recovered} HP.`, ...metadata });
+}
+
+function takeDamage(unit: Fighter, amount: number, events: BattleEvent[], metadata: Pick<BattleEvent, 'actionId' | 'actorId' | 'abilityId' | 'targetIds'>) {
+  const previousHp = unit.hp;
+  unit.hp = clamp(unit.hp - amount, unit.maxHp);
+  if (unit.hp === 0 && unit.deathWardAbilityId) {
+    unit.hp = 1;
+    const abilityId = unit.deathWardAbilityId;
+    unit.deathWardAbilityId = null;
+    events.push({ kind: 'guard', message: `A Benção divina impede a morte de ${unit.name}: resta 1 HP.`, ...metadata, abilityId });
+  }
+  return previousHp - unit.hp;
 }
 
 function result(state: BattleState, events: BattleEvent[]) {
@@ -159,8 +173,7 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
   for (const unit of team.units) {
     if (unit.hp <= 0 || (unit.bleedTurns ?? 0) <= 0) continue;
     if (unit.invulnerableExpiresAt == null) {
-      const damage = Math.min(unit.bleedAmount ?? 0, unit.hp);
-      unit.hp -= damage;
+      const damage = takeDamage(unit, unit.bleedAmount ?? 0, events, { targetIds: [unit.id] });
       events.push({ kind: 'damage', message: `${unit.name} sofre ${damage} de dano de sangramento.`, targetIds: [unit.id] });
       if (unit.hp === 0) events.push({ kind: 'defeated', message: `${unit.name} foi derrotado.`, targetIds: [unit.id] });
     } else {
@@ -203,6 +216,7 @@ export function createBattle(player: readonly UnitDefinition[], enemy: readonly 
       hp: unit.maxHp, maxHp: unit.maxHp, abilityIds: [...unit.abilityIds], guardExpiresAt: null, guardReduction: null, guardHealPerTurn: null,
       bleedTurns: 0, bleedAmount: 0, invulnerableExpiresAt: null, attackBlockedExpiresAt: null,
       abilitiesBlockedExpiresAt: null, abilityBlockAbilityId: null,
+      deathWardAbilityId: null,
       damageBoostAmount: 0, damageBoostStartsAt: null, damageBoostExpiresAt: null })),
   });
   const state: BattleState = { teams: { player: makeTeam(player, 'player'), enemy: makeTeam(enemy, 'enemy') },
@@ -289,14 +303,16 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
               events.push({ kind: 'guard', message: `${target.name} está invulnerável e não recebe dano.`, ...targetMetadata });
             } else {
               const reduction = target.guardExpiresAt === null ? 0 : guardReduction(state, target);
-              appliedDamage = Math.max(0, effect.amount + damageBonus(actor, team.turns) - reduction);
-              target.hp = clamp(target.hp - appliedDamage, target.maxHp);
+              appliedDamage = takeDamage(target, Math.max(0, effect.amount + damageBonus(actor, team.turns) - reduction), events, targetMetadata);
               events.push({ kind: 'damage', message: `${target.name} recebe ${appliedDamage} de dano.`, ...targetMetadata });
               if (target.hp === 0) events.push({ kind: 'defeated', message: `${target.name} foi derrotado.`, ...targetMetadata });
             }
             if (effect.kind === 'drain') heal(actor, appliedDamage, events, metadata);
           } else if (effect.kind === 'heal') {
             heal(target, effect.amount, events, targetMetadata);
+          } else if (effect.kind === 'prevent-defeat') {
+            target.deathWardAbilityId = ability.id;
+            events.push({ kind: 'guard', message: `${target.name} recebeu Benção divina contra o próximo dano fatal.`, ...targetMetadata });
           } else if (effect.kind === 'guard') {
             const targetTeam = team.units.includes(target) ? team : enemy;
             target.guardExpiresAt = targetTeam.turns + effect.teamTurns;

@@ -37,6 +37,7 @@ export const effectSpecs: Record<AbilityEffect['kind'], { label: string; fields:
   guard: { label: 'Defesa / guarda', fields: { reduction: { label: 'Redução por golpe', min: 1, max: 10000, initial: 10 }, teamTurns: { label: 'Turnos da equipe', min: 1, max: 20, initial: 2 }, healPerTurn: { label: 'Cura por turno (0 = sem cura)', min: 0, max: 10000, initial: 0 } } },
   'dispel-shields': { label: 'Remover escudos (inclui cura vinculada e invulnerabilidade)', fields: {} },
   'ability-block': { label: 'Bloquear todas as habilidades', fields: { teamTurns: { label: 'Turnos da equipe alvo', min: 1, max: 20, initial: 2 } } },
+  'prevent-defeat': { label: 'Sobreviver ao próximo dano fatal com 1 HP', fields: {} },
   'restore-energy': { label: 'Recuperar energia', fields: { amount: { label: 'Energia', min: 1, max: 100, initial: 20 } } },
   'extra-turn': { label: 'Turnos extras', fields: { count: { label: 'Quantidade', min: 1, max: 3, initial: 1 } } },
   bleed: { label: 'Sangramento', fields: { amount: { label: 'Dano por turno', min: 1, max: 10000, initial: 10 }, turns: { label: 'Turnos do alvo', min: 1, max: 20, initial: 3 } } },
