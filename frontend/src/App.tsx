@@ -200,6 +200,7 @@ function GameContent({ screen, setScreen }: { screen: GameScreen; setScreen: Dis
 
   if (screen === 'menu' && user) {
     return <MainMenu user={user} busy={busy} error={error} onLogout={logout}
+      onSessionExpired={handleSessionExpired}
       onSaveName={saveName}
       audioVolume={audio.volume} audioMuted={audio.muted}
       onAudioVolumeChange={audio.setVolume} onAudioMutedChange={audio.setMuted}

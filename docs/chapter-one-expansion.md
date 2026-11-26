@@ -63,6 +63,13 @@ As novas listas substituem as metas anteriores das unidades indicadas. A revela�
 - `/api/quick-battle` devolve `blockedUntil` e `serverTime`. Um início bloqueado responde **429**, com mensagem, `retryAt` e `serverTime`.
 - A interface usa o relógio do servidor, desabilita **Entrar na batalha**, mostra o contador ao lado e revalida a disponibilidade ao abrir a tela/recuperar o foco. Uma resposta antiga não pode apagar um bloqueio recém-retornado pelo servidor.
 
+## Ajustes de entardecer e adversários
+
+- Kalis e Ridan estão entre os adversários iniciais da Batalha rápida (`QUICK_BATTLE_ALWAYS_UNIT_IDS`), sem filtro de posse na lista de Adversários; a aquisição jogável continua pelas missões do Quadro de missões.
+- Exal - Verdadeiro poder tem 200 HP de atual/máximo somente como inimigo em `path-1-encounter-7` (`FINAL_EXAL_BOSS_HP`), aplicado na criação da batalha final. Catálogo, jogador, rápidas, multiplayer e snapshots existentes continuam com 100 HP.
+- Ao concluir a campanha 1 (batalha 7 vencida, segundo `completedEncounters` salvo), o menu principal aplica uma camada de entardecer (laranja e violeta) sobre `sky-background.webp`; sem progresso nenhuma camada aparece. A camada é decorativa, não intercepta cliques, preserva legibilidade e respeita movimento reduzido.
+- Na preparação da Batalha rápida, somente a grade de ícones de Adversários é rolável (`overflow-y:auto`, focável por teclado); explicação, contador, cooldown e **Entrar na batalha** permanecem visíveis, inclusive em viewports baixos e com cooldown ativo.
+
 ## Atualização dos bancos
 
 - `046_chapter_one_expansion.sql`: habilidades, conjuntos, personagens, formações e missões. Preserva conteúdo não solicitado do CMS e os snapshots existentes.

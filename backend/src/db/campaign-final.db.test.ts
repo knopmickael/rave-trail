@@ -116,3 +116,17 @@ it('persiste a transformação inicial uma única vez após recarga e conclui a 
   expect(after!.selectedTeam).toEqual(progress!.selectedTeam);
   expect((await battles.getBattle(user.id, final.id)).log?.filter((event) => event.kind === 'transform')).toHaveLength(1);
 });
+
+it('usa Exal com 200 HP somente como chefe final e mantém o jogador e as rápidas com 100 HP', async () => {
+  const user = await player();
+  await pool.query("UPDATE player_progress SET data=jsonb_set(data,'{unlockedUnitIds}',(data->'unlockedUnitIds')||'[\"rival-b-final-mode\"]'::jsonb) WHERE user_id=$1", [user.id]);
+  await game.setTeamSlot(user.id, 1, 'rival-b-final-mode');
+  const final = await battles.startBattle(user.id, FINAL_ENCOUNTER_ID);
+  expect(final.state.teams.enemy.units[0]).toMatchObject({ unitId: 'rival-b-final-mode', hp: 200, maxHp: 200 });
+  expect(final.state.teams.player.units.find((u) => u.unitId === 'rival-b-final-mode')).toMatchObject({ hp: 100, maxHp: 100 });
+  expect((await battles.getBattle(user.id, final.id)).state.teams.enemy.units[0].maxHp).toBe(200);
+  expect((await game.getCatalog()).units.find((u) => u.id === 'rival-b-final-mode')?.maxHp).toBe(100);
+  await pool.query("UPDATE player_progress SET data=jsonb_set(data,'{completedEncounters}',$2::jsonb) WHERE user_id=$1", [user.id, JSON.stringify(encounters.filter((e) => e.campaignId === 'path-1').map((e) => e.id))]);
+  const quick = await new PostgresBattleRepository(pool, (max) => max - 1).startQuickBattle(user.id);
+  expect(quick.state.teams.enemy.units.find((u) => u.unitId === 'rival-b-final-mode')).toMatchObject({ hp: 100, maxHp: 100 });
+});

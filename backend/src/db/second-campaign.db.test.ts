@@ -72,13 +72,13 @@ it('mantém a campanha 02 bloqueada mesmo com equipe vazia ou Osiris já desbloq
   for (let slot = 0; slot < 3; slot++) await game.setTeamSlot(user.id, slot, null);
   await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 })).rejects.toMatchObject({ statusCode: 403 });
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || $2::jsonb) WHERE user_id = $1", [user.id, JSON.stringify([OSIRIS_UNIT_ID])]);
-  await expect(game.setTeamSlot(user.id, 0, OSIRIS_UNIT_ID)).rejects.toMatchObject({ statusCode: 400 });
+  await expect(game.setTeamSlot(user.id, 0, OSIRIS_UNIT_ID)).resolves.toEqual([OSIRIS_UNIT_ID, null, null]);
   await game.setTeamSlot(user.id, 1, STARTER_UNIT_IDS[1]);
   await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 })).rejects.toMatchObject({ statusCode: 403 });
-  expect((await auth.getProgress(user.id))!.selectedTeam).toEqual([null, STARTER_UNIT_IDS[1], null]);
+  expect((await auth.getProgress(user.id))!.selectedTeam).toEqual([OSIRIS_UNIT_ID, STARTER_UNIT_IDS[1], null]);
 });
 
-it('oculta personagens e missões desabilitados da campanha 02 mesmo após vitórias rápidas', async () => {
+it('exibe personagens e missões da campanha 02 sem concedê-los antes da revelação na campanha', async () => {
   const user = await player();
   await pool.query('UPDATE player_progress SET data = data || $2::jsonb WHERE user_id = $1', [user.id,
     JSON.stringify({ completedEncounters: first.map((entry) => entry.id), availablePathIds: ['path-1', 'path-2'] })]);
@@ -88,14 +88,15 @@ it('oculta personagens e missões desabilitados da campanha 02 mesmo após vitó
   await pool.query(`INSERT INTO battles (id, user_id, encounter_id, state, status, mode)
     SELECT gen_random_uuid(), $1, NULL, $2::jsonb, 'victory', 'quick' FROM generate_series(1, 100)`, [user.id, JSON.stringify(state)]);
   const missions = (await game.getCharacterUnlocks(user.id)).characters.filter((unit) => SECOND_CAMPAIGN_UNIT_IDS.includes(unit.id as typeof SECOND_CAMPAIGN_UNIT_IDS[number]));
-  expect(missions).toHaveLength(0);
+  expect(missions).toHaveLength(17);
+  expect(missions.filter((unit) => unit.kind === 'battle-wins').every((unit) => !unit.campaignAvailable)).toBe(true);
   const after = (await auth.getProgress(user.id))!;
   for (const id of SECOND_CAMPAIGN_UNIT_IDS) expect(after.unlockedUnitIds).not.toContain(id);
   const catalog = await game.getCatalog();
-  expect(catalog.units).toHaveLength(units.length - SECOND_CAMPAIGN_UNIT_IDS.length);
-  for (const id of SECOND_CAMPAIGN_UNIT_IDS) expect(catalog.units.some((unit) => unit.id === id)).toBe(false);
+  expect(catalog.units).toHaveLength(units.length);
+  for (const id of SECOND_CAMPAIGN_UNIT_IDS) expect(catalog.units.some((unit) => unit.id === id)).toBe(true);
   const disabled = await pool.query('SELECT id FROM units WHERE NOT enabled');
-  expect(disabled.rows.map((unit) => unit.id).sort()).toEqual([...SECOND_CAMPAIGN_UNIT_IDS].sort());
+  expect(disabled.rows).toHaveLength(0);
   const enemies = await pool.query('SELECT 1 FROM encounter_enemies e JOIN units u ON u.id=e.unit_id WHERE NOT u.enabled');
   expect(enemies.rowCount).toBe(0);
 });
@@ -119,6 +120,6 @@ it('executa as migrações e o seed novamente preservando equipe e publicação 
   expect(after).toEqual(before);
   await migrate(pool); await seedDatabase(pool);
   expect(await auth.getProgress(user.id)).toEqual(after);
-  expect((await game.getCatalog()).units).toHaveLength(units.length - SECOND_CAMPAIGN_UNIT_IDS.length);
+  expect((await game.getCatalog()).units).toHaveLength(units.length);
   await expect(battles.getMap(user.id, 'path-2')).rejects.toMatchObject({ statusCode: 403 });
 });

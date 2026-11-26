@@ -87,6 +87,7 @@ it('mostra a explicação, somente os adversários retornados e a equipe nos slo
   expect(screen.getByRole('heading', { name: 'Batalha rápida' })).toBeInTheDocument();
   expect(screen.getByText(/inimigos que você já derrotou na campanha/)).toBeInTheDocument();
   const opponents = await screen.findByRole('list', { name: 'Adversários disponíveis' });
+  expect(opponents).toHaveAttribute('tabindex', '0');
   expect(within(opponents).getAllByRole('img')).toHaveLength(3);
   enemies.forEach((unit) => expect(within(opponents).getByRole('img', { name: `Retrato de ${unit.name}` })).toHaveAttribute('src', unit.portrait));
   within(opponents).getAllByRole('listitem').forEach((item) => expect(item).toHaveTextContent(''));

@@ -150,10 +150,10 @@ it('publica e despublica a campanha 02 para uma conta nova usando somente a conf
     await repo.save('campaigns', { ...original, prerequisiteEncounterId: null, released: true, description: 'História publicada pelo CMS.' }, false);
     expect((await game.getCampaigns(user.id)).find((c) => c.id === original.id)).toMatchObject({ available: true, description: 'História publicada pelo CMS.' });
     expect((await battles.getMap(user.id, original.id)).campaign.description).toBe('História publicada pelo CMS.');
-    await expect(battles.startBattle(user.id, 'path-2-encounter-1')).rejects.toMatchObject({ statusCode: 503 });
+    await expect(battles.startBattle(user.id, 'path-2-encounter-1')).resolves.toMatchObject({ encounterId: 'path-2-encounter-1' });
     await pool.query("UPDATE player_progress SET data=jsonb_set(data,'{completedEncounters}','[\"path-2-encounter-1\"]') WHERE user_id=$1", [user.id]);
-    expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => unit.id === 'general-abel')).toBe(false);
-    expect((await game.getCharacterUnlocks(user.id)).characters.some((unit) => unit.id === 'general-abel')).toBe(false);
+    expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => unit.id === 'general-abel')).toBe(true);
+    expect((await game.getCharacterUnlocks(user.id)).characters.some((unit) => unit.id === 'general-abel')).toBe(true);
     await seedDatabase(pool);
     expect((await game.getCampaigns(user.id)).find((c) => c.id === original.id)?.available).toBe(true);
     await repo.save('campaigns', { ...original, released: false }, false);

@@ -3,7 +3,6 @@ import { abilities } from '@game/content/abilities.js';
 import { narrativeCharacters, STARTER_UNIT_IDS, units } from '@game/content/units.js';
 import { campaigns } from '@game/content/campaigns.js';
 import { encounters } from '@game/content/encounters.js';
-import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import { synchronizeCharacterUnlocks } from './character-unlocks.js';
 import type { PlayerProgress } from '@game/contracts.js';
 
@@ -54,7 +53,7 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
       name = EXCLUDED.name, version = EXCLUDED.version, description = EXCLUDED.description,
       portrait_path = EXCLUDED.portrait_path, illustration_path = EXCLUDED.illustration_path, roster_order = EXCLUDED.roster_order,
       unlock_condition = EXCLUDED.unlock_condition`,
-    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), rosterOrders.get(unit.id), !SECOND_CAMPAIGN_UNIT_IDS.includes(unit.id as typeof SECOND_CAMPAIGN_UNIT_IDS[number])]);
+    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), rosterOrders.get(unit.id), true]);
     for (const [slot, abilityId] of unit.abilityIds.entries()) {
       await client.query('INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING', [unit.id, slot, abilityId]);
     }

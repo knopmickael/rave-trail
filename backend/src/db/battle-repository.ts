@@ -2,9 +2,9 @@ import { randomInt, randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import type { CampaignBattleOptions, CampaignMapData, PlayerProgress, QuickBattleData } from '@game/contracts.js';
 import type { EncounterDefinition } from '@game/content/encounters.js';
-import { FINAL_ENCOUNTER_ID, FINAL_BATTLE_REQUIREMENT, SECOND_FINAL_ENCOUNTER_ID, OSIRIS_UNIT_ID,
+import { FINAL_ENCOUNTER_ID, FINAL_EXAL_BOSS_HP, FINAL_BATTLE_REQUIREMENT, SECOND_FINAL_ENCOUNTER_ID, OSIRIS_UNIT_ID,
   OSIRIS_BATTLE_REQUIREMENT, withOsiris } from '@game/content/campaign-rules.js';
-import { QUICK_BATTLE_ALWAYS_UNIT_IDS, QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS, type UnitDefinition } from '@game/content/units.js';
+import { QUICK_BATTLE_ALWAYS_UNIT_IDS, type UnitDefinition } from '@game/content/units.js';
 import { BOT_THINK_MS, TURN_DURATION_MS, createBattle, executeTurn, planEnemyTurn, type BattleAction, type BattleCombo, type BattleRecord, type BattleTurnResult, type BattleEvent } from '@game/core/battle.js';
 import type { BattleRepository } from '../game/battle-repository.js';
 import { GameError } from '../game/repository.js';
@@ -167,14 +167,11 @@ export class PostgresBattleRepository implements BattleRepository {
     return team;
   }
 
-  private async quickBattleOpponents(client: Pool | PoolClient, completedEncounters: readonly string[],
-    unlockedUnitIds: readonly string[]) {
-    const missionOpponents = QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS.filter((id) => unlockedUnitIds.includes(id));
+  private async quickBattleOpponents(client: Pool | PoolClient, completedEncounters: readonly string[]) {
     const opponents = await client.query<QuickBattleData['opponents'][number]>(`SELECT u.id, u.name, u.portrait_path AS portrait
-      FROM units u WHERE u.enabled AND (u.id = ANY($2::text[]) OR u.id = ANY($3::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
+      FROM units u WHERE u.enabled AND (u.id = ANY($2::text[]) OR EXISTS (SELECT 1 FROM encounter_enemies e
           WHERE e.unit_id = u.id AND e.encounter_id = ANY($1::text[])))
-      ORDER BY u.roster_order NULLS LAST, u.id`, [completedEncounters, QUICK_BATTLE_ALWAYS_UNIT_IDS,
-        missionOpponents]);
+      ORDER BY u.roster_order NULLS LAST, u.id`, [completedEncounters, QUICK_BATTLE_ALWAYS_UNIT_IDS]);
     return opponents.rows;
   }
 
@@ -182,8 +179,8 @@ export class PostgresBattleRepository implements BattleRepository {
     const progress = await this.pool.query<{ data: PlayerProgress }>('SELECT data FROM player_progress WHERE user_id = $1', [userId]);
     if (!progress.rows[0]) throw new GameError(404, 'Progresso não encontrado.');
     const now = this.now();
-    return { opponents: await this.quickBattleOpponents(this.pool, progress.rows[0].data.completedEncounters,
-      progress.rows[0].data.unlockedUnitIds), blockedUntil: await readQuickBattleBlock(this.pool, userId, now), serverTime: new Date(now).toISOString() };
+    return { opponents: await this.quickBattleOpponents(this.pool, progress.rows[0].data.completedEncounters),
+      blockedUntil: await readQuickBattleBlock(this.pool, userId, now), serverTime: new Date(now).toISOString() };
   }
 
   async startQuickBattle(userId: string): Promise<BattleRecord> {
@@ -195,7 +192,7 @@ export class PostgresBattleRepository implements BattleRepository {
       const blockedUntil = await readQuickBattleBlock(client, userId, this.now());
       if (blockedUntil) throw quickBattleBlocked(blockedUntil, this.now());
       await this.requireNoMultiplayer(client, userId);
-      const opponents = await this.quickBattleOpponents(client, progress.completedEncounters, progress.unlockedUnitIds);
+      const opponents = await this.quickBattleOpponents(client, progress.completedEncounters);
       if (!opponents.length) throw new GameError(503, 'Adversários indisponíveis no catálogo.');
       const team = await this.playerTeam(client, userId, progress);
       const catalog = await new PostgresGameRepository(this.pool).getCatalog(client);
@@ -268,6 +265,9 @@ export class PostgresBattleRepository implements BattleRepository {
         battle.log!.push({ kind: 'turn', message: `Grande rei Osiris ocupa o slot ${options.osirisSlot! + 1} como aliado convidado.` });
       }
       if (finalBattle) {
+        for (const enemy of battle.state.teams.enemy.units) {
+          if (enemy.unitId === 'rival-b-final-mode') Object.assign(enemy, { hp: FINAL_EXAL_BOSS_HP, maxHp: FINAL_EXAL_BOSS_HP });
+        }
         const { id, name, portrait, maxHp, abilityIds } = findUnit('protagonist-main-transformed');
         const ravi = battle.state.teams.player.units.find((unit) => unit.unitId === 'protagonist-main-base')!;
         const previousName = ravi.name;

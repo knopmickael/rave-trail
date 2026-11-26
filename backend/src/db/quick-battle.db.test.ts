@@ -51,39 +51,43 @@ async function winQuick(userId: string) {
   expect(outcome.battle.state.status).toBe('victory');
 }
 
-it('disponibiliza protagonistas desde o início e acrescenta somente inimigos já vencidos por conta', async () => {
+it('disponibiliza protagonistas e capitães desde o início e acrescenta inimigos já vencidos por conta', async () => {
   const user = await readyPlayer(2);
   const other = await auth.register('outra@example.com', 'hash', session());
   const initial = await battles.getQuickBattle(user.id);
-  expect(initial.opponents.map((unit) => unit.id)).toEqual([...QUICK_BATTLE_ALWAYS_UNIT_IDS, ...encounters[0].enemyUnitIds, ...encounters[1].enemyUnitIds]);
+  expect(initial.opponents.map((unit) => unit.id)).toEqual([...STARTER_UNIT_IDS, KALIS_UNIT_ID, RIDAN_UNIT_ID, ...encounters[0].enemyUnitIds, ...encounters[1].enemyUnitIds]);
   expect(initial.opponents.every((unit) => unit.name && unit.portrait)).toBe(true);
-  expect((await battles.getQuickBattle(other.id)).opponents.map((unit) => unit.id)).toEqual([...QUICK_BATTLE_ALWAYS_UNIT_IDS]);
+  expect((await battles.getQuickBattle(other.id)).opponents.map((unit) => unit.id)).toEqual([...STARTER_UNIT_IDS, KALIS_UNIT_ID, RIDAN_UNIT_ID]);
   await complete(user.id, 3);
   const expanded = await battles.getQuickBattle(user.id);
   expect(new Set(expanded.opponents.map((unit) => unit.id))).toEqual(new Set([...QUICK_BATTLE_ALWAYS_UNIT_IDS, ...encounters.slice(0, 3).flatMap((entry) => entry.enemyUnitIds)]));
-  expect(new Set(expanded.opponents.map((unit) => unit.id)).size).toBe(12);
+  expect(new Set(expanded.opponents.map((unit) => unit.id)).size).toBe(14);
   expect(initial.opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(false);
   expect(expanded.opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(true);
 });
 
-it('omite adversários desabilitados da campanha 2 mesmo após vencer seus confrontos', async () => {
+it('inclui o elenco reativado da campanha 2 após seus confrontos e respeita desativações posteriores', async () => {
   const user = await readyPlayer(encounters.length);
   const second = new Set<string>(SECOND_CAMPAIGN_UNIT_IDS);
   const opponents = (await battles.getQuickBattle(user.id)).opponents;
-  expect(opponents.filter((unit) => second.has(unit.id))).toHaveLength(0);
+  expect(opponents.filter((unit) => second.has(unit.id))).toHaveLength(16);
   expect(opponents.some((unit) => unit.id === 'maga-artemis')).toBe(false);
   expect(opponents.some((unit) => unit.id === 'passage-guardian-base')).toBe(true);
   const quick = await new PostgresBattleRepository(pool, (maximum) => maximum - 1).startQuickBattle(user.id);
-  expect(quick.state.teams.enemy.units.every((unit) => !second.has(unit.unitId))).toBe(true);
+  expect(quick.state.teams.enemy.units.some((unit) => second.has(unit.unitId))).toBe(true);
+  try {
+    await pool.query("UPDATE units SET enabled=false WHERE id='general-abel'");
+    expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => unit.id === 'general-abel')).toBe(false);
+  } finally { await pool.query("UPDATE units SET enabled=true WHERE id='general-abel'"); }
 });
 
-it('libera capitães como adversários somente após as três vitórias rápidas exigidas', async () => {
+it('oferece capitães como adversários antes de conquistá-los e mantém a missão de três vitórias', async () => {
   const user = await readyPlayer(0);
   const captains = new Set([KALIS_UNIT_ID, RIDAN_UNIT_ID]);
-  expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => captains.has(unit.id))).toBe(false);
+  expect((await battles.getQuickBattle(user.id)).opponents.filter((unit) => captains.has(unit.id))).toHaveLength(2);
   await winQuick(user.id);
   await winQuick(user.id);
-  expect((await battles.getQuickBattle(user.id)).opponents.some((unit) => captains.has(unit.id))).toBe(false);
+  expect((await battles.getQuickBattle(user.id)).opponents.filter((unit) => captains.has(unit.id))).toHaveLength(2);
   expect((await auth.getProgress(user.id))!.unlockedUnitIds.some((id) => captains.has(id))).toBe(false);
   await winQuick(user.id);
   expect((await auth.getProgress(user.id))!.unlockedUnitIds).toEqual(expect.arrayContaining([...captains]));

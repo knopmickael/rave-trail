@@ -14,9 +14,9 @@ import { PostgresBattleRepository } from './battle-repository.js';
 import type { BattleRecord } from '@game/core/battle.js';
 import { abilities } from '@game/content/abilities.js';
 import { STARTER_UNIT_IDS, units } from '@game/content/units.js';
-import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
+import { SECOND_CAMPAIGN_CHARACTERS } from '@game/content/second-campaign.js';
 
-const enabledUnits = units.filter((unit) => !new Set<string>(SECOND_CAMPAIGN_UNIT_IDS).has(unit.id));
+const enabledUnits = units;
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url || !new URL(url).pathname.endsWith('_test') || url === process.env.DATABASE_URL) {
@@ -267,11 +267,12 @@ it('reaplica nomes e ordem sobre posições antigas sem conflito e preserva equi
     'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
     'Jung de Grimória II', 'Exal de Grimória II', 'Monnica de Grimória II',
     'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
+    ...SECOND_CAMPAIGN_CHARACTERS.map((character) => character.name),
   ]);
-  expect(catalog.units.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: 26 }, (_, index) => index));
+  expect(catalog.units.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));
   expect(catalog.units.map((unit) => [unit.id, unit.abilityIds]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))).toEqual(abilitiesBefore);
   expect(await repository.getProgress(user.id)).toEqual(progressBefore);
-  expect(catalog.units.filter((unit) => unit.unlock.kind === 'premium').map((unit) => unit.id)).toEqual(['rival-b-final-mode', 'legendary-beast-premium']);
+  expect(catalog.units.filter((unit) => unit.unlock.kind === 'premium').map((unit) => unit.id)).toEqual(['rival-b-final-mode', 'legendary-beast-premium', 'maga-artemis']);
 });
 
 async function nearVictory(battle: BattleRecord) {

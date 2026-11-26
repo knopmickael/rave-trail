@@ -69,6 +69,7 @@ export function QuickBattle({ onBack, onOpenCharacters, onSessionExpired, onBatt
   const loaded = !!data && !!catalog && !!progress;
   const hasOpponents = !!data?.opponents.length;
   const hasTeam = !!progress?.selectedTeam.some((id) => id !== null);
+  const missingTeam = loaded && !error && !hasTeam;
   const deadline = data?.blockedUntil ? Date.parse(data.blockedUntil) : 0;
   const remaining = Number.isFinite(deadline) ? Math.max(0, Math.ceil((deadline - now - serverOffset) / 1000)) : 0;
   const blocked = remaining > 0;
@@ -105,23 +106,25 @@ export function QuickBattle({ onBack, onOpenCharacters, onSessionExpired, onBatt
     </header>
 
     <div className="quick-battle-content">
-      <section className="quick-battle-panel" aria-labelledby="quick-battle-intro" aria-busy={busy}>
+      <section className={`quick-battle-panel${loaded && !error ? ' quick-battle-panel--ready' : ''}`} aria-labelledby="quick-battle-intro" aria-busy={busy}>
         <h2 id="quick-battle-intro">{t('Prepare-se para o confronto')}</h2>
-        <p>{t('Enfrente uma equipe sorteada entre os três protagonistas, disponíveis desde o início, os inimigos que você já derrotou na campanha e os capitães desbloqueados no Quadro de missões. Cada Batalha rápida é um novo confronto, sem mapa e sem avançar a campanha.')}</p>
+        <p className="quick-battle-intro-copy">{t('Enfrente uma equipe sorteada entre os três protagonistas e os capitães da guarda, disponíveis desde o início, e os inimigos que você já derrotou na campanha. Cada Batalha rápida é um novo confronto, sem mapa e sem avançar a campanha.')}</p>
         {error ? <>
           <p className="feedback" role="alert">{text(error)}</p>
           <button className="text-button" onClick={() => setAttempt((value) => value + 1)}>{t('Tentar novamente')}</button>
         </> : !loaded ? <p role="status">{t('Carregando adversários…')}</p> : <>
-          <h3>{t('Adversários disponíveis')}</h3>
-          {hasOpponents ? <ul className="quick-battle-opponents" aria-label={t('Adversários disponíveis')}>
+          <h3 className="quick-battle-opponents-title">{t('Adversários disponíveis')}</h3>
+          {hasOpponents ? <ul className="quick-battle-opponents" aria-label={t('Adversários disponíveis')} tabIndex={0}>
             {data.opponents.map((unit) => <li key={unit.id}>
               <img src={unit.portrait} alt={t('Retrato de {name}', { name: text(unit.name) })} draggable={false} />
             </li>)}
-          </ul> : <p role="status">{t('Nenhum adversário disponível no catálogo.')}</p>}
-          {!hasTeam && <p role="status">{t('Monte sua equipe na Lista de personagens antes de entrar na batalha.')}</p>}
+          </ul> : <p className="quick-battle-empty" role="status">{t('Nenhum adversário disponível no catálogo.')}</p>}
         </>}
-        {startError && <p className="feedback" role="alert">{text(startError)}</p>}
-        {blocked && <p id="quick-battle-cooldown" className="quick-battle-cooldown" role="status">{t(QUICK_BATTLE_COOLDOWN_MESSAGE)}</p>}
+        {(missingTeam || startError || blocked) && <div className="quick-battle-notices">
+          {missingTeam && <p role="status">{t('Monte sua equipe na Lista de personagens antes de entrar na batalha.')}</p>}
+          {startError && <p className="feedback" role="alert">{text(startError)}</p>}
+          {blocked && <p id="quick-battle-cooldown" className="quick-battle-cooldown" role="status">{t(QUICK_BATTLE_COOLDOWN_MESSAGE)}</p>}
+        </div>}
         <div className="quick-battle-start">
           <button type="button" className="fantasy-button compact" disabled={busy || !loaded || !hasOpponents || !hasTeam || blocked}
             aria-describedby={blocked ? 'quick-battle-cooldown' : undefined}

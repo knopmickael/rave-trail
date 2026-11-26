@@ -144,7 +144,7 @@ export const messages = {
   'Fechar história': 'Close story',
   'Prólogo de {name}': '{name} prologue',
   'Prepare-se para o confronto': 'Prepare for battle',
-  'Enfrente uma equipe sorteada entre os três protagonistas, disponíveis desde o início, os inimigos que você já derrotou na campanha e os capitães desbloqueados no Quadro de missões. Cada Batalha rápida é um novo confronto, sem mapa e sem avançar a campanha.': 'Face a randomly selected team drawn from the three protagonists, available from the start, enemies you have defeated in the campaign, and captains unlocked through the Mission board. Each Quick battle is a new encounter, with no map and no campaign progression.',
+  'Enfrente uma equipe sorteada entre os três protagonistas e os capitães da guarda, disponíveis desde o início, e os inimigos que você já derrotou na campanha. Cada Batalha rápida é um novo confronto, sem mapa e sem avançar a campanha.': 'Face a randomly selected team drawn from the three protagonists and guard captains, available from the start, and enemies you have defeated in the campaign. Each Quick battle is a new encounter, with no map and no campaign progression.',
   'Carregando adversários…': 'Loading opponents…',
   'Adversários disponíveis': 'Available opponents',
   'Nenhum adversário disponível no catálogo.': 'No opponents available in the catalog.',

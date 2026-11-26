@@ -3,12 +3,10 @@ import { battleUnlock, KALIS_UNIT_ID, RIDAN_UNIT_ID } from './unlocks.js';
 import { SECOND_CAMPAIGN_CHARACTERS, SECOND_CAMPAIGN_UNIT_IDS, type SecondCampaignCharacterId } from './second-campaign.js';
 
 export const STARTER_UNIT_IDS = ['protagonist-main-base', 'protagonist-secondary-base', 'protagonist-female-base'] as const;
-export const QUICK_BATTLE_ALWAYS_UNIT_IDS = [...STARTER_UNIT_IDS] as const;
-export const QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS = [KALIS_UNIT_ID, RIDAN_UNIT_ID] as const;
+export const QUICK_BATTLE_ALWAYS_UNIT_IDS = [...STARTER_UNIT_IDS, KALIS_UNIT_ID, RIDAN_UNIT_ID] as const;
 
 export const ROSTER_UNIT_IDS = [
   ...QUICK_BATTLE_ALWAYS_UNIT_IDS,
-  ...QUICK_BATTLE_MISSION_OPPONENT_UNIT_IDS,
   'road-raider-1-base',
   'road-raider-2-base',
   'road-raider-3-base',

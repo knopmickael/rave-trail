@@ -1,6 +1,7 @@
 import type { TeamSlots } from '../contracts.js';
 
 export const FINAL_ENCOUNTER_ID = 'path-1-encounter-7';
+export const FINAL_EXAL_BOSS_HP = 200;
 export const FINAL_BATTLE_REQUIREMENT = 'É obrigatório possuir Ravi de Berdal na equipe. Ele será substituído por Ravi Berserk ao iniciar a batalha, mantendo os demais aliados.';
 export const SECOND_FINAL_ENCOUNTER_ID = 'path-2-encounter-6';
 export const OSIRIS_UNIT_ID = 'grande-rei-osiris';

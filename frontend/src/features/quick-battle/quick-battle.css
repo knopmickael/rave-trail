@@ -1,10 +1,12 @@
 .quick-battle-page { display: flex; flex-direction: column; min-height: 100svh; height: 100svh; padding: var(--page-content-inset); color: #233b38; }
 .quick-battle-content { display: grid; place-items: center; flex: 1; min-height: 0; padding-bottom: 120px; }
-.quick-battle-panel { width: min(100%, 560px); max-height: 100%; padding: 28px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 2px solid #d4a64d; border-radius: 12px; background: #fff9ef; box-shadow: 0 12px 40px #173d7b44; }
+.quick-battle-panel { display: flex; flex-direction: column; min-height: 0; width: min(100%, 560px); max-height: 100%; padding: 28px; overflow: hidden; border: 2px solid #d4a64d; border-radius: 12px; background: #fff9ef; box-shadow: 0 12px 40px #173d7b44; }
+.quick-battle-panel > :not(.quick-battle-opponents) { flex-shrink: 0; }
 .quick-battle-panel h2 { margin: 0 0 16px; font-size: 23px; }
-.quick-battle-panel h3 { margin: 24px 0 16px; font-size: 16px; }
-.quick-battle-panel p { font-size: 14px; line-height: 1.7; }
-.quick-battle-opponents { --opponent-size: 48px; display: flex; flex-flow: row wrap; align-items: flex-start; align-content: flex-start; justify-content: flex-start; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; }
+.quick-battle-panel h3 { margin: 0 0 16px; font-size: 16px; }
+.quick-battle-panel p { margin: 0 0 16px; font-size: 14px; line-height: 1.7; }
+.quick-battle-opponents { --opponent-size: 48px; display: flex; flex: 0 1 auto; flex-flow: row wrap; align-items: flex-start; align-content: flex-start; justify-content: flex-start; min-height: 0; max-height: clamp(96px, 26svh, 240px); gap: 10px; margin: 0 0 20px; padding: 0 4px 0 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #9a7651 #efe2ca; scrollbar-gutter: stable; list-style: none; }
+.quick-battle-opponents:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 .quick-battle-opponents li { display: flex; flex: 0 0 auto; }
 .quick-battle-opponents img { width: var(--opponent-size); height: var(--opponent-size); object-fit: cover; border: 2px solid #d8955c; border-radius: 5px; background: #e2d4b7; }
 .quick-battle-panel .fantasy-button { min-width: 0; }
@@ -20,7 +22,7 @@
   .quick-battle-team { position: static; grid-column: 1; grid-row: 2; align-self: end; }
   .quick-battle-panel { padding: 20px; }
   .quick-battle-panel h2 { margin-bottom: 12px; font-size: 21px; }
-  .quick-battle-panel h3 { margin: 16px 0 12px; }
+  .quick-battle-panel h3 { margin: 0 0 12px; }
   .quick-battle-panel p { line-height: 1.5; }
   .quick-battle-opponents { --opponent-size: 42px; gap: 8px; }
   .quick-battle-panel .fantasy-button.compact { padding: 12px 18px; }
@@ -29,3 +31,20 @@
 .quick-battle-start > .fantasy-button { flex: 1; min-width: 0; }
 .quick-battle-cooldown { padding: 12px; border: 1px solid #b78c53; border-radius: 6px; background: #f5e6c9; color: #69451e; }
 .quick-battle-countdown { flex-shrink: 0; min-width: 4.2ch; padding: 10px 12px; border: 1px solid #9a7651; border-radius: 6px; background: #fff3db; color: #69451e; font: 700 18px/1.2 var(--font-ui); font-variant-numeric: tabular-nums; text-align: center; }
+.quick-battle-notices { display: grid; gap: 8px; margin-bottom: 12px; }
+.quick-battle-panel .quick-battle-notices p { margin: 0; }
+@media (min-width: 720px) and (max-height: 650px) {
+  .quick-battle-panel { padding: 14px; }
+  .quick-battle-panel--ready { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(92px, 1fr) auto auto; gap: 8px 16px; }
+  .quick-battle-panel--ready > h2 { grid-column: 1; grid-row: 1; margin: 0; font-size: 16px; }
+  .quick-battle-panel--ready > .quick-battle-intro-copy { grid-column: 1; grid-row: 2; margin: 0; font-size: 12px; line-height: 1.35; }
+  .quick-battle-panel--ready > .quick-battle-opponents-title { grid-column: 2; grid-row: 1; margin: 0; font-size: 14px; }
+  .quick-battle-panel--ready > .quick-battle-opponents { grid-column: 2; grid-row: 2; min-height: 92px; max-height: none; margin: 0; }
+  .quick-battle-panel--ready > .quick-battle-empty { grid-column: 2; grid-row: 2; margin: 0; }
+  .quick-battle-panel--ready > .quick-battle-notices { grid-column: 1 / -1; grid-row: 3; gap: 6px; margin: 0; }
+  .quick-battle-panel--ready .quick-battle-notices p { font-size: 12px; line-height: 1.35; }
+  .quick-battle-panel--ready .quick-battle-cooldown { padding: 8px; }
+  .quick-battle-panel--ready > .quick-battle-start { grid-column: 1 / -1; grid-row: 4; }
+  .quick-battle-panel--ready .fantasy-button.compact { margin-top: 0; padding: 9px 12px; font-size: 15px; }
+  .quick-battle-panel--ready .quick-battle-countdown { padding: 8px 10px; font-size: 16px; }
+}

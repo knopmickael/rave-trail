@@ -30,3 +30,7 @@ Os textos completos exibidos no jogo estão em `shared/src/content/encounters.ts
 - A final da Campanha 01 mantém a equipe inteira: Ravi de Berdal é convertido em Ravi Berserk no próprio slot ao iniciar a partida, sem conceder a versão permanentemente.
 - Combatente Demônio e Lorde demônio Rakin têm suas posições trocadas somente na Lista de personagens; a formação da batalha 5 permanece a mesma.
 - Notas editoriais sobre a fase de desenvolvimento não são exibidas aos jogadores.
+
+## Reativação do elenco - migration 050
+
+A migration `050_enable_second_campaign_characters.sql` reabilita os 17 personagens da campanha 2 (`units.enabled=true`) e restaura as formações originais dos encontros `path-2-encounter-1` a `path-2-encounter-6` somente quando o encontro ficou vazio após a migration 040; autoria não vazia do CMS é preservada. Nenhuma unidade é concedida à conta: progresso, equipes, missões e preços não mudam, e a publicação da campanha continua seguindo o CMS. O seed insere novas unidades sempre habilitadas e não volta a desabilitar o elenco reativado, respeitando desativações posteriores pelo CMS.
