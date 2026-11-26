@@ -10,12 +10,16 @@
 | Trazer dos mortos | 50 | Revive um aliado com o HP máximo e limpa efeitos anteriores. |
 | Recuperar muita vida | 50 | Restaura 30 HP de cada aliado vivo, até o HP máximo. |
 | Turno extra | 40 | Concede um turno adicional à equipe após encerrar o turno atual. |
+| Drenar existência | 60 | Causa 30 de dano a cada inimigo vivo e recupera o HP efetivamente drenado, até o máximo do usuário. |
+| Vórtex negro | 35 | Causa 15 de dano a todos os inimigos e bloqueia somente ataques durante um turno da equipe alvo. |
 
 Benção divina não acumula cargas, não expira antes de ser consumida e pode impedir dano fatal direto, drenagem ou sangramento. Não é Guarda ou Invulnerabilidade, portanto Retaliação não a remove. Uma nova aplicação após o consumo concede uma nova proteção. O BOT e a prévia usam exatamente a regra oficial do servidor. Drenagem recupera somente o HP efetivamente perdido pelo alvo, inclusive quando a benção impede sua morte.
 
 Drak passa a usar Golpe simples, Guarda, Reter muita energia e Turno extra. Trinity troca Varredura tática por Benção divina. Jung II usa Retaliação, Invulnerabilidade, Reter muita energia e Execução.
 
 A migration **049** atualiza os custos de Execução e Recuperar muita vida para 50 de energia. Na batalha, habilidades aliadas e inimigas usam cursor de interação, inclusive ao consultar opções desabilitadas; os tooltips aparecem após **250 ms** com mouse ou foco de teclado.
+
+A migration **051** altera somente os custos de Drenar existência para **60** e Vórtex negro para **35** de energia. Novas partidas usam esses valores; partidas já iniciadas preservam seus snapshots.
 
 ## Personagens e encontros
 

@@ -52,7 +52,7 @@ try {
   assert.equal(missingPage.status, 404);
   assert.equal(missingPage.headers.get('x-robots-tag'), 'noindex, follow');
   for (const path of ['/media/images/logo-rave-trail.png', '/media/video/menu-background-poster.webp',
-    '/media/images/fight-background.png', '/media/images/fight-exal-background.png', '/media/campaigns/mapa-campanha-01.png',
+    '/media/images/fight-background.png', '/media/images/fight-exal-background.png', '/media/campaigns/mapa-campanha-01.png', '/media/campaigns/mapa-campanha-02.png',
     '/media/characters/ravi-de-berdal-face.png', '/media/characters/jung-de-grimoria-ii-face.png', '/media/characters/jung-de-grimoria-ii-body.png',
     '/media/abilities/retain-energy.jpg', '/media/campaigns/path-1.webp',
     '/media/audio/click-menu.wav', '/media/audio/battle-win.wav', '/media/audio/battle-lose.mp3']) {

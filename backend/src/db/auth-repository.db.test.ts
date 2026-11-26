@@ -135,7 +135,7 @@ it('migra custos, alvos e conjuntos antigos sem alterar a equipe ou o progresso'
   await pool.query('ALTER TABLE abilities DROP CONSTRAINT abilities_target_check');
   await pool.query("ALTER TABLE abilities ADD CONSTRAINT abilities_target_check CHECK (target IN ('enemy', 'ally', 'all-enemies', 'all-allies', 'team'))");
   await pool.query("DELETE FROM schema_migrations WHERE name IN ('006_abilities_and_loadouts.sql', '007_passago_abilities.sql', '008_trinity_retain_energy.sql', '009_berserk_and_final_exal_guard.sql', '012_drak_collective_guard.sql', '013_quick_starters_and_berserk.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '028_internal_strength.sql', '029_monnica_guard.sql', '030_heal_20.sql',     '031_swap_starter_specials.sql', '032_soul_drain_35.sql', '033_drain_heal_on_damage.sql', '034_reduce_guard_absorption.sql', '035_ability_rebalance.sql', '036_guard_captains_and_store_content.sql', '037_internal_strength_two_turns.sql')");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('044_divine_protection_retaliation_and_wolfs_howl.sql','045_wolfs_howl_one_turn.sql','046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql','051_existence_drain_and_dark_vortex_energy.sql','052_release_second_campaign_after_exal.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);

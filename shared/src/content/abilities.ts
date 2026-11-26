@@ -61,7 +61,7 @@ export const abilities = {
     effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 5, turns: 3 }],
   },
   'dark-vortex': {
-    id: 'dark-vortex', name: 'Vórtex negro', energyCost: 30, target: 'all-enemies', icon: '/media/abilities/dark-vortex.png',
+    id: 'dark-vortex', name: 'Vórtex negro', energyCost: 35, target: 'all-enemies', icon: '/media/abilities/dark-vortex.png',
     description: 'Golpeia todos os inimigos causando 15 de dano e impedindo que realizem qualquer ataque durante 1 turno. Demais habilidades ainda poderão ser utilizadas.',
     effects: [{ kind: 'damage', amount: 15 }, { kind: 'attack-block', teamTurns: 1 }],
   },
@@ -79,7 +79,7 @@ export const abilities = {
     description: 'Causa 25 de dano a um inimigo e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 25 }],
   },
   'soul-drain-plus': {
-    id: 'soul-drain-plus', name: 'Drenar existência', energyCost: 45, target: 'all-enemies', icon: '/media/abilities/soul-drain-plus.jpg',
+    id: 'soul-drain-plus', name: 'Drenar existência', energyCost: 60, target: 'all-enemies', icon: '/media/abilities/soul-drain-plus.jpg',
     description: 'Causa 30 de dano a todos os inimigos vivos e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 30 }],
   },
   'fury-scream': {

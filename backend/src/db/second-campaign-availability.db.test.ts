@@ -3,6 +3,7 @@ import pg from 'pg';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import { encounters } from '@game/content/encounters.js';
+import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules.js';
 import { migrate } from './migrations.js';
 import { seedDatabase } from './seed.js';
 import { PostgresGameRepository } from './game-repository.js';
@@ -60,4 +61,27 @@ it('reativa autoria desabilitada e restaura encontros vazios sem apagar formaç�
   await cms.save('characters', { ...current.characters.find((u) => u.id === general.id)!, enabled: false }, false);
   await migrate(pool); await seedDatabase(pool);
   expect((await game.getCatalog()).units.some((u) => u.id === general.id)).toBe(false);
+});
+
+it('publica a campanha 02 com pré-requisito da final sem alterar autoria, progresso ou batalhas existentes', async () => {
+  const user = await player();
+  await game.setTeamSlot(user.id, 0, 'protagonist-main-base');
+  await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{completedEncounters}', $2::jsonb) WHERE user_id=$1", [user.id, JSON.stringify([FINAL_ENCOUNTER_ID])]);
+  const battles = new PostgresBattleRepository(pool);
+  const battle = await battles.startQuickBattle(user.id);
+  const progress = await auth.getProgress(user.id);
+  const original = (await cms.catalog()).campaigns.find((c) => c.id === 'path-2')!;
+  await cms.save('campaigns', { ...original, title: 'Capítulo editado', description: 'História editada.', released: false, prerequisiteEncounterId: null }, false);
+  await pool.query("DELETE FROM schema_migrations WHERE name='052_release_second_campaign_after_exal.sql'");
+  await expect(battles.getMap(user.id, 'path-2')).rejects.toMatchObject({ statusCode: 403 });
+  await migrate(pool); await seedDatabase(pool);
+  expect((await game.getCampaigns(user.id)).find((c) => c.id === 'path-2')).toMatchObject({
+    title: 'Capítulo editado', description: 'História editada.', released: true, prerequisiteEncounterId: FINAL_ENCOUNTER_ID, available: true,
+  });
+  expect(await auth.getProgress(user.id)).toEqual(progress);
+  expect((await pool.query('SELECT state FROM battles WHERE id=$1', [battle.id])).rows[0].state).toEqual(battle.state);
+  const published = (await cms.catalog()).campaigns.find((c) => c.id === 'path-2')!;
+  await cms.save('campaigns', { ...published, released: false }, false);
+  await migrate(pool); await seedDatabase(pool);
+  expect((await game.getCampaigns(user.id)).find((c) => c.id === 'path-2')).toMatchObject({ released: false, available: false });
 });

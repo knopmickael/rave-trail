@@ -69,6 +69,13 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
       await client.query('INSERT INTO encounter_enemies (encounter_id, slot_index, unit_id) SELECT $1,$2,id FROM units WHERE id=$3 AND enabled', [encounter.id, slot, unitId]);
     }
   }
+  // Em banco vazio, os encontros da campanha 1 só existem após o seed acima.
+  // Completa o default ausente sem substituir pré-requisitos ou autoria do CMS.
+  for (const campaign of campaigns) {
+    if (!campaign.prerequisiteEncounterId || managed.has(`campaigns:${campaign.id}`)) continue;
+    await client.query(`UPDATE campaigns SET prerequisite_encounter_id=$2, released=$3
+      WHERE id=$1 AND prerequisite_encounter_id IS NULL`, [campaign.id, campaign.prerequisiteEncounterId, campaign.released]);
+  }
 }
 
 export async function seedDatabase(pool: Pool): Promise<void> {

@@ -74,7 +74,7 @@ describe('catálogo compartilhado', () => {
       icon: '/media/abilities/internal-strength.png', effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 2 }] });
     expect(abilities['soul-drain']).toMatchObject({ energyCost: 35,
       description: 'Causa 25 de dano a um inimigo e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.' });
-    expect(abilities['soul-drain-plus']).toMatchObject({ target: 'all-enemies', energyCost: 45,
+    expect(abilities['soul-drain-plus']).toMatchObject({ target: 'all-enemies', energyCost: 60,
       description: 'Causa 30 de dano a todos os inimigos vivos e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.',
       effects: [{ kind: 'drain', amount: 30 }] });
     expect(abilities.heal).toMatchObject({ energyCost: 35, effects: [{ kind: 'heal', amount: 25 }] });
@@ -86,7 +86,7 @@ describe('catálogo compartilhado', () => {
       icon: '/media/abilities/simple-strike-II.png', effects: [{ kind: 'damage', amount: 30 }] });
     expect(abilities['quick-slash']).toMatchObject({ energyCost: 30, target: 'enemy',
       effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 5, turns: 3 }] });
-    expect(abilities['dark-vortex']).toMatchObject({ energyCost: 30, target: 'all-enemies',
+    expect(abilities['dark-vortex']).toMatchObject({ energyCost: 35, target: 'all-enemies',
       effects: [{ kind: 'damage', amount: 15 }, { kind: 'attack-block', teamTurns: 1 }] });
     expect(abilities['fast-move']).toMatchObject({ name: 'Invulnerabilidade', energyCost: 25, target: 'self',
       effects: [{ kind: 'invulnerable', teamTurns: 1 }] });

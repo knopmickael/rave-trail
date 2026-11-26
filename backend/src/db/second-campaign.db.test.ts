@@ -45,36 +45,47 @@ async function finish(userId: string, battle: BattleRecord, requestId = randomUU
       abilityId: state.teams.player.units[0].abilityIds.includes('simple-strike') ? 'simple-strike' : 'quick-slash', targetId: 'enemy-0' }]);
 }
 
-it('mantém a campanha 02 bloqueada mesmo após a vitória final da primeira', async () => {
+it('libera o mapa e a primeira batalha da campanha 02 somente após vencer a final da primeira', async () => {
   const user = await player();
   await expect(battles.getMap(user.id, 'path-2')).rejects.toMatchObject({ statusCode: 403 });
   await expect(battles.startBattle(user.id, second[0].id)).rejects.toMatchObject({ statusCode: 403 });
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{completedEncounters}', $2::jsonb) WHERE user_id = $1",
     [user.id, JSON.stringify(first.slice(0, 6).map((entry) => entry.id))]);
-  await finish(user.id, await battles.startBattle(user.id, FINAL_ENCOUNTER_ID));
   await expect(battles.getMap(user.id, 'path-2')).rejects.toMatchObject({ statusCode: 403 });
-  await expect(battles.startBattle(user.id, second[0].id)).rejects.toMatchObject({ statusCode: 403 });
-  expect((await game.getCampaigns(user.id)).map((campaign) => campaign.available)).toEqual([true, false]);
+  await finish(user.id, await battles.startBattle(user.id, FINAL_ENCOUNTER_ID));
+  const map = await battles.getMap(user.id, 'path-2');
+  expect(map.campaign).toMatchObject({ id: 'path-2', available: true });
+  expect(map.encounters[0]).toMatchObject({ id: second[0].id, available: true });
+  await expect(battles.startBattle(user.id, second[0].id)).resolves.toMatchObject({ encounterId: second[0].id });
+  expect((await game.getCampaigns(user.id)).map((campaign) => campaign.available)).toEqual([true, true]);
 });
 
-it.each([0, 1, 2] as const)('mantém Osiris inacessível como convidado no slot %s e preserva equipe e desbloqueios', async (slot) => {
+it.each([0, 1, 2] as const)('inclui Osiris como convidado no slot %s e preserva equipe e desbloqueios', async (slot) => {
   const user = await player(true);
   const before = (await auth.getProgress(user.id))!;
   expect(before.unlockedUnitIds).not.toContain(OSIRIS_UNIT_ID);
-  await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID)).rejects.toMatchObject({ statusCode: 403 });
-  await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 3 as 0 })).rejects.toMatchObject({ statusCode: 403 });
-  await expect(battles.startBattle(user.id, second[0].id, { osirisSlot: slot })).rejects.toMatchObject({ statusCode: 403 });
+  await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID)).rejects.toMatchObject({ statusCode: 400 });
+  await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 3 as 0 })).rejects.toMatchObject({ statusCode: 400 });
+  await expect(battles.startBattle(user.id, second[0].id, { osirisSlot: slot })).rejects.toMatchObject({ statusCode: 400 });
+  const battle = await battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: slot });
+  const expected = [...STARTER_UNIT_IDS] as string[]; expected[slot] = OSIRIS_UNIT_ID;
+  expect(battle.state.teams.player.units.map((unit) => unit.unitId)).toEqual(expected);
+  expect(battle.state.teams.player.units[slot].id).toBe(`player-${slot}`);
   expect(await auth.getProgress(user.id)).toEqual(before);
 });
 
-it('mantém a campanha 02 bloqueada mesmo com equipe vazia ou Osiris já desbloqueado', async () => {
+it('aceita Osiris como único convidado e evita duplicação quando já está na equipe', async () => {
   const user = await player(true);
   for (let slot = 0; slot < 3; slot++) await game.setTeamSlot(user.id, slot, null);
-  await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 })).rejects.toMatchObject({ statusCode: 403 });
+  const solo = await battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 });
+  expect(solo.state.teams.player.units).toHaveLength(1);
+  expect(solo.state.teams.player.units[0]).toMatchObject({ unitId: OSIRIS_UNIT_ID, id: 'player-2' });
   await pool.query("UPDATE player_progress SET data = jsonb_set(data, '{unlockedUnitIds}', (data->'unlockedUnitIds') || $2::jsonb) WHERE user_id = $1", [user.id, JSON.stringify([OSIRIS_UNIT_ID])]);
   await expect(game.setTeamSlot(user.id, 0, OSIRIS_UNIT_ID)).resolves.toEqual([OSIRIS_UNIT_ID, null, null]);
   await game.setTeamSlot(user.id, 1, STARTER_UNIT_IDS[1]);
-  await expect(battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 })).rejects.toMatchObject({ statusCode: 403 });
+  const moved = await battles.startBattle(user.id, SECOND_FINAL_ENCOUNTER_ID, { osirisSlot: 2 });
+  expect(moved.state.teams.player.units.map((unit) => unit.unitId)).toEqual([STARTER_UNIT_IDS[1], OSIRIS_UNIT_ID]);
+  expect(moved.state.teams.player.units.filter((unit) => unit.unitId === OSIRIS_UNIT_ID)).toHaveLength(1);
   expect((await auth.getProgress(user.id))!.selectedTeam).toEqual([OSIRIS_UNIT_ID, STARTER_UNIT_IDS[1], null]);
 });
 
@@ -121,5 +132,5 @@ it('executa as migrações e o seed novamente preservando equipe e publicação 
   await migrate(pool); await seedDatabase(pool);
   expect(await auth.getProgress(user.id)).toEqual(after);
   expect((await game.getCatalog()).units).toHaveLength(units.length);
-  await expect(battles.getMap(user.id, 'path-2')).rejects.toMatchObject({ statusCode: 403 });
+  expect((await battles.getMap(user.id, 'path-2')).campaign.available).toBe(true);
 });

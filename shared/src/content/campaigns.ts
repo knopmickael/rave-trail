@@ -1,4 +1,5 @@
 import { SECOND_CAMPAIGN_INTRODUCTION } from './second-campaign.js';
+import { FINAL_ENCOUNTER_ID } from './campaign-rules.js';
 
 export const FIRST_CAMPAIGN_INTRODUCTION = [
   'Em um continente místico, onde diferentes povos, reinos e organizações disputam influência, três jovens camponeses vivem pacificamente em uma vila comercial, sem imaginar o potencial extraordinário que carregam.',
@@ -33,6 +34,7 @@ export const campaigns: readonly CampaignDefinition[] = [
   {
     id: 'path-2', chapterNumber: 2, title: 'Além das Fronteiras',
     description: SECOND_CAMPAIGN_INTRODUCTION.join('\n\n'),
-    background: '/media/campaigns/path-2.webp', mapBackground: DEFAULT_CAMPAIGN_MAP, sortOrder: 1, released: false,
+    background: '/media/campaigns/path-2.webp', mapBackground: '/media/campaigns/mapa-campanha-02.png',
+    prerequisiteEncounterId: FINAL_ENCOUNTER_ID, sortOrder: 1, released: true,
   },
 ];

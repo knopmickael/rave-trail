@@ -213,7 +213,7 @@ it.each([true, false])('abre o mesmo modal de slots da lista de personagens some
   render(<CampaignMap {...props()} campaignId="path-2" />);
   await user.click(await screen.findByRole('button', { name: 'Batalha 6: O verdadeiro rei demônio' }));
   expect(screen.getAllByRole('button', { name: /^Batalha \d:/ })).toHaveLength(6);
-  expect(screen.getByRole('img', { name: 'Mapa da campanha' })).toHaveAttribute('src', '/media/campaigns/mapa-campanha-01.png');
+  expect(screen.getByRole('img', { name: 'Mapa da campanha' })).toHaveAttribute('src', '/media/campaigns/mapa-campanha-02.png');
   const dialog = screen.getByRole('dialog', { name: 'O verdadeiro rei demônio' });
   expect(within(dialog).queryByText(OSIRIS_BATTLE_REQUIREMENT)).not.toBeInTheDocument();
   expect(within(dialog).queryByRole('radio')).not.toBeInTheDocument();

@@ -32,7 +32,7 @@ describe('motor determinístico de combate', () => {
     const enemyTurn = executeTurn(initial, [action(0, 'guard')]).state;
     expect(enemyTurn.teams.player.units[0].unitId).toBe('protagonist-main-base');
     expect(initial.teams.player.units[0].guardExpiresAt).toBeNull();
-    enemyTurn.teams.enemy.energy = 45;
+    enemyTurn.teams.enemy.energy = 60;
     const before = JSON.stringify(enemyTurn);
     const transformed = executeTurn(enemyTurn, [{ actorId: 'enemy-0', abilityId: 'soul-drain-plus' }]);
     expect(JSON.stringify(enemyTurn)).toBe(before);
@@ -99,9 +99,11 @@ describe('motor determinístico de combate', () => {
 
   it.each([
     ['rival-b-base', 'soul-drain', 25, 35],
-    ['rival-b-final-mode', 'soul-drain-plus', 30, 45],
+    ['rival-b-final-mode', 'soul-drain-plus', 30, 60],
   ] as const)('%s drena vida, debita energia, respeita Guarda e limita a cura', (unitId, abilityId, amount, cost) => {
-    const initial = state([unitId]); initial.teams.player.energy = 100;
+    const initial = state([unitId]); initial.teams.player.energy = cost - 1;
+    expect(() => previewActions(initial, [action(0, abilityId, abilityId === 'soul-drain-plus' ? undefined : 'enemy-0')])).toThrow(/Energia insuficiente/);
+    initial.teams.player.energy = 100;
     if (abilityId === 'soul-drain-plus') initial.teams.enemy.units.slice(1).forEach((unit) => { unit.hp = 0; });
     initial.teams.player.units[0].hp = 30;
     const before = JSON.stringify(initial);
@@ -348,8 +350,11 @@ describe('motor determinístico de combate', () => {
   });
 
   it('Vórtex negro atinge todos e bloqueia apenas ataques por um turno inimigo', () => {
-    const initial = state(['rival-b-final-mode']); initial.teams.player.energy = 30;
+    const initial = state(['rival-b-final-mode']); initial.teams.player.energy = 34;
+    expect(() => previewActions(initial, [action(0, 'dark-vortex')])).toThrow(/Energia insuficiente/);
+    initial.teams.player.energy = 35;
     let battle = executeTurn(initial, [action(0, 'dark-vortex')]).state;
+    expect(battle.teams.player.energy).toBe(0);
     expect(battle.teams.enemy.units.map((unit) => unit.hp)).toEqual([85, 85, 85]);
     expect(battle.teams.enemy.units.map((unit) => unit.attackBlockedExpiresAt)).toEqual([2, 2, 2]);
     const enemyAttack = [{ actorId: 'enemy-0', abilityId: 'simple-strike', targetId: 'player-0' }];
