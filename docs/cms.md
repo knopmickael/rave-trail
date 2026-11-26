@@ -1,6 +1,6 @@
 # CMS local — Rave Trail Content Studio
 
-O CMS é uma aplicação de autoria em `cms/`, executada somente na sua máquina. A interface usa React/Vite e a API local usa Fastify com PostgreSQL. As gravações são feitas diretamente no banco configurado: ao conectar à produção pelo túnel, salvar no CMS altera o catálogo de produção.
+O CMS é uma aplicação de autoria em `cms/`, executada somente na sua máquina. A interface usa React/Vite e a API local usa Fastify com PostgreSQL. No perfil **local**, cada alteração também gera uma migration SQL no repositório para publicação pelo deploy. Ao conectar à produção pelo túnel, salvar no CMS altera diretamente o catálogo de produção.
 
 ## Iniciar
 
@@ -27,6 +27,25 @@ npm run cms:local
 ```
 
 Abra **http://127.0.0.1:5188**. Este perfil acessa diretamente o PostgreSQL local, sem SSH. O banco precisa estar iniciado, por exemplo por `npm run db:up`.
+
+### Publicar edições locais pelo CI/CD
+
+Prepare o banco com `npm run cms:local:db:setup` para aplicar a migration **054**, que adiciona o journal de exportação. Depois, use `npm run cms:local` normalmente:
+
+1. Edite e salve no CMS local — por exemplo, troque as quatro habilidades de um personagem.
+2. O banco local recebe a alteração e o CMS cria automaticamente um novo arquivo `.sql` em `backend/migrations/` com a operação equivalente, incluindo os slots das habilidades e a proteção contra sobrescrita pelo seed.
+3. Teste no jogo local. Inclua os arquivos gerados no commit e faça o push pelo fluxo normal do projeto.
+4. O CI/CD aplica essas migrations em produção uma única vez. Não é necessário repetir a edição no CMS de produção.
+
+O mesmo fluxo cobre criação, edição, exclusão, reordenação do catálogo/confrontos, setups e uploads. Imagens enviadas são incluídas como bytes no SQL; URLs e caminhos externos continuam sendo referências, e arquivos novos em `frontend/public/` precisam acompanhar o commit. Edições feitas antes desta funcionalidade não são exportadas retroativamente.
+
+Os nomes têm o formato `054_zz_cms_<timestamp>_<uuid>.sql`: são ordenados após as migrations existentes do mesmo prefixo, e antes da próxima migration numerada (`055_...`, nesse exemplo). Cada gravação produz um arquivo novo; não edite, remova ou reutilize uma migration já publicada. Ao integrar branches, revise a ordem das migrations que dependem umas das outras. Os arquivos não fazem commit, push ou deploy por conta própria.
+
+A migration já é marcada como aplicada no banco local, evitando repetir a operação no próximo setup/deploy local. O conteúdo e o SQL são registrados na mesma transação em `cms_migration_journal`; os registros desse journal ficam no banco local e não são transportados no arquivo. Se a exportação falhar depois do commit, o CMS informa **alteração salva com migration pendente**. Corrija as permissões/espaço em `backend/migrations/` e recarregue o CMS: a consulta de status recupera o arquivo sem repetir a edição. Um arquivo existente com conteúdo diferente nunca é sobrescrito. Antes de publicar, confira no Git que todas as migrations esperadas foram geradas.
+
+As migrations representam as operações aprovadas localmente: uma edição posterior em produção nos mesmos campos pode ser substituída pelo próximo deploy. Exclusões revalidam referências e histórico no destino, podendo impedir o deploy se o conteúdo já estiver em uso. Operações que reorganizam personagens ou confrontos exigem os mesmos IDs nos dois ambientes; se houver registros adicionais ou ausentes em produção, o deploy falha atomicamente, preservando as posições. Desabilitar personagens atualiza as equipes e confrontos do próprio destino, sem copiar IDs ou dados de jogadores locais. Em uma instalação nova, o migrador prepara o catálogo inicial antes do primeiro SQL de autoria que dependa dele.
+
+Somente o perfil explícito **local** (`CMS_PROFILE=local`) gera arquivos. O perfil **prod** e o comando legado `npm run cms` continuam gravando diretamente no banco configurado, sem geração de migrations.
 
 ### Editar produção/Lightsail
 
@@ -59,7 +78,7 @@ npm run cms:prod
 
 Abra **http://127.0.0.1:5189**. A aplicação continua executando localmente; esse perfil muda o banco editado. A API aceita apenas o host local e a origem exata do estúdio. Use `127.0.0.1`, não `localhost`.
 
-Os comandos `*:db:setup` aplicam as migrações pendentes de `backend/migrations/`, com transação e lock. Não executam seed nem resetam jogadores. A migração `038_local_content_cms.sql` adiciona as estruturas do CMS; a `039_cms_content_requirements.sql` sincroniza os mapas e descrições originais, converte desbloqueios legados, explicita a revelação das missões e impede recompensas diretas no banco. Em um banco novo, o catálogo inicial pode ser criado pelo fluxo normal de migração/seed do jogo, apontado para esse banco.
+Os comandos `*:db:setup` aplicam as migrações pendentes de `backend/migrations/`, com transação e lock. Não resetam jogadores. O catálogo inicial é preparado antes de migrations geradas pelo CMS quando o banco ainda não tem o catálogo base; fora desse caso não executam seed. A migração `038_local_content_cms.sql` adiciona as estruturas do CMS; a `039_cms_content_requirements.sql` sincroniza os mapas e descrições originais, converte desbloqueios legados, explicita a revelação das missões e impede recompensas diretas no banco. Em um banco novo, o catálogo inicial também pode ser criado pelo fluxo normal de migração/seed do jogo, apontado para esse banco.
 
 **Compatibilidade:** os comandos anteriores `npm run cms`, `cms:tunnel` e `cms:db:setup` continuam carregando `.env.cms` quando nenhum perfil foi selecionado. Os novos comandos exportam `CMS_PROFILE=local` ou `CMS_PROFILE=prod` para todos os subprocessos, incluindo Vite, API, túnel e migrações.
 

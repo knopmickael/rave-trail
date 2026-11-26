@@ -8,13 +8,15 @@ import { chatSchema, suggestAbility } from './ai.js';
 import { readMedia } from '../../backend/src/db/media.js';
 import type { Entity } from '../contracts.js';
 import { cmsEnvironmentFile } from '../environment.js';
+import { migrationDirectory } from '../../backend/src/paths.js';
 
-export function createCmsApp(pool: Pool | null, origin = 'http://127.0.0.1:5188', apiPort = 3188) {
+export function createCmsApp(pool: Pool | null, origin = 'http://127.0.0.1:5188', apiPort = 3188, contentMigrationDirectory = migrationDirectory) {
   const environmentFile = cmsEnvironmentFile();
   const setupCommand = process.env.CMS_PROFILE ? `cms:${process.env.CMS_PROFILE}:db:setup` : 'cms:db:setup';
   const app = Fastify({ bodyLimit: 8 * 1024 * 1024, logger: false });
   const token = randomBytes(32).toString('hex');
-  const repo = pool ? new CmsRepository(pool) : null;
+  const generatesMigrations = process.env.CMS_PROFILE === 'local';
+  const repo = pool ? new CmsRepository(pool, generatesMigrations ? contentMigrationDirectory : undefined) : null;
   app.addHook('onRequest', async (request, reply) => {
     reply.header('Cache-Control', 'no-store').header('X-Content-Type-Options', 'nosniff');
     if (![`127.0.0.1:${apiPort}`, new URL(origin).host].includes(request.headers.host ?? '')
@@ -42,9 +44,16 @@ export function createCmsApp(pool: Pool | null, origin = 'http://127.0.0.1:5188'
     let message = `Configure CMS_DATABASE_URL no ${environmentFile} e reinicie o CMS.`;
     if (pool) {
       try {
-        const result = await pool.query("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE name='040_character_availability.sql') AS ready");
+        const result = await pool.query('SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE name=$1) AS ready',
+          [generatesMigrations ? '054_cms_migration_journal.sql' : '040_character_availability.sql']);
         ready = result.rows[0].ready;
-        message = ready ? 'Conectado. Alterações são gravadas diretamente neste banco.' : `Execute npm run ${setupCommand} para preparar o banco.`;
+        message = ready ? generatesMigrations
+          ? 'Conectado. Cada alteração gera uma migration em backend/migrations/. Inclua os arquivos no commit para publicar pelo deploy.'
+          : 'Conectado. Alterações são gravadas diretamente neste banco.' : `Execute npm run ${setupCommand} para preparar o banco.`;
+        if (ready && generatesMigrations) {
+          try { await repo!.flushMigrations(); }
+          catch { ready = false; message = 'Há migrations pendentes de exportação. Verifique a escrita em backend/migrations/ e atualize o status ou reinicie o CMS. Não repita as edições já salvas.'; }
+        }
       } catch { message = 'Banco indisponível. Verifique a URL, o túnel SSH e as migrações.'; }
     }
     return { token, database: process.env.CMS_DATABASE_LABEL ?? 'Banco do CMS', ready, message,
@@ -66,10 +75,7 @@ export function createCmsApp(pool: Pool | null, origin = 'http://127.0.0.1:5188'
     app.delete<{ Params: { id: string } }>(`/api/${entity}/:id`, (request) => requireRepo().remove(entity, id.parse(request.params.id)));
   }
   app.post('/api/setups', (request) => requireRepo().saveSetup(setupSchema.parse(request.body)));
-  app.delete<{ Params: { id: string } }>('/api/setups/:id', async (request) => {
-    await requireRepo().pool.query('DELETE FROM cms_ability_setups WHERE id=$1', [id.parse(request.params.id)]);
-    return { ok: true };
-  });
+  app.delete<{ Params: { id: string } }>('/api/setups/:id', (request) => requireRepo().removeSetup(id.parse(request.params.id)));
   app.post('/api/ai/chat', (request) => suggestAbility(chatSchema.parse(request.body)));
   app.post('/api/media', async (request, reply) => {
     const input = z.object({ base64: z.string().max(7 * 1024 * 1024) }).strict().parse(request.body);
@@ -81,8 +87,8 @@ export function createCmsApp(pool: Pool | null, origin = 'http://127.0.0.1:5188'
       : content.toString('ascii', 0, 4) === 'RIFF' && content.toString('ascii', 8, 12) === 'WEBP' ? 'image/webp' : null;
     if (!mime) throw new CmsError(400, 'Use PNG, JPEG ou WebP.');
     const mediaId = randomUUID();
-    await requireRepo().pool.query('INSERT INTO cms_media VALUES ($1,$2,$3)', [mediaId, mime, content]);
-    return reply.code(201).send({ path: `/media/cms/${mediaId}` });
+    const result = await requireRepo().saveMedia(mediaId, mime, content);
+    return reply.code(201).send(result);
   });
   app.get<{ Params: { id: string } }>('/media/cms/:id', async (request, reply) => {
     const image = await readMedia(requireRepo().pool, z.uuid().parse(request.params.id));

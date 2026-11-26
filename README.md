@@ -42,7 +42,7 @@ Planejamento do multiplayer: [regras e arquitetura com WebSocket](docs/multiplay
 
 Multiplayer implementado para um único processo Fastify: fila global, equipes de três personagens, combos ao vivo e reconexão por 10 segundos. Requer migrações **041–043**. Consulte [operação, retenção e limites](docs/deploy/multiplayer.md) e [registro de execução](docs/multiplayer-progress.md).
 
-O balanceamento da migração **044** adiciona Proteção divina, Retaliação e Uivo do lobo, recalibra Invulnerabilidade/Recuperar vida e redistribui habilidades de sete personagens. Requer o motor atualizado; detalhes de duração, cura e bloqueios em [CMS — balanceamento](docs/cms.md#balanceamento-da-migração-044). O deploy aplica a migration automaticamente; não há sincronização automática de edições locais do CMS.
+O balanceamento da migração **044** adiciona Proteção divina, Retaliação e Uivo do lobo, recalibra Invulnerabilidade/Recuperar vida e redistribui habilidades de sete personagens. Requer o motor atualizado; detalhes de duração, cura e bloqueios em [CMS — balanceamento](docs/cms.md#balanceamento-da-migração-044). O deploy aplica a migration automaticamente. Após preparar o banco com a migration **054**, cada alteração salva em `npm run cms:local` também gera uma migration SQL em `backend/migrations/`; inclua os arquivos no commit/push para publicá-los pelo CI/CD. Veja [publicação de edições locais](docs/cms.md#publicar-edições-locais-pelo-cicd).
 
 As migrations **046–047** expandem a campanha 01 com Execução, Benção divina, cinco personagens, novas formações e missões e bloqueio de cinco minutos após dez desistências rápidas em menos de cinco minutos. Consulte [regras e atualização dos bancos](docs/chapter-one-expansion.md).
 
