@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import type { User } from '@game/contracts';
-import { api, ApiError, clearGameData, preloadGameData } from './api';
+import type { PlayerProgress, User } from '@game/contracts';
+import { api, ApiError, clearGameData, gameDataCache, preloadGameData } from './api';
 import { preloadGameAssets } from './asset-preloader';
 import { assets } from './assets';
 import { CharacterList } from './features/characters/CharacterList';
@@ -14,7 +14,8 @@ import { BattleLoading } from './features/battle/BattleLoading';
 import { useAudioSettings } from './audio/useAudioSettings';
 import { useGameAudio } from './audio/useGameAudio';
 import type { BattleRecord } from '@game/core/battle';
-import { isFinalEncounter } from '@game/content/campaign-rules';
+import { FINAL_ENCOUNTER_ID, isFinalEncounter } from '@game/content/campaign-rules';
+import { SkyBackground } from './components/SkyBackground';
 import { DesktopAccess } from './components/DesktopAccess';
 import { TitleScreen } from './components/TitleScreen';
 import { version } from '../../package.json';
@@ -38,13 +39,22 @@ function AppVersion() {
 }
 
 type GameScreen = 'title' | 'auth' | 'menu' | 'characters' | 'store' | 'campaigns' | 'map' | 'quick-battle' | 'unlocks' | 'battle' | 'multiplayer';
+type MenuBackgroundState = { userId: string; sunset: boolean };
 
 function GameApp() {
   const [screen, setScreen] = useState<GameScreen>('title');
-  return <><GameContent screen={screen} setScreen={setScreen} /><AnalyticsConsent showPreferences={screen === 'menu'} /></>;
+  const [user, setUser] = useState<User | null>(null);
+  const [background, setBackground] = useState<MenuBackgroundState | null>(null);
+  const userId = user?.id;
+  const sunset = !!userId && background?.userId === userId && background.sunset;
+  return <><SkyBackground sunset={sunset} /><GameContent screen={screen} setScreen={setScreen} user={user} setUser={setUser} onBackgroundChange={setBackground} /><AnalyticsConsent showPreferences={screen === 'menu'} /></>;
 }
 
-function GameContent({ screen, setScreen }: { screen: GameScreen; setScreen: Dispatch<SetStateAction<GameScreen>> }) {
+function GameContent({ screen, setScreen, user, setUser, onBackgroundChange }: {
+  screen: GameScreen; setScreen: Dispatch<SetStateAction<GameScreen>>;
+  user: User | null; setUser: Dispatch<SetStateAction<User | null>>;
+  onBackgroundChange: (background: MenuBackgroundState) => void;
+}) {
   const { t, text } = useI18n();
   useAnalyticsScreen(screen);
   const [campaignId, setCampaignId] = useState('path-1');
@@ -52,7 +62,6 @@ function GameContent({ screen, setScreen }: { screen: GameScreen; setScreen: Dis
   const [multiplayerBattling, setMultiplayerBattling] = useState(false);
   const [battle, setBattle] = useState<BattleRecord | null>(null);
   const [battleTitle, setBattleTitle] = useState('Batalha');
-  const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -70,7 +79,23 @@ function GameContent({ screen, setScreen }: { screen: GameScreen; setScreen: Dis
     setMode('login');
     setError('Sua sessão expirou. Entre novamente para continuar.');
     setScreen('auth');
-  }, []);
+  }, [setUser, setScreen]);
+
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    const update = (progress: PlayerProgress) => {
+      if (active) onBackgroundChange({ userId, sunset: progress.completedEncounters.includes(FINAL_ENCOUNTER_ID) });
+    };
+    const cached = gameDataCache.peek<PlayerProgress>('progress');
+    if (cached) update(cached);
+    // A vitória invalida o cache; a troca de tela compartilha a consulta atualizada.
+    void api.progress().then(update).catch((cause: unknown) => {
+      if (active && cause instanceof ApiError && cause.status === 401) handleSessionExpired();
+    });
+    return () => { active = false; };
+  }, [userId, screen, onBackgroundChange, handleSessionExpired]);
 
   useEffect(() => {
     if (!user?.sessionExpiresAt) return;
@@ -200,7 +225,6 @@ function GameContent({ screen, setScreen }: { screen: GameScreen; setScreen: Dis
 
   if (screen === 'menu' && user) {
     return <MainMenu user={user} busy={busy} error={error} onLogout={logout}
-      onSessionExpired={handleSessionExpired}
       onSaveName={saveName}
       audioVolume={audio.volume} audioMuted={audio.muted}
       onAudioVolumeChange={audio.setVolume} onAudioMutedChange={audio.setMuted}

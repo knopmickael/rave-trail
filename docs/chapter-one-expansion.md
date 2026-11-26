@@ -67,7 +67,7 @@ As novas listas substituem as metas anteriores das unidades indicadas. A revela�
 
 - Kalis e Ridan estão entre os adversários iniciais da Batalha rápida (`QUICK_BATTLE_ALWAYS_UNIT_IDS`), sem filtro de posse na lista de Adversários; a aquisição jogável continua pelas missões do Quadro de missões.
 - Exal - Verdadeiro poder tem 200 HP de atual/máximo somente como inimigo em `path-1-encounter-7` (`FINAL_EXAL_BOSS_HP`), aplicado na criação da batalha final. Catálogo, jogador, rápidas, multiplayer e snapshots existentes continuam com 100 HP.
-- Ao concluir a campanha 1 (batalha 7 vencida, segundo `completedEncounters` salvo), o menu principal aplica uma camada de entardecer (laranja e violeta) sobre `sky-background.webp`; sem progresso nenhuma camada aparece. A camada é decorativa, não intercepta cliques, preserva legibilidade e respeita movimento reduzido.
+- Ao concluir a campanha 1 (batalha 7 vencida, segundo `completedEncounters` salvo), os menus aplicam o filtro de `menu-background-filter.html` ao mesmo `menu-background-default.mp4`, sempre em 0.5×. O poster de 00:01 aparece durante o download completo e com movimento reduzido, recebendo o mesmo filtro. A camada é decorativa, não intercepta cliques nem filtra os controles; logout e troca de conta não herdam o tema. Detalhes em `docs/assets/video.md`.
 - Na preparação da Batalha rápida, somente a grade de ícones de Adversários é rolável (`overflow-y:auto`, focável por teclado); explicação, contador, cooldown e **Entrar na batalha** permanecem visíveis, inclusive em viewports baixos e com cooldown ativo.
 
 ## Atualização dos bancos

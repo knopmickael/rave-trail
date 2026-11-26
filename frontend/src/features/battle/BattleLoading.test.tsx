@@ -11,5 +11,5 @@ it('mostra o carregamento em um modal sobre o céu', () => {
   const modal = screen.getByRole('status');
   expect(modal).toHaveTextContent('Carregando batalha...');
   expect(modal).toHaveClass('battle-loading-modal');
-  expect(modal.closest('main')?.style.backgroundImage).toContain('sky-background.webp');
+  expect(modal.closest('main')?.style.backgroundImage).toContain('menu-background-poster.webp');
 });

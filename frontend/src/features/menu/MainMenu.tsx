@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { PlayerProgress, User } from '@game/contracts';
-import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
-import { api, ApiError, gameDataCache } from '../../api';
+import { useRef, useState, type FormEvent } from 'react';
+import type { User } from '@game/contracts';
 import { assets } from '../../assets';
 import { useI18n } from '../../i18n/LanguageProvider';
 import { LanguageSelector } from '../../i18n/LanguageSelector';
@@ -20,14 +18,13 @@ interface MainMenuProps {
   onOpenProfile: () => void;
   onLogout: () => Promise<void>;
   onSaveName: (name: string) => Promise<void>;
-  onSessionExpired?: () => void;
   audioVolume: number;
   audioMuted: boolean;
   onAudioVolumeChange: (volume: number) => void;
   onAudioMutedChange: (muted: boolean) => void;
 }
 
-export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onOpenCampaigns, onOpenQuickBattle, onOpenMultiplayer, onOpenUnlocks, onOpenProfile, onLogout, onSaveName, onSessionExpired, audioVolume, audioMuted, onAudioVolumeChange, onAudioMutedChange }: MainMenuProps) {
+export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onOpenCampaigns, onOpenQuickBattle, onOpenMultiplayer, onOpenUnlocks, onOpenProfile, onLogout, onSaveName, audioVolume, audioMuted, onAudioVolumeChange, onAudioMutedChange }: MainMenuProps) {
   const { t, text } = useI18n();
   const profileDialog = useRef<HTMLDialogElement>(null);
   const settingsDialog = useRef<HTMLDialogElement>(null);
@@ -35,18 +32,7 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
   const [saved, setSaved] = useState(false);
-  const [progress, setProgress] = useState(() => gameDataCache.peek<PlayerProgress>('progress'));
   const profileBusy = busy || saving;
-  const sunset = progress?.completedEncounters.includes(FINAL_ENCOUNTER_ID) ?? false;
-
-  useEffect(() => {
-    let active = true;
-    setProgress(gameDataCache.peek<PlayerProgress>('progress'));
-    api.progress().then((saved) => { if (active) setProgress(saved); }).catch((cause) => {
-      if (active && cause instanceof ApiError && cause.status === 401) onSessionExpired?.();
-    });
-    return () => { active = false; };
-  }, [user.id, onSessionExpired]);
 
   async function saveName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,8 +46,7 @@ export function MainMenu({ user, busy, error, onOpenCharacters, onOpenStore, onO
   }
 
   return (
-    <main className={`main-menu-screen${sunset ? ' main-menu-screen--sunset' : ''}`}>
-      {sunset && <div className="main-menu-sunset" aria-hidden="true" style={{ backgroundImage: `linear-gradient(180deg, #694e8a 0%, #c97883 48%, #f2a75f 100%), url(${assets.sky})` }} />}
+    <main className="main-menu-screen">
       <h1 className="visually-hidden">{t('Menu principal')}</h1>
       <nav className="menu-options" aria-label={t('Opções do menu principal')}>
         <img className="main-menu-logo" src={assets.logo} alt="Rave Trail" />

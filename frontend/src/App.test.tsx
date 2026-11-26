@@ -12,6 +12,7 @@ import { narrativeCharacters, STARTER_UNIT_IDS, units } from '@game/content/unit
 import { campaigns } from '@game/content/campaigns';
 import { encounters } from '@game/content/encounters';
 import { createBattle } from '@game/core/battle';
+import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
 import { characterUnlockProgress } from '@game/core/unlocks';
 
 vi.mock('./api', async (importOriginal) => {
@@ -45,6 +46,76 @@ beforeEach(() => {
     state: { ...createBattle(STARTER_UNIT_IDS.map((unitId) => units.find((unit) => unit.id === unitId)!), encounters[0].enemyUnitIds.map((unitId) => units.find((unit) => unit.id === unitId)!), Object.values(abilities)), status: 'abandoned' } }));
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+it('usa o mesmo fundo com entardecer salvo ao navegar pelos menus e limpa o tema ao sair', async () => {
+  vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
+  const progress = createInitialProgress(); progress.completedEncounters = [FINAL_ENCOUNTER_ID];
+  vi.mocked(api.progress).mockResolvedValue(progress);
+  const user = userEvent.setup();
+  const view = render(<App />);
+  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  const background = view.container.querySelector('.sky-background');
+  await vi.waitFor(() => expect(background).toHaveClass('sky-background--sunset'));
+  await user.click(screen.getByRole('button', { name: 'Lista de personagens' }));
+  expect(view.container.querySelector('.sky-background')).toBe(background);
+  expect(background).toHaveClass('sky-background--sunset');
+  await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
+  await user.click(screen.getByRole('button', { name: 'Abrir perfil de Aventureiro' }));
+  await user.click(within(screen.getByRole('dialog', { name: 'Meu perfil' })).getByRole('button', { name: 'Desconectar' }));
+  expect(await screen.findByRole('button', { name: 'Começar jogo' })).toBeInTheDocument();
+  expect(background).not.toHaveClass('sky-background--sunset');
+});
+
+it('atualiza o fundo ao retornar da vitória final, sem aplicar entardecer após as primeiras seis batalhas', async () => {
+  vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
+  const progress = createInitialProgress();
+  progress.completedEncounters = Array.from({ length: 6 }, (_, i) => `path-1-encounter-${i + 1}`);
+  vi.mocked(api.progress).mockResolvedValue(progress);
+  const user = userEvent.setup();
+  const view = render(<App />);
+  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  const background = view.container.querySelector('.sky-background');
+  expect(background).not.toBeNull();
+  expect(background).not.toHaveClass('sky-background--sunset');
+  await user.click(screen.getByRole('button', { name: 'Campanha' }));
+  vi.mocked(api.progress).mockResolvedValue({ ...progress, completedEncounters: [...progress.completedEncounters, FINAL_ENCOUNTER_ID] });
+  await user.click(screen.getByRole('button', { name: 'Voltar ao menu principal' }));
+  await vi.waitFor(() => expect(background).toHaveClass('sky-background--sunset'));
+});
+
+it('ignora progresso atrasado da conta anterior após logout e novo login', async () => {
+  vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
+  let finish!: (progress: ReturnType<typeof createInitialProgress>) => void;
+  vi.mocked(api.progress).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+  const user = userEvent.setup();
+  const view = render(<App />);
+  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  await user.click(screen.getByRole('button', { name: 'Abrir perfil de Aventureiro' }));
+  await user.click(within(screen.getByRole('dialog', { name: 'Meu perfil' })).getByRole('button', { name: 'Desconectar' }));
+  vi.mocked(api.progress).mockResolvedValue(createInitialProgress());
+  vi.mocked(api.authenticate).mockResolvedValue({ id: '2', email: 'novo@example.com', name: 'Novo jogador' });
+  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  await user.type(screen.getByLabelText('E-mail'), 'novo@example.com');
+  await user.type(screen.getByLabelText('Senha'), 'senha de teste');
+  await user.click(screen.getByRole('button', { name: 'Entrar' }));
+  await screen.findByRole('heading', { name: 'Menu principal' });
+  await act(async () => { finish({ ...createInitialProgress(), completedEncounters: [FINAL_ENCOUNTER_ID] }); });
+  expect(view.container.querySelector('.sky-background')).not.toBeNull();
+  expect(view.container.querySelector('.sky-background')).not.toHaveClass('sky-background--sunset');
+});
+
+it('pede login quando a atualização do fundo recebe 401 após uma falha transitória no preload', async () => {
+  vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });
+  vi.mocked(api.progress).mockRejectedValue(new ApiError('Sem conexão.', 0));
+  const user = userEvent.setup();
+  render(<App />);
+  await user.click(await screen.findByRole('button', { name: 'Começar jogo' }));
+  await screen.findByRole('heading', { name: 'Menu principal' });
+  vi.mocked(api.progress).mockRejectedValue(new ApiError('Sessão expirada.', 401));
+  await user.click(screen.getByRole('button', { name: 'Campanha' }));
+  expect(await screen.findByLabelText('Senha')).toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou');
+});
 
 it('abre as missões e acessa um personagem liberado pelo menu sem exibir notificação de desbloqueio', async () => {
   vi.mocked(api.session).mockResolvedValue({ id: '1', email: 'jogador@example.com', name: 'Aventureiro' });

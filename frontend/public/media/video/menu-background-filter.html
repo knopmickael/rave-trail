@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teste de cor do céu</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: #111;
+    }
+
+.fundo {
+  filter: grayscale(1) brightness(1.15);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    #997baa 0%,
+    #b87d95 35%,
+    #ca8075 65%,
+    #dc9147 100%
+  );
+  mix-blend-mode: color;
+}
+  </style>
+</head>
+<body>
+  <video class="fundo" autoplay muted loop playsinline controls>
+    <source src="./menu-background-default.mp4" type="video/mp4">
+    Seu navegador não suporta reprodução de vídeo.
+  </video>
+<script>
+  document.querySelector(".fundo").playbackRate = .5;
+</script>
+</body>
+</html>

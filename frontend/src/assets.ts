@@ -1,7 +1,7 @@
 export const assets = {
   logo: '/media/images/logo-rave-trail.png',
-  sky: '/media/images/sky-background.webp',
-  skyVideo: '/media/video/sky-background.webm',
+  sky: '/media/video/menu-background-poster.webp',
+  skyVideo: '/media/video/menu-background-default.mp4',
   baseAudio: '/media/audio/base.mp3',
   fightAudio: '/media/audio/fight.ogg',
   finalFightAudio: '/media/audio/final-fight.mp3',
