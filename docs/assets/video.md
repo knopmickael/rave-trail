@@ -11,6 +11,7 @@ Vídeos em `frontend/public/media/video/`. As ferramentas de autoria ficam em `t
 - O fundo fica montado uma única vez em `GameApp`: trocar de menu ou de tema não reinicia a reprodução nem baixa outro vídeo. Downloads pendentes são abortados e URLs locais são revogadas ao desmontar ou ativar movimento reduzido.
 - A reprodução pausa quando a aba fica oculta. Com `prefers-reduced-motion: reduce`, somente o poster aparece e o MP4 não é solicitado.
 - Depois da vitória salva em `path-1-encounter-7`, poster e vídeo recebem o filtro de `menu-background-filter.html`: `grayscale(1) brightness(1.15)` e uma camada isolada com `mix-blend-mode: color`, gradiente `#997baa 0%, #b87d95 35%, #ca8075 65%, #dc9147 100%`. Botões, textos e demais telas não são filtrados. O estado é vinculado à conta, revalidado pelo cache compartilhado ao navegar e removido no logout.
+- A entrada e a saída do entardecer usam uma transição CSS de **1,5 segundo** (`ease-in-out`): o filtro é interpolado a partir de `grayscale(0) brightness(1)` e a camada de cor faz fade entre opacidade 0 e 1. O vídeo continua reproduzindo sem reinício ou novo download. Com movimento reduzido, o tema muda sem animação.
 
 O MP4 original e o HTML de referência são preservados. Para regenerar o poster com FFmpeg, se disponível:
 

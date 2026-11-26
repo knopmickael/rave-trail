@@ -1,16 +1,19 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { units } from '@game/content/units';
+import { createInitialProgress, type PlayerProgress } from '@game/contracts';
+import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
+import { SECOND_CAMPAIGN_CHARACTERS } from '@game/content/second-campaign';
 import { characterUnlockProgress } from '@game/core/unlocks';
-import { api, ApiError } from '../../api';
+import { api, ApiError, clearGameData, gameDataCache } from '../../api';
 import { CharacterUnlocks } from './CharacterUnlocks';
 
 vi.mock('../../api', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../api')>();
-  return { ...original, api: { ...original.api, characterUnlocks: vi.fn() } };
+  return { ...original, api: { ...original.api, characterUnlocks: vi.fn(), progress: vi.fn() } };
 });
 const props = () => ({ onBack: vi.fn(), onSessionExpired: vi.fn() });
 beforeAll(() => {
@@ -19,14 +22,16 @@ beforeAll(() => {
 });
 beforeEach(() => {
   vi.clearAllMocks();
+  clearGameData();
+  vi.mocked(api.progress).mockResolvedValue(createInitialProgress());
   vi.mocked(api.characterUnlocks).mockResolvedValue(characterUnlockProgress(units, [], []));
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); clearGameData(); });
 
 it('mostra todos os requisitos dentro dos cartões e oculta as unidades premium', async () => {
   render(<CharacterUnlocks {...props()} />);
   const raider = await screen.findByRole('region', { name: 'Saqueador da estrada I' });
-  expect(screen.getByRole('region', { name: 'General Abel' })).toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'General Abel' })).not.toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveClass('unlocks-container');
   expect(screen.getByRole('region', { name: 'Lista de missões' })).toHaveAttribute('tabindex', '0');
   expect(within(raider).getAllByRole('progressbar')).toHaveLength(3);
@@ -107,7 +112,38 @@ it('mantém as missões ainda não habilitadas visíveis, inertes e com cadeado'
   expect(within(within(locked).getByRole('list', { name: 'Requisitos de Ravi Berserk' }))
     .queryByText('Finalize a batalha 7')).not.toBeInTheDocument();
   expect(within(locked).getAllByRole('progressbar')).toHaveLength(3);
-  expect(document.querySelectorAll('.unlock-card')).toHaveLength(units.filter((unit) => unit.unlock.kind === 'battle-wins').length);
+  expect(document.querySelectorAll('.unlock-card')).toHaveLength(21);
+});
+
+it('oculta todas as missões da campanha 2 mesmo após vencer as seis primeiras batalhas da campanha 1', async () => {
+  vi.mocked(api.progress).mockResolvedValue({ ...createInitialProgress(), completedEncounters: Array.from({ length: 6 }, (_, i) => `path-1-encounter-${i + 1}`) });
+  render(<CharacterUnlocks {...props()} />);
+  await screen.findByRole('region', { name: 'Saqueador da estrada I' });
+  for (const unit of SECOND_CAMPAIGN_CHARACTERS) expect(screen.queryByRole('region', { name: unit.name })).not.toBeInTheDocument();
+});
+
+it('revela as 16 missões da campanha 2 após a final, mantendo os requisitos e a exclusão de Premium', async () => {
+  vi.mocked(api.progress).mockResolvedValue({ ...createInitialProgress(), completedEncounters: [FINAL_ENCOUNTER_ID] });
+  vi.mocked(api.characterUnlocks).mockResolvedValue(characterUnlockProgress(units, [], [], {}, []));
+  render(<CharacterUnlocks {...props()} />);
+  const abel = await screen.findByRole('region', { name: 'General Abel' });
+  expect(within(abel).getByText('Vença 100 batalhas na Batalha rápida.')).toBeInTheDocument();
+  expect(abel).toHaveClass('unlock-card--locked');
+  expect(document.querySelectorAll('.unlock-card')).toHaveLength(37);
+  for (const unit of SECOND_CAMPAIGN_CHARACTERS.filter((unit) => unit.id !== 'maga-artemis')) {
+    expect(screen.getByRole('region', { name: unit.name })).toBeInTheDocument();
+  }
+  expect(screen.queryByRole('region', { name: 'Maga Ártemis' })).not.toBeInTheDocument();
+});
+
+it('não exibe spoilers do cache enquanto aguarda o progresso e revela os cartões quando a vitória é confirmada', async () => {
+  gameDataCache.set('unlocks', characterUnlockProgress(units, [], []));
+  let finish!: (progress: PlayerProgress) => void;
+  vi.mocked(api.progress).mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+  render(<CharacterUnlocks {...props()} />);
+  expect(screen.queryByRole('region', { name: 'General Abel' })).not.toBeInTheDocument();
+  await act(async () => { finish({ ...createInitialProgress(), completedEncounters: [FINAL_ENCOUNTER_ID] }); });
+  expect(await screen.findByRole('region', { name: 'General Abel' })).toBeInTheDocument();
 });
 
 it('mantém os dados carregados ao retornar à janela sem repetir a consulta', async () => {

@@ -5,6 +5,7 @@ import { api, ApiError, gameDataCache } from '../../api';
 import { CharacterArt } from './CharacterArt';
 import { AbilityIcon } from './AbilityIcon';
 import { TeamSlotDialog } from './TeamSlotDialog';
+import { visibleRosterUnits } from './roster-visibility';
 import { useI18n } from '../../i18n/LanguageProvider';
 import './characters.css';
 
@@ -44,7 +45,7 @@ export function CharacterList({ onBack, onSessionExpired, backLabel = 'Voltar ao
 
   const unlocked = new Set(progress?.unlockedUnitIds ?? []);
   const units = catalog?.units ?? [];
-  const rosterUnits = units;
+  const rosterUnits = visibleRosterUnits(units, progress?.completedEncounters);
   const selected = rosterUnits.find((unit) => unit.id === selectedId);
 
   function chooseSlot() {

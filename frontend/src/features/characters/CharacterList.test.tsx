@@ -6,6 +6,8 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createInitialProgress } from '@game/contracts';
 import { abilities } from '@game/content/abilities';
 import { narrativeCharacters, units } from '@game/content/units';
+import { SECOND_CAMPAIGN_CHARACTERS } from '@game/content/second-campaign';
+import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules';
 import { api } from '../../api';
 import { CharacterList } from './CharacterList';
 
@@ -64,6 +66,7 @@ it('destaca a thumb clicada e apresenta as quatro habilidades do personagem à d
 });
 
 it('exibe todo o catálogo do banco sem textos auxiliares e com os novos inimigos bloqueados', async () => {
+  vi.mocked(api.progress).mockResolvedValue({ ...createInitialProgress(), completedEncounters: [FINAL_ENCOUNTER_ID] });
   renderList();
   await screen.findByRole('button', { name: 'Selecionar Ravi de Berdal' });
   const catalog = screen.getByRole('region', { name: 'Catálogo de personagens' });
@@ -80,6 +83,39 @@ it('exibe todo o catálogo do banco sem textos auxiliares e com os novos inimigo
   expect(screen.queryByText('Equipe atual da sua conta.')).not.toBeInTheDocument();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Saqueador da estrada I — bloqueado' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Exal - Verdadeiro poder — bloqueado' })).toBeEnabled();
+});
+
+it.each([{ completed: [] }, { completed: Array.from({ length: 6 }, (_, i) => `path-1-encounter-${i + 1}`) }])('oculta o elenco da campanha 2 antes da vitória final ($completed)', async ({ completed }) => {
+  vi.mocked(api.progress).mockResolvedValue({ ...createInitialProgress(), completedEncounters: completed });
+  renderList();
+  await screen.findByRole('button', { name: 'Selecionar Ravi de Berdal' });
+  const catalog = screen.getByRole('region', { name: 'Catálogo de personagens' });
+  expect(within(catalog).getAllByRole('button')).toHaveLength(26);
+  for (const unit of SECOND_CAMPAIGN_CHARACTERS) {
+    expect(within(catalog).queryByRole('button', { name: `Selecionar ${unit.name} — bloqueado` })).not.toBeInTheDocument();
+  }
+});
+
+it('revela os 17 personagens da campanha 2 após Exal sem conceder sua aquisição', async () => {
+  vi.mocked(api.progress).mockResolvedValue({ ...createInitialProgress(), completedEncounters: [FINAL_ENCOUNTER_ID] });
+  const user = userEvent.setup();
+  renderList();
+  await user.click(await screen.findByRole('button', { name: 'Selecionar General Abel — bloqueado' }));
+  expect(screen.getByRole('button', { name: 'Adicionar à equipe' })).toBeDisabled();
+  const catalog = screen.getByRole('region', { name: 'Catálogo de personagens' });
+  expect(within(catalog).getAllByRole('button')).toHaveLength(43);
+  for (const unit of SECOND_CAMPAIGN_CHARACTERS) {
+    expect(within(catalog).getByRole('button', { name: `Selecionar ${unit.name} — bloqueado` })).toBeInTheDocument();
+  }
+  expect(api.setTeamSlot).not.toHaveBeenCalled();
+});
+
+it('a posse antecipada não revela o elenco da campanha 2 antes de finalizar a campanha 1', async () => {
+  vi.mocked(api.progress).mockResolvedValue({ ...createInitialProgress(), unlockedUnitIds: units.map((unit) => unit.id) });
+  renderList();
+  await screen.findByRole('button', { name: 'Selecionar Ravi de Berdal' });
+  expect(screen.queryByRole('button', { name: 'Selecionar General Abel' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Selecionar Maga Ártemis' })).not.toBeInTheDocument();
 });
 
 it('permite consultar bloqueados, mas impede adicioná-los à equipe', async () => {

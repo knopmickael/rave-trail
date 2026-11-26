@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { CharacterUnlockData } from '@game/contracts';
+import type { CharacterUnlockData, PlayerProgress } from '@game/contracts';
 import { api, ApiError, gameDataCache } from '../../api';
 import { useI18n } from '../../i18n/LanguageProvider';
+import { visibleRosterUnits } from '../characters/roster-visibility';
 import '../characters/characters.css';
 import './unlocks.css';
 
@@ -11,13 +12,16 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
 }) {
   const { t, text } = useI18n();
   const [data, setData] = useState(() => gameDataCache.peek<CharacterUnlockData>('unlocks'));
+  const [progress, setProgress] = useState(() => gameDataCache.peek<PlayerProgress>('progress'));
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
     setError('');
-    api.characterUnlocks().then((saved) => { if (active) setData(saved); }).catch((cause: unknown) => {
+    Promise.all([api.characterUnlocks(), api.progress()]).then(([saved, savedProgress]) => {
+      if (active) { setData(saved); setProgress(savedProgress); }
+    }).catch((cause: unknown) => {
       if (!active) return;
       if (cause instanceof ApiError && cause.status === 401) onSessionExpired();
       else setError(cause instanceof Error ? cause.message : 'Não foi possível carregar os desbloqueios.');
@@ -25,7 +29,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
     return () => { active = false; };
   }, [attempt, onSessionExpired]);
 
-  const missions = data?.characters.filter((unit) => unit.kind !== 'premium') ?? [];
+  const missions = visibleRosterUnits(data?.characters ?? [], progress?.completedEncounters).filter((unit) => unit.kind !== 'premium');
 
   return <main className="unlocks-page">
     <header className="roster-header">
