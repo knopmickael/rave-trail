@@ -99,28 +99,15 @@ O indicador de conexão mostra o rótulo configurado, a disponibilidade do banco
 - As regras são avaliadas pelo backend do jogo. Novas unidades e regras não dependem de editar os arrays estáticos do catálogo. Personagens já conquistados permanecem desbloqueados quando as regras são alteradas.
 - O catálogo completo e as missões da campanha 02 seguem os mesmos fluxos do restante do conteúdo. O cadeado de uma missão informa a batalha de revelação configurada, mesmo quando ela difere dos requisitos da missão.
 
-### Habilidades e IA
+### Habilidades
 
-Há dois modos de autoria, ambos produzindo o mesmo contrato validado de combate:
+O formulário usa exclusivamente configuração manual, sem seleção de modo ou assistente de IA.
 
-1. **Configuração manual:** nome, imagem, descrição, custo de energia, alvo e lista ordenada de efeitos. São oferecidos os 7 alvos e os 14 efeitos existentes: dano, cura, dreno, ressurreição, guarda, recuperação de energia, turno extra, sangramento, invulnerabilidade, bloqueio de ataques, bônus de dano, remoção de escudos, bloqueio de todas as habilidades e proteção contra o próximo dano fatal. Guarda aceita cura por turno vinculada ao escudo (zero significa sem cura). Valores e combinações de alvo são validados na API.
-2. **Assistente de IA:** conversa com histórico e contexto do rascunho. A resposta pode gerar uma configuração nova usando os efeitos suportados. A ação **Aplicar ao formulário** preenche o rascunho; **Salvar alterações** persiste a habilidade.
-
-Configure um provedor compatível com **OpenAI Chat Completions**:
-
-```dotenv
-CMS_AI_BASE_URL=https://api.openai.com/v1
-CMS_AI_MODEL=nome-do-modelo-disponivel-na-sua-conta
-CMS_AI_API_KEY=sua-chave
-```
-
-O modelo precisa suportar `response_format: { type: "json_object" }`. Também é possível usar um provedor local compatível, como `CMS_AI_BASE_URL=http://127.0.0.1:11434/v1`, com um modelo instalado e sem chave quando o provedor não a exigir. A API consulta `<BASE_URL>/chat/completions`. Reinicie a API após mudar esses valores.
-
-O contexto enviado ao modelo contém o contrato de efeitos/alvos, o rascunho de habilidade e as mensagens da conversa. Não envia credenciais do banco ou histórico de jogadores. A chave da IA permanece na API local.
+São editáveis nome, imagem, descrição, custo de energia, alvo e lista ordenada de efeitos. São oferecidos os 7 alvos e os 17 efeitos existentes: dano, cura, dreno, ressurreição, guarda, recuperação de energia, turno extra, sangramento, invulnerabilidade, bloqueio de ataques, bônus de dano, remoção de escudos, bloqueio de todas as habilidades, proteção contra o próximo dano fatal, queimadura, reflexão de dano direto e concentração. Guarda aceita cura por turno vinculada ao escudo (zero significa sem cura). Valores e combinações de alvo são validados na API. As regras das novas habilidades estão em [redefinição de habilidades — migration 055](ability-redefinition.md).
 
 A configuração manual é montada diretamente no formulário da habilidade, sem seletores ou salvamento de setups reutilizáveis.
 
-Uma descrição que exige uma mecânica ausente do motor — por exemplo, alvos mistos, condições arbitrárias ou passivas — gera uma **especificação de extensão**, exportável como JSON. Não se salva um `kind` desconhecido nem se executa código produzido pelo modelo. A extensão precisa ser implementada e testada no motor compartilhado; depois, o contrato e o formulário podem ser ampliados. Uma combinação nova dos efeitos existentes já pode ser configurada e salva sem alterar o motor.
+Uma mecânica ausente do motor — por exemplo, alvos mistos, condições arbitrárias ou passivas — precisa ser implementada e testada no motor compartilhado; depois, o contrato e o formulário podem ser ampliados. Uma combinação nova dos efeitos existentes já pode ser configurada e salva sem alterar o motor.
 
 ### Balanceamento da migração 044
 
@@ -155,7 +142,7 @@ As batalhas já iniciadas conservam seus snapshots de habilidades/unidades. Alte
 ## Persistência e exclusão
 
 - Abrir personagens, campanhas, habilidades e confrontos não exige confirmação. Reposicionar entidades no catálogo pelos botões **Subir/Descer** também não exibe prompt.
-- Salvar/criar, excluir, descartar alterações, enviar imagens, remover requisitos/efeitos e aplicar propostas de IA exigem confirmação. Cancelar mantém o conteúdo e não dispara a gravação.
+- Salvar/criar, excluir, descartar alterações, enviar imagens e remover requisitos/efeitos exigem confirmação. Cancelar mantém o conteúdo e não dispara a gravação.
 - Não existe opção de conteúdo provisório em nenhuma entidade ou contrato do jogo/CMS. Colunas históricas inertes são preservadas apenas para compatibilidade com migrações antigas.
 - O seed consulta `cms_content_overrides` e preserva conteúdo editado pelo CMS, relacionamentos e registros excluídos. Uma exclusão não é revertida pelo próximo seed.
 - IDs de registros existentes não são alterados pelo formulário.

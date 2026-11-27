@@ -9,7 +9,8 @@ const divine: AbilityDefinition = { id: 'divine-protection', name: 'Proteção d
   effects: [{ kind: 'guard', reduction: 10, teamTurns: 3, healPerTurn: 10 }] };
 const retaliation: AbilityDefinition = { id: 'retaliation', name: 'Retaliação', description: 'Remove escudos.',
   energyCost: 30, target: 'all-enemies', icon: '/media/abilities/retaliation.png', effects: [{ kind: 'dispel-shields' }] };
-const howl = abilities['wolfs-howl'];
+// Existing battles keep the original control effect in their immutable snapshot.
+const howl: AbilityDefinition = { ...abilities['wolfs-howl'], effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 1 }] };
 const action = (actorId: string, abilityId: string, targetId?: string): BattleAction => ({ actorId, abilityId, ...(targetId ? { targetId } : {}) });
 function initial() {
   const state = createBattle(units.slice(0, 3), units.slice(3, 6), [...Object.values(abilities), divine, retaliation, howl]);
@@ -84,7 +85,7 @@ it('uma Guarda comum substitui o escudo divino e interrompe a cura', () => {
   expect(battle.teams.player.units[0].hp).toBe(40);
 });
 
-it('Uivo bloqueia qualquer habilidade por apenas um turno do alvo, mantendo aliados livres', () => {
+it('snapshot legado de Uivo bloqueia qualquer habilidade por um turno, mantendo aliados livres', () => {
   let battle = executeTurn(initial(), [action('player-0', howl.id, 'enemy-0')]).state;
   expect(battle.teams.enemy.units[0].hp).toBe(80);
   expect(battle.teams.player.energy).toBe(65);

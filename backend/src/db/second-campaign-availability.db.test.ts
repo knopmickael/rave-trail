@@ -4,7 +4,7 @@ import { afterAll, beforeAll, expect, it } from 'vitest';
 import { SECOND_CAMPAIGN_UNIT_IDS } from '@game/content/second-campaign.js';
 import { encounters } from '@game/content/encounters.js';
 import { FINAL_ENCOUNTER_ID } from '@game/content/campaign-rules.js';
-import { migrate } from './migrations.js';
+import { migrate } from './test-migrations.js';
 import { seedDatabase } from './seed.js';
 import { PostgresGameRepository } from './game-repository.js';
 import { PostgresAuthRepository } from './auth-repository.js';

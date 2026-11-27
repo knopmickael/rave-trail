@@ -9,7 +9,7 @@ import { hashSessionToken } from '../auth/crypto.js';
 import { PostgresMultiplayer } from './multiplayer.js';
 import { PostgresAuthRepository } from './auth-repository.js';
 import { PostgresGameRepository } from './game-repository.js';
-import { migrate } from './migrations.js';
+import { migrate } from './test-migrations.js';
 import { seedDatabase } from './seed.js';
 
 const url = process.env.TEST_DATABASE_URL;

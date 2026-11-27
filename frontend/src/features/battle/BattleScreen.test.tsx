@@ -241,6 +241,22 @@ it('desativa todas as habilidades sob Uivo do lobo e mantém o turno e os aliado
   expect(screen.getByRole('img', { name: 'Efeito ativo: habilidades bloqueadas' })).toHaveAttribute('src', '/media/abilities/wolfs-howl.png');
 });
 
+it('mostra queimadura, reflexão e concentração com os ícones de origem e bloqueia quem concentra', () => {
+  const record = initial(); record.state.teams.player.energy = 100;
+  Object.assign(record.state.teams.player.units[0], { concentrationExpiresAt: 4, concentrationAbilityId: 'deep-concentration' });
+  Object.assign(record.state.teams.player.units[1], { burnExpiresAt: 4, burnAbilityId: 'wolfs-howl',
+    reflectionExpiresAt: 2, reflectionPercent: 30, reflectionAbilityId: 'damage-reflection' });
+  Object.assign(record.state.teams.enemy.units[0], { attackBlockedExpiresAt: 3, attackBlockAbilityId: 'frozen-throne' });
+  render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
+  for (const name of ['Golpe simples', 'Guarda', 'Reter energia', 'Investida']) expect(skill(name)).toBeDisabled();
+  expect(skill('Reter energia', 'Doko de Berdal')).toBeEnabled();
+  expect(screen.getByRole('img', { name: 'Efeito ativo: concentração' })).toHaveAttribute('src', '/media/abilities/deep-concentration.png');
+  expect(screen.getByRole('img', { name: 'Efeito ativo: queimadura' })).toHaveAttribute('src', '/media/abilities/wolfs-howl.png');
+  expect(screen.getByRole('img', { name: 'Efeito ativo: reflexão de dano' })).toHaveAttribute('src', '/media/abilities/damage-reflection.png');
+  expect(screen.getByRole('img', { name: 'Efeito ativo: ataques bloqueados' })).toHaveAttribute('src', '/media/abilities/frozen-throne.png');
+  expect(endTurn()).toBeEnabled();
+});
+
 it('mantém a batalha visível na escolha de alvo, sem opção de cancelar, e destaca o inimigo selecionável', async () => {
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={initial()} title="Batalha" {...handlers()} />);
@@ -576,6 +592,21 @@ it('agrupa o registro por turnos decrescentes e lista os movimentos do último p
   expect(within(rows[1]).getByRole('img', { name: 'Saqueador da estrada I' })).toBeInTheDocument();
   expect(within(rows[2]).getByRole('img', { name: 'Doko de Berdal' })).toBeInTheDocument();
   expect(within(rows[3]).getByRole('img', { name: 'Ravi de Berdal' })).toBeInTheDocument();
+});
+
+it('registra a reflexão como reação do aliado sem atribuir ao agressor um ataque contra si mesmo', async () => {
+  const record = initial();
+  Object.assign(record.state.teams.player.units[0], { reflectionExpiresAt: 2, reflectionPercent: 30, reflectionAbilityId: 'damage-reflection' });
+  const enemyTurn = executeTurn(record.state, []).state;
+  const outcome = previewActions(enemyTurn, [{ actorId: 'enemy-0', abilityId: 'simple-strike', targetId: 'player-0' }]);
+  record.state = outcome.state; record.log = outcome.events;
+  render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Registro do combate' }));
+  const rows = within(screen.getByRole('dialog', { name: 'Registro do combate' })).getAllByRole('listitem');
+  expect(rows).toHaveLength(2);
+  expect(within(rows[0]).getByRole('img', { name: 'Repelir dano' })).toBeInTheDocument();
+  expect(within(rows[0]).getByRole('img', { name: 'Alvo: Saqueador da estrada I' })).toBeInTheDocument();
+  expect(within(rows[1]).getAllByRole('img', { name: /^Alvo:/ })).toHaveLength(1);
 });
 
 it('descarta a fila quando o servidor encerra automaticamente o turno de 45 segundos', async () => {

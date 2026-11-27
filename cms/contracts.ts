@@ -44,4 +44,7 @@ export const effectSpecs: Record<AbilityEffect['kind'], { label: string; fields:
   invulnerable: { label: 'Invulnerabilidade', fields: { teamTurns: { label: 'Turnos', min: 1, max: 20, initial: 1 } } },
   'attack-block': { label: 'Bloquear ataques', fields: { teamTurns: { label: 'Turnos', min: 1, max: 20, initial: 1 } } },
   'damage-boost': { label: 'Bônus de ataque', fields: { amount: { label: 'Dano adicional', min: 1, max: 10000, initial: 10 }, teamTurns: { label: 'Turnos futuros da equipe', min: 1, max: 20, initial: 2 } } },
+  burn: { label: 'Queimadura (impedir curas e novos escudos)', fields: { teamTurns: { label: 'Turnos futuros da equipe alvo', min: 1, max: 20, initial: 3 } } },
+  'damage-reflection': { label: 'Refletir dano direto', fields: { percent: { label: 'Dano refletido (%)', min: 1, max: 100, initial: 30 }, teamTurns: { label: 'Turnos futuros da equipe inimiga', min: 1, max: 20, initial: 1 } } },
+  concentration: { label: 'Concentração (bloquear usuário e completar energia)', fields: { teamTurns: { label: 'Turnos futuros sem agir', min: 1, max: 20, initial: 2 } } },
 };

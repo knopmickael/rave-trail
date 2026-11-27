@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest';
 import { createInitialProgress } from '@game/contracts.js';
 import { hashSessionToken } from '../auth/crypto.js';
 import { PostgresAuthRepository } from './auth-repository.js';
-import { migrate } from './migrations.js';
+import { migrate } from './test-migrations.js';
 import { resetPlayerProgress } from './reset-progress.js';
 import { seedDatabase } from './seed.js';
 

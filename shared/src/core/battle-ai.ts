@@ -16,7 +16,8 @@ interface PlannedTurn {
 const other = (side: BattleSide): BattleSide => side === 'player' ? 'enemy' : 'player';
 const nextTurn = (state: BattleState, side: BattleSide) => state.teams[side].turns + (state.activeSide === side ? 0 : 1);
 const blocked = (state: BattleState, side: BattleSide, unit: Fighter) => (unit.attackBlockedExpiresAt ?? 0) > nextTurn(state, side)
-  || (unit.abilitiesBlockedExpiresAt ?? 0) > nextTurn(state, side);
+  || (unit.abilitiesBlockedExpiresAt ?? 0) > nextTurn(state, side)
+  || (unit.concentrationExpiresAt ?? 0) > nextTurn(state, side);
 
 function positionKey(state: BattleState) {
   return JSON.stringify([state.status, state.activeSide, state.turn, state.pendingTransformation?.unit.id,
@@ -26,7 +27,10 @@ function positionKey(state: BattleState) {
         [unit.unitId, unit.hp, unit.guardExpiresAt, unit.guardAbilityId, unit.guardReduction, unit.guardHealPerTurn,
           unit.bleedTurns, unit.bleedAmount, unit.invulnerableExpiresAt, unit.attackBlockedExpiresAt,
           unit.abilitiesBlockedExpiresAt, unit.abilityBlockAbilityId, unit.deathWardAbilityId,
-          unit.damageBoostAmount, unit.damageBoostStartsAt, unit.damageBoostExpiresAt])];
+           unit.damageBoostAmount, unit.damageBoostStartsAt, unit.damageBoostExpiresAt,
+           unit.attackBlockAbilityId, unit.burnExpiresAt, unit.burnAbilityId,
+           unit.reflectionExpiresAt, unit.reflectionPercent, unit.reflectionAbilityId,
+           unit.concentrationExpiresAt, unit.concentrationAbilityId])];
     })]);
 }
 
@@ -46,7 +50,8 @@ function teamValue(state: BattleState, side: BattleSide) {
   const opponent = other(side);
   const enemies = state.teams[opponent];
   // Energia disponível no próximo ataque, incluindo retenções possíveis dos aliados.
-   const restored = enemies.units.filter((unit) => unit.hp > 0 && (unit.abilitiesBlockedExpiresAt ?? 0) <= nextTurn(state, opponent)).reduce((total, unit) => total + Math.max(0,
+   const restored = enemies.units.filter((unit) => unit.hp > 0 && (unit.abilitiesBlockedExpiresAt ?? 0) <= nextTurn(state, opponent)
+     && (unit.concentrationExpiresAt ?? 0) <= nextTurn(state, opponent)).reduce((total, unit) => total + Math.max(0,
     ...unit.abilityIds.map((id) => (state.abilities[id]?.effects ?? []).reduce((sum, effect) =>
       sum + (effect.kind === 'restore-energy' ? effect.amount : 0), 0))), 0);
   const enemyEnergy = Math.min(100, enemies.energy + (state.activeSide === opponent ? 0 : 15) + restored);
@@ -68,13 +73,16 @@ function teamValue(state: BattleState, side: BattleSide) {
       const guard = unit.guardAbilityId ? state.abilities[unit.guardAbilityId]?.effects.find((effect) => effect.kind === 'guard') : undefined;
       const reduction = unit.guardReduction ?? (guard?.kind === 'guard' ? guard.reduction : 10);
       value += Math.min(unit.hp, attacks.reduce((saved, power) => saved + Math.min(power, reduction), 0)) * .35;
-      value += Math.min(unit.maxHp - unit.hp, (unit.guardHealPerTurn ?? 0) * (unit.guardExpiresAt - team.turns)) * .6;
+      if (unit.burnExpiresAt == null) value += Math.min(unit.maxHp - unit.hp, (unit.guardHealPerTurn ?? 0) * (unit.guardExpiresAt - team.turns)) * .6;
     }
     if ((unit.invulnerableExpiresAt ?? 0) > nextTurn(state, opponent)) value += Math.min(unit.hp, incoming) * .5;
     if (unit.deathWardAbilityId) value += incoming >= unit.hp ? 100 : 20;
+    if ((unit.reflectionExpiresAt ?? 0) > nextTurn(state, opponent)) value += Math.min(unit.hp, incoming) * (unit.reflectionPercent ?? 0) / 100 * .5;
+    if ((unit.burnExpiresAt ?? 0) > nextTurn(state, side)) value -= 8 + (unit.maxHp - unit.hp) * .15;
+    if (unit.concentrationExpiresAt != null) value += (100 - team.energy) * .3 / Math.max(1, unit.concentrationExpiresAt - team.turns);
     if (blocked(state, side, unit)) {
       // Mede a ofensiva perdida sem considerar o próprio bloqueio duas vezes.
-      const available = { ...unit, attackBlockedExpiresAt: null, abilitiesBlockedExpiresAt: null };
+      const available = { ...unit, attackBlockedExpiresAt: null, abilitiesBlockedExpiresAt: null, concentrationExpiresAt: null };
       value -= attackPower(state, side, available, Math.min(100, team.energy + 15)) * .4;
       if ((unit.abilitiesBlockedExpiresAt ?? 0) > nextTurn(state, side)) value -= 20;
     }
@@ -138,7 +146,7 @@ export function planEnemyTurn(initial: BattleState): BattleAction[] {
       if (simulated.status !== 'active') return;
       const team = simulated.teams[side];
       for (const [index, actor] of team.units.entries()) {
-        if (used & (1 << index) || initialTeam.units[index].hp <= 0 || actor.hp <= 0 || actor.abilitiesBlockedExpiresAt != null) continue;
+        if (used & (1 << index) || initialTeam.units[index].hp <= 0 || actor.hp <= 0 || actor.abilitiesBlockedExpiresAt != null || actor.concentrationExpiresAt != null) continue;
         for (const id of actor.abilityIds) {
           const ability = simulated.abilities[id];
           if (!ability || ability.energyCost > team.energy) continue;

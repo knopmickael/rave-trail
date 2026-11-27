@@ -6,7 +6,7 @@ import { PostgresAuthRepository } from './auth-repository.js';
 import { PostgresGameRepository } from './game-repository.js';
 import { PostgresBattleRepository } from './battle-repository.js';
 import { compactCompletedBattles } from './battle-compaction.js';
-import { migrate } from './migrations.js';
+import { migrate } from './test-migrations.js';
 import { seedDatabase } from './seed.js';
 
 const url = process.env.TEST_DATABASE_URL;

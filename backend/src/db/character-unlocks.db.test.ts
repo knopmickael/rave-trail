@@ -10,7 +10,7 @@ import type { CharacterUnlockData } from '@game/contracts.js';
 import { PostgresAuthRepository } from './auth-repository.js';
 import { PostgresGameRepository } from './game-repository.js';
 import { PostgresBattleRepository } from './battle-repository.js';
-import { migrate } from './migrations.js';
+import { migrate } from './test-migrations.js';
 import { seedDatabase } from './seed.js';
 import { encounters } from '@game/content/encounters.js';
 import { characterUnlockProgress, type BattleVictory } from '@game/core/unlocks.js';

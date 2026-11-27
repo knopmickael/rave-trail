@@ -32,6 +32,8 @@ Detalhes das fronteiras e da publicação: [docs/architecture.md](docs/architect
 
 Autoria de personagens, habilidades e campanhas: [CMS local — Content Studio](docs/cms.md). Use `npm run cms:local` (**http://127.0.0.1:5188**, `.env.cms.local`) ou `npm run cms:prod` (**http://127.0.0.1:5189**, `.env.cms.prod`) para escolher o banco editado.
 
+A migration **055** rebalanceia Corte rápido, Uivo do lobo e Fúria devastadora e adiciona Repelir dano, Concentração profunda, Rugido do dragão, Explosão sísmica e Trono de gelo. Inclui queimadura, reflexão de dano e concentração no motor e no formulário manual do CMS. Consulte [regras e atualização](docs/ability-redefinition.md).
+
 As alterações de conteúdo do `todo-list.md` usam a migração **039**: publicação e história das campanhas sincronizadas com o CMS, ordenação de personagens pela lista, confirmações de edição/gravação/exclusão e desbloqueios somente iniciais, Premium ou por missão. Prepare o banco de cada perfil com `npm run cms:local:db:setup` ou `npm run cms:prod:db:setup`.
 
 SEO, páginas públicas e envio do site aos buscadores: [docs/seo.md](docs/seo.md).

@@ -313,10 +313,10 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired, m
                       <img src={state.abilities['fast-move'].icon} alt={t('Efeito ativo: Invulnerabilidade')} />
                     </AbilityTooltip>
                   </li>}
-                  {unit.attackBlockedExpiresAt != null && state.abilities['dark-vortex'] && <li>
-                    <AbilityTooltip ability={state.abilities['dark-vortex']} resetKey={tooltipReset} focusable
+                  {unit.attackBlockedExpiresAt != null && state.abilities[unit.attackBlockAbilityId ?? 'dark-vortex'] && <li>
+                    <AbilityTooltip ability={state.abilities[unit.attackBlockAbilityId ?? 'dark-vortex']} resetKey={tooltipReset} focusable
                       extra={t('Impedido de atacar por {count} turno(s) da equipe.', { count: Math.max(0, unit.attackBlockedExpiresAt - state.teams[side].turns) })}>
-                      <img src={state.abilities['dark-vortex'].icon} alt={t('Efeito ativo: ataques bloqueados')} />
+                      <img src={state.abilities[unit.attackBlockAbilityId ?? 'dark-vortex'].icon} alt={t('Efeito ativo: ataques bloqueados')} />
                     </AbilityTooltip>
                   </li>}
                   {unit.abilitiesBlockedExpiresAt != null && (() => {
@@ -326,6 +326,18 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired, m
                       <img src={effect.icon} alt={t('Efeito ativo: habilidades bloqueadas')} />
                     </AbilityTooltip></li> : null;
                   })()}
+                  {([
+                    { active: unit.burnExpiresAt != null, id: unit.burnAbilityId ?? 'wolfs-howl', label: 'Efeito ativo: queimadura',
+                      extra: t('Não recebe curas nem novos escudos por {count} turno(s) da equipe.', { count: Math.max(0, (unit.burnExpiresAt ?? 0) - state.teams[side].turns - (state.activeSide === side ? 0 : 1)) }) },
+                    { active: unit.reflectionExpiresAt != null, id: unit.reflectionAbilityId ?? 'damage-reflection', label: 'Efeito ativo: reflexão de dano',
+                      extra: t('Devolve {percent}% do dano direto ao agressor, sem reduzir o dano recebido.', { percent: unit.reflectionPercent ?? 0 }) },
+                    { active: unit.concentrationExpiresAt != null, id: unit.concentrationAbilityId ?? 'deep-concentration', label: 'Efeito ativo: concentração',
+                      extra: t('Sem usar habilidades por {count} turno(s) da equipe; depois completa a energia.', { count: Math.max(0, (unit.concentrationExpiresAt ?? 0) - state.teams[side].turns - (state.activeSide === side ? 0 : 1)) }) },
+                  ] as const).map((effect) => effect.active && state.abilities[effect.id] ? <li key={effect.label}>
+                    <AbilityTooltip ability={state.abilities[effect.id]} resetKey={tooltipReset} focusable extra={effect.extra}>
+                      <img src={state.abilities[effect.id].icon} alt={t(effect.label)} />
+                    </AbilityTooltip>
+                  </li> : null)}
                   {(unit.bleedTurns ?? 0) > 0 && state.abilities['quick-slash'] && <li>
                     <AbilityTooltip ability={state.abilities['quick-slash']} resetKey={tooltipReset} focusable
                       extra={t('Sangramento: {damage} de dano por {count} turno(s) restantes.', { damage: unit.bleedAmount ?? 0, count: unit.bleedTurns ?? 0 })}>
@@ -354,7 +366,7 @@ export function BattleScreen({ initialBattle, title, onBack, onSessionExpired, m
                   ? !state.teams.player.units.some((entry) => entry.hp === 0)
                   : ability.target === 'enemy' ? !state.teams.enemy.units.some((entry) => entry.hp > 0) : false;
                 const attackBlocked = unit.attackBlockedExpiresAt != null && ability.effects.some((effect) => ['damage', 'drain', 'bleed'].includes(effect.kind));
-                const disabled = !player || busy || !playerTurn || unit.hp <= 0 || unit.abilitiesBlockedExpiresAt != null || attackBlocked
+                const disabled = !player || busy || !playerTurn || unit.hp <= 0 || unit.abilitiesBlockedExpiresAt != null || unit.concentrationExpiresAt != null || attackBlocked
                   || (!!chosen && !selected) || (!!pending && pending.actorId !== unit.id)
                   || (!selected && (ability.energyCost > energy || noTarget));
                 return <AbilityTooltip key={id} ability={ability} resetKey={tooltipReset} focusable={disabled}>

@@ -12,7 +12,10 @@ export type AbilityEffect =
   | { readonly kind: 'bleed'; readonly amount: number; readonly turns: number }
   | { readonly kind: 'invulnerable'; readonly teamTurns: number }
   | { readonly kind: 'attack-block'; readonly teamTurns: number }
-  | { readonly kind: 'damage-boost'; readonly amount: number; readonly teamTurns: number };
+  | { readonly kind: 'damage-boost'; readonly amount: number; readonly teamTurns: number }
+  | { readonly kind: 'burn'; readonly teamTurns: number }
+  | { readonly kind: 'damage-reflection'; readonly percent: number; readonly teamTurns: number }
+  | { readonly kind: 'concentration'; readonly teamTurns: number };
 
 export interface AbilityDefinition {
   readonly id: string;
@@ -56,9 +59,9 @@ export const abilities = {
     effects: [{ kind: 'damage-boost', amount: 10, teamTurns: 2 }],
   },
   'quick-slash': {
-    id: 'quick-slash', name: 'Corte rápido', energyCost: 30, target: 'enemy', icon: '/media/abilities/quick-slash.png',
-    description: 'Causa 20 de dano a um inimigo instantaneamente e aplica sangramento: 5 de dano a cada turno dele por mais 3 turnos.',
-    effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 5, turns: 3 }],
+    id: 'quick-slash', name: 'Corte rápido', energyCost: 35, target: 'enemy', icon: '/media/abilities/quick-slash.png',
+    description: 'Causa 25 de dano a um inimigo imediatamente e provoca sangramento, causando 5 de dano à cada turno de sua equipe pelos próximos 3 turnos.',
+    effects: [{ kind: 'damage', amount: 25 }, { kind: 'bleed', amount: 5, turns: 3 }],
   },
   'dark-vortex': {
     id: 'dark-vortex', name: 'Vórtex negro', energyCost: 35, target: 'all-enemies', icon: '/media/abilities/dark-vortex.png',
@@ -83,8 +86,8 @@ export const abilities = {
     description: 'Causa 30 de dano a todos os inimigos vivos e recupera do usuário a mesma quantidade de HP aplicada como dano, sem ultrapassar o HP máximo.', effects: [{ kind: 'drain', amount: 30 }],
   },
   'fury-scream': {
-    id: 'fury-scream', name: 'Fúria devastadora', energyCost: 40, target: 'all-enemies', icon: '/media/abilities/fury-scream.jpg',
-    description: 'Causa 35 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 35 }],
+    id: 'fury-scream', name: 'Fúria devastadora', energyCost: 60, target: 'all-enemies', icon: '/media/abilities/fury-scream.jpg',
+    description: 'Causa 45 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 45 }],
   },
   'heal-plus': {
     id: 'heal-plus', name: 'Recuperar muita vida', energyCost: 50, target: 'all-allies', icon: '/media/abilities/heal-plus.jpg',
@@ -124,8 +127,8 @@ export const abilities = {
   },
   'wolfs-howl': {
     id: 'wolfs-howl', name: 'Uivo do lobo', energyCost: 35, target: 'enemy', icon: '/media/abilities/wolfs-howl.png',
-    description: 'Causa 20 de dano a um inimigo e impede que ele use qualquer habilidade no próximo turno da equipe dele.',
-    effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 1 }],
+    description: 'Causa 25 de dano a um inimigo imediatamente e provoca queimadura, impedindo que ele receba curas e escudos pelos próximos 3 turnos de sua equipe.',
+    effects: [{ kind: 'damage', amount: 25 }, { kind: 'burn', teamTurns: 3 }],
   },
   execution: {
     id: 'execution', name: 'Execução', energyCost: 50, target: 'enemy', icon: '/media/abilities/execution.png',
@@ -136,6 +139,30 @@ export const abilities = {
     id: 'divine-boon', name: 'Benção divina', energyCost: 40, target: 'ally', icon: '/media/abilities/divine-boon.png',
     description: 'Protege um aliado vivo contra o próximo dano fatal: ele permanece com 1 HP. A benção é consumida ao impedir a morte e não acumula.',
     effects: [{ kind: 'prevent-defeat' }],
+  },
+  'damage-reflection': {
+    id: 'damage-reflection', name: 'Repelir dano', energyCost: 35, target: 'ally', icon: '/media/abilities/damage-reflection.png',
+    description: 'Protege um aliado no próximo turno inimigo: devolve ao agressor 30% do dano direto efetivamente recebido, sem reduzir o dano sofrido. Não reflete sangramento ou outros danos por turno.',
+    effects: [{ kind: 'damage-reflection', percent: 30, teamTurns: 1 }],
+  },
+  'deep-concentration': {
+    id: 'deep-concentration', name: 'Concentração profunda', energyCost: 45, target: 'self', icon: '/media/abilities/deep-concentration.png',
+    description: 'O usuário fica sem poder usar habilidades nos próximos 2 turnos de sua equipe. Ao voltar a agir, se estiver vivo, completa a energia da equipe até 100.',
+    effects: [{ kind: 'concentration', teamTurns: 2 }],
+  },
+  'dragons-roar': {
+    id: 'dragons-roar', name: 'Rugido do dragão', energyCost: 35, target: 'enemy', icon: '/media/abilities/dragons-roar.png',
+    description: 'Causa 25 de dano a um inimigo imediatamente e provoca congelamento, impedindo que ele utilize qualquer habilidade no próximo turno de sua equipe.',
+    effects: [{ kind: 'damage', amount: 25 }, { kind: 'ability-block', teamTurns: 1 }],
+  },
+  'seismic-explosion': {
+    id: 'seismic-explosion', name: 'Explosão sísmica', energyCost: 50, target: 'all-enemies', icon: '/media/abilities/seismic-explosion.png',
+    description: 'Causa 35 de dano a cada inimigo vivo.', effects: [{ kind: 'damage', amount: 35 }],
+  },
+  'frozen-throne': {
+    id: 'frozen-throne', name: 'Trono de gelo', energyCost: 45, target: 'all-enemies', icon: '/media/abilities/frozen-throne.png',
+    description: 'Impede que os inimigos utilizem habilidades ofensivas pelos próximos 2 turnos de sua equipe.',
+    effects: [{ kind: 'attack-block', teamTurns: 2 }],
   },
 } as const satisfies Record<string, AbilityDefinition>;
 

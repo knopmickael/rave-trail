@@ -85,12 +85,12 @@ it('preserva o dano ampliado do sangramento criado pelo golpe e não altera sang
   let state = executeTurn(initial, [action(0, 'internal-strength', 'player-1')]).state;
   state = executeTurn(state, []).state;
   state = executeTurn(state, [action(1, 'quick-slash', 'enemy-0')]).state;
-  expect(state.teams.enemy.units[0]).toMatchObject({ hp: 55, bleedAmount: 15, bleedTurns: 2 });
+  expect(state.teams.enemy.units[0]).toMatchObject({ hp: 50, bleedAmount: 15, bleedTurns: 2 });
   expect(state.teams.enemy.units[1]).toMatchObject({ hp: 80, bleedAmount: 10 });
   state = executeTurn(state, []).state;
   expect(state.teams.player.units[1].damageBoostExpiresAt).toBe(4);
   state = executeTurn(state, []).state;
-  expect(state.teams.enemy.units[0].hp).toBe(40);
+  expect(state.teams.enemy.units[0].hp).toBe(35);
   state = executeTurn(state, []).state;
   expect(state.teams.player.units[1].damageBoostExpiresAt).toBeNull();
 });

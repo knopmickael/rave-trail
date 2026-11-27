@@ -133,11 +133,11 @@ describe('motor determinístico de combate', () => {
     expect(outcome.events.some((event) => event.kind === 'miss')).toBe(true);
   });
 
-  it('Fúria devastadora causa 35 em área, desconta Guarda e ignora derrotados', () => {
-    const initial = state(['protagonist-main-transformed']); initial.teams.player.energy = 40;
+  it('Fúria devastadora causa 45 em área, desconta Guarda e ignora derrotados', () => {
+    const initial = state(['protagonist-main-transformed']); initial.teams.player.energy = 60;
     initial.teams.enemy.units[1].guardExpiresAt = 2; initial.teams.enemy.units[2].hp = 0;
     const outcome = previewActions(initial, [action(0, 'fury-scream')]);
-    expect(outcome.state.teams.enemy.units.map((unit) => unit.hp)).toEqual([65, 75, 0]);
+    expect(outcome.state.teams.enemy.units.map((unit) => unit.hp)).toEqual([55, 65, 0]);
     expect(outcome.state.teams.player.energy).toBe(0);
   });
 
@@ -337,15 +337,15 @@ describe('motor determinístico de combate', () => {
   it('Corte rápido causa dano imediato e sangra por três turnos do alvo', () => {
     const initial = state(['protagonist-main-transformed']); initial.teams.player.energy = 100;
     let battle = executeTurn(initial, [action(0, 'quick-slash', 'enemy-0')]).state;
-    expect(battle.teams.enemy.units[0].hp).toBe(75);
+    expect(battle.teams.enemy.units[0].hp).toBe(70);
     expect(battle.teams.enemy.units[0]).toMatchObject({ bleedTurns: 2, bleedAmount: 5 });
     battle = executeTurn(battle, []).state;
     battle = executeTurn(battle, []).state;
-    expect(battle.teams.enemy.units[0].hp).toBe(70);
+    expect(battle.teams.enemy.units[0].hp).toBe(65);
     expect(battle.teams.enemy.units[0].bleedTurns).toBe(1);
     battle = executeTurn(battle, []).state;
     battle = executeTurn(battle, []).state;
-    expect(battle.teams.enemy.units[0].hp).toBe(65);
+    expect(battle.teams.enemy.units[0].hp).toBe(60);
     expect(battle.teams.enemy.units[0]).toMatchObject({ bleedTurns: 0, bleedAmount: 0 });
   });
 

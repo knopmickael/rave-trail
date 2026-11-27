@@ -23,12 +23,20 @@ export interface Fighter {
   bleedAmount?: number;
   invulnerableExpiresAt?: number | null;
   attackBlockedExpiresAt?: number | null;
+  attackBlockAbilityId?: string | null;
   abilitiesBlockedExpiresAt?: number | null;
   abilityBlockAbilityId?: string | null;
   deathWardAbilityId?: string | null;
   damageBoostAmount?: number;
   damageBoostStartsAt?: number | null;
   damageBoostExpiresAt?: number | null;
+  burnExpiresAt?: number | null;
+  burnAbilityId?: string | null;
+  reflectionExpiresAt?: number | null;
+  reflectionPercent?: number | null;
+  reflectionAbilityId?: string | null;
+  concentrationExpiresAt?: number | null;
+  concentrationAbilityId?: string | null;
 }
 export interface BattleTeam { units: Fighter[]; energy: number; turns: number; extraTurns: number }
 export interface BattleState {
@@ -90,12 +98,20 @@ function clearEffects(unit: Fighter) {
   unit.bleedAmount = 0;
   unit.invulnerableExpiresAt = null;
   unit.attackBlockedExpiresAt = null;
+  unit.attackBlockAbilityId = null;
   unit.abilitiesBlockedExpiresAt = null;
   unit.abilityBlockAbilityId = null;
   unit.deathWardAbilityId = null;
   unit.damageBoostAmount = 0;
   unit.damageBoostStartsAt = null;
   unit.damageBoostExpiresAt = null;
+  unit.burnExpiresAt = null;
+  unit.burnAbilityId = null;
+  unit.reflectionExpiresAt = null;
+  unit.reflectionPercent = null;
+  unit.reflectionAbilityId = null;
+  unit.concentrationExpiresAt = null;
+  unit.concentrationAbilityId = null;
 }
 
 function copyState(state: BattleState): BattleState {
@@ -106,6 +122,11 @@ function copyState(state: BattleState): BattleState {
 }
 
 function heal(unit: Fighter, amount: number, events: BattleEvent[], metadata: Pick<BattleEvent, 'actionId' | 'actorId' | 'abilityId' | 'targetIds'>) {
+  if (unit.hp <= 0) return;
+  if (unit.burnExpiresAt != null) {
+    events.push({ kind: 'guard', message: `A queimadura impede a cura de ${unit.name}.`, ...metadata });
+    return;
+  }
   const recovered = Math.min(amount, unit.maxHp - unit.hp);
   unit.hp += recovered;
   events.push({ kind: 'heal', message: `${unit.name} recupera ${recovered} HP.`, ...metadata });
@@ -120,7 +141,27 @@ function takeDamage(unit: Fighter, amount: number, events: BattleEvent[], metada
     unit.deathWardAbilityId = null;
     events.push({ kind: 'guard', message: `A Benção divina impede a morte de ${unit.name}: resta 1 HP.`, ...metadata, abilityId });
   }
+  if (unit.hp === 0) {
+    unit.concentrationExpiresAt = null;
+    unit.concentrationAbilityId = null;
+  }
   return previousHp - unit.hp;
+}
+
+function reflectDamage(state: BattleState, actor: Fighter, target: Fighter, damage: number, events: BattleEvent[], actionId: string) {
+  if (target.reflectionExpiresAt == null || damage <= 0 || actor.hp <= 0) return;
+  const reflected = Math.floor(damage * (target.reflectionPercent ?? 0) / 100);
+  if (reflected <= 0) return;
+  const metadata = { actionId: `${actionId}:reflection:${target.id}`, actorId: target.id, abilityId: target.reflectionAbilityId ?? undefined, targetIds: [actor.id] };
+  if (actor.invulnerableExpiresAt != null) {
+    events.push({ kind: 'guard', message: `${actor.name} está invulnerável e não recebe o dano refletido.`, ...metadata });
+    return;
+  }
+  const reduction = actor.guardExpiresAt == null ? 0 : guardReduction(state, actor);
+  // Reflected damage is applied directly, never through this reaction again.
+  const applied = takeDamage(actor, Math.max(0, reflected - reduction), events, metadata);
+  events.push({ kind: 'damage', message: `${target.name} reflete ${applied} de dano em ${actor.name}.`, ...metadata });
+  if (actor.hp === 0) events.push({ kind: 'defeated', message: `${actor.name} foi derrotado.`, ...metadata });
 }
 
 function result(state: BattleState, events: BattleEvent[]) {
@@ -136,6 +177,18 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
   team.turns++;
   team.energy = clamp(team.energy + 15, 100);
   for (const unit of team.units) {
+    if (unit.burnExpiresAt != null && unit.burnExpiresAt <= team.turns) {
+      unit.burnExpiresAt = null; unit.burnAbilityId = null;
+      events.push({ kind: 'guard', message: `A queimadura de ${unit.name} expirou.`, targetIds: [unit.id] });
+    }
+    if (unit.concentrationExpiresAt != null && unit.concentrationExpiresAt <= team.turns) {
+      const abilityId = unit.concentrationAbilityId ?? undefined;
+      unit.concentrationExpiresAt = null; unit.concentrationAbilityId = null;
+      if (unit.hp > 0) {
+        team.energy = 100;
+        events.push({ kind: 'energy', message: `${unit.name} concluiu a concentração: energia da equipe completa (100).`, abilityId, targetIds: [unit.id] });
+      }
+    }
     // O último tick pertence ao turno de expiração. A cura é parte do escudo,
     // portanto removê-lo ou substituí-lo também cancela os ticks restantes.
     if (unit.hp > 0 && unit.guardExpiresAt !== null && unit.guardExpiresAt >= team.turns && (unit.guardHealPerTurn ?? 0) > 0) {
@@ -147,6 +200,7 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
     }
     if (unit.attackBlockedExpiresAt != null && unit.attackBlockedExpiresAt <= team.turns) {
       unit.attackBlockedExpiresAt = null;
+      unit.attackBlockAbilityId = null;
       events.push({ kind: 'guard', message: `${unit.name} pode voltar a atacar.` });
     }
     if (unit.abilitiesBlockedExpiresAt != null && unit.abilitiesBlockedExpiresAt <= team.turns) {
@@ -164,6 +218,10 @@ function beginTurn(state: BattleState, side: BattleSide, events: BattleEvent[]) 
   // A invulnerabilidade protege contra o turno da equipe adversária; por isso,
   // seu prazo é contado no relógio dessa equipe e expira no início do turno dela.
   for (const unit of state.teams[other(side)].units) {
+    if (unit.reflectionExpiresAt != null && unit.reflectionExpiresAt <= team.turns) {
+      unit.reflectionExpiresAt = null; unit.reflectionPercent = null; unit.reflectionAbilityId = null;
+      events.push({ kind: 'guard', message: `A reflexão de dano de ${unit.name} expirou.`, targetIds: [unit.id] });
+    }
     if (unit.invulnerableExpiresAt != null && unit.invulnerableExpiresAt <= team.turns) {
       unit.invulnerableExpiresAt = null;
       events.push({ kind: 'guard', message: `A invulnerabilidade de ${unit.name} expirou.` });
@@ -244,7 +302,7 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
     if (!actor || actor.hp <= 0 || !actor.abilityIds.includes(action.abilityId) || !ability) throw new BattleRuleError('Personagem ou habilidade inválidos.');
     if (acted.has(actor.id)) throw new BattleRuleError('Cada personagem pode usar somente uma habilidade por turno.');
     acted.add(actor.id);
-    if (actor.abilitiesBlockedExpiresAt != null) {
+    if (actor.abilitiesBlockedExpiresAt != null || actor.concentrationExpiresAt != null) {
       throw new BattleRuleError(`${actor.name} está impedido de usar habilidades neste turno.`);
     }
     if (actor.attackBlockedExpiresAt != null && isAttackAbility(ability)) {
@@ -279,6 +337,7 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
       events.push({ kind: 'miss', message: `${actor.name}: MISS — ${targets[0].name} ${ability.target === 'defeated-ally' ? 'já está vivo' : 'já foi derrotado'}. O custo foi mantido.`, ...metadata, targetIds });
     } else {
       for (const effect of ability.effects) {
+        if (actor.hp <= 0) break;
         if (effect.kind === 'restore-energy') {
           const recovered = Math.min(effect.amount, 100 - team.energy);
           team.energy += recovered;
@@ -287,6 +346,7 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
           team.extraTurns += effect.count;
           events.push({ kind: 'turn', message: `${actor.name} concede ${effect.count} turno adicional à equipe.`, ...metadata, targetIds });
         } else for (const target of targets) {
+          if (actor.hp <= 0) break;
           const targetMetadata = { ...metadata, targetIds: [target.id] };
           if (effect.kind === 'revive') {
             if (target.hp === 0) {
@@ -306,14 +366,19 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
               appliedDamage = takeDamage(target, Math.max(0, effect.amount + damageBonus(actor, team.turns) - reduction), events, targetMetadata);
               events.push({ kind: 'damage', message: `${target.name} recebe ${appliedDamage} de dano.`, ...targetMetadata });
               if (target.hp === 0) events.push({ kind: 'defeated', message: `${target.name} foi derrotado.`, ...targetMetadata });
+              reflectDamage(state, actor, target, appliedDamage, events, actionId);
             }
-            if (effect.kind === 'drain') heal(actor, appliedDamage, events, metadata);
+            if (effect.kind === 'drain' && actor.hp > 0) heal(actor, appliedDamage, events, metadata);
           } else if (effect.kind === 'heal') {
             heal(target, effect.amount, events, targetMetadata);
           } else if (effect.kind === 'prevent-defeat') {
             target.deathWardAbilityId = ability.id;
             events.push({ kind: 'guard', message: `${target.name} recebeu Benção divina contra o próximo dano fatal.`, ...targetMetadata });
           } else if (effect.kind === 'guard') {
+            if (target.burnExpiresAt != null) {
+              events.push({ kind: 'guard', message: `A queimadura impede que ${target.name} receba Guarda.`, ...targetMetadata });
+              continue;
+            }
             const targetTeam = team.units.includes(target) ? team : enemy;
             target.guardExpiresAt = targetTeam.turns + effect.teamTurns;
             target.guardAbilityId = ability.id;
@@ -334,13 +399,32 @@ export function previewActions(initial: BattleState, actions: readonly BattleAct
             target.bleedAmount = effect.amount + damageBonus(actor, team.turns);
             events.push({ kind: 'damage', message: `${target.name} está sangrando: ${target.bleedAmount} de dano por ${effect.turns} turnos.`, ...targetMetadata });
           } else if (effect.kind === 'invulnerable') {
+            if (target.burnExpiresAt != null) {
+              events.push({ kind: 'guard', message: `A queimadura impede que ${target.name} receba Invulnerabilidade.`, ...targetMetadata });
+              continue;
+            }
             const opposingTeam = state.teams[other(side)];
             target.invulnerableExpiresAt = opposingTeam.turns + 1 + effect.teamTurns;
             events.push({ kind: 'guard', message: `${target.name} ficará invulnerável no próximo turno inimigo.`, ...targetMetadata });
           } else if (effect.kind === 'attack-block') {
             const targetTeam = team.units.includes(target) ? team : enemy;
             target.attackBlockedExpiresAt = targetTeam.turns + 1 + effect.teamTurns;
+            target.attackBlockAbilityId = ability.id;
             events.push({ kind: 'guard', message: `${target.name} não poderá atacar durante ${effect.teamTurns} turno(s).`, ...targetMetadata });
+          } else if (effect.kind === 'burn') {
+            const targetTeam = team.units.includes(target) ? team : enemy;
+            target.burnExpiresAt = targetTeam.turns + 1 + effect.teamTurns;
+            target.burnAbilityId = ability.id;
+            events.push({ kind: 'guard', message: `${target.name} sofre queimadura: não recebe curas nem novos escudos por ${effect.teamTurns} turnos da equipe.`, ...targetMetadata });
+          } else if (effect.kind === 'damage-reflection') {
+            target.reflectionExpiresAt = state.teams[other(side)].turns + 1 + effect.teamTurns;
+            target.reflectionPercent = effect.percent;
+            target.reflectionAbilityId = ability.id;
+            events.push({ kind: 'guard', message: `${target.name} reflete ${effect.percent}% do dano direto nos próximos ${effect.teamTurns} turnos inimigos.`, ...targetMetadata });
+          } else if (effect.kind === 'concentration') {
+            target.concentrationExpiresAt = team.turns + 1 + effect.teamTurns;
+            target.concentrationAbilityId = ability.id;
+            events.push({ kind: 'guard', message: `${target.name} inicia concentração por ${effect.teamTurns} turnos da equipe, sem poder usar habilidades.`, ...targetMetadata });
           } else if (effect.kind === 'damage-boost') {
             const targetTeam = team.units.includes(target) ? team : enemy;
             const alreadyActive = damageBonus(target, targetTeam.turns) > 0;

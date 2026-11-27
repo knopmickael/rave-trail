@@ -6,7 +6,7 @@ import { abilities } from '@game/content/abilities.js';
 import { encounters } from '@game/content/encounters.js';
 import { battleUnlockRules } from '@game/content/unlocks.js';
 import { createBattle } from '@game/core/battle.js';
-import { migrate } from './migrations.js';
+import { migrate } from './test-migrations.js';
 import { seedDatabase } from './seed.js';
 import { PostgresGameRepository } from './game-repository.js';
 import { CmsRepository } from '../../../cms/server/repository.js';
@@ -23,7 +23,7 @@ afterAll(async () => { await pool.end(); await admin.query(`DROP SCHEMA IF EXIST
 
 it('inicializa o novo conteúdo e o balanceamento no banco vazio', async () => {
   const catalog = await game.getCatalog();
-  expect(catalog.abilities.find((a) => a.id === 'quick-slash')).toMatchObject({ energyCost: 30, effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 5, turns: 3 }] });
+  expect(catalog.abilities.find((a) => a.id === 'quick-slash')).toMatchObject({ energyCost: 35, effects: [{ kind: 'damage', amount: 25 }, { kind: 'bleed', amount: 5, turns: 3 }] });
   expect(catalog.abilities.find((a) => a.id === 'resurrection')?.effects).toEqual([{ kind: 'revive', hpRatio: 1 }]);
   for (const id of ['passage-guardian-base', 'guerreiros-habilidosos-a', 'jung-de-grimoria-ii']) {
     expect(catalog.units.find((u) => u.id === id)?.abilityIds).toEqual(units.find((u) => u.id === id)!.abilityIds);

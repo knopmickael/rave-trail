@@ -5,7 +5,7 @@ import { CmsRepository } from './repository';
 import { createCmsApp } from './app';
 import { createApp } from '../../backend/src/app';
 import { readMedia } from '../../backend/src/db/media';
-import { migrate } from '../../backend/src/db/migrations';
+import { migrate } from '../../backend/src/db/test-migrations';
 import { seedDatabase } from '../../backend/src/db/seed';
 import { PostgresAuthRepository } from '../../backend/src/db/auth-repository';
 import { PostgresGameRepository } from '../../backend/src/db/game-repository';

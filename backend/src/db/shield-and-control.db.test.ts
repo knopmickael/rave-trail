@@ -3,7 +3,7 @@ import pg from 'pg';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { abilities } from '@game/content/abilities.js';
 import { createBattle } from '@game/core/battle.js';
-import { migrate } from './migrations.js';
+import { migrate } from './test-migrations.js';
 import { seedDatabase } from './seed.js';
 import { PostgresGameRepository } from './game-repository.js';
 import { CmsRepository } from '../../../cms/server/repository.js';
@@ -77,7 +77,8 @@ it('migra conteúdo anterior mesmo com edições CMS, preservando campos alheios
   expect(catalog.units.find((u) => u.id === drak.id)).toMatchObject({ name: 'Drak editado no CMS', maxHp: 180 });
   for (const [id, abilityIds] of loadouts) expect(catalog.units.find((u) => u.id === id)?.abilityIds).toEqual(abilityIds);
   for (const id of ['divine-protection', 'retaliation', 'wolfs-howl'] as const) {
-    expect(catalog.abilities.find((a) => a.id === id)).toEqual(abilities[id]);
+    const expected = id === 'wolfs-howl' ? { ...abilities[id], effects: [{ kind: 'damage', amount: 20 }, { kind: 'ability-block', teamTurns: 1 }] } : abilities[id];
+    expect(catalog.abilities.find((a) => a.id === id)).toEqual(expected);
   }
   expect((await pool.query('SELECT state FROM saved_snapshot')).rows[0].state).toEqual(snapshot);
   const divine = catalog.abilities.find((a) => a.id === 'divine-protection')!;

@@ -107,6 +107,7 @@ export function Studio() {
     finally { setBusy(false); }
   }
   const records = (catalog[entity] as Draft[]).filter((item) => `${title(item)} ${item.id}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')));
+  const abilitiesById = new Map(catalog.abilities.map((ability) => [ability.id, ability]));
   return <div className="studio">
     <aside className="sidebar"><a className="brand" href="/" aria-label="Rave Trail Content Studio"><span className="brand-mark">R<span>✦</span></span><span>RAVE TRAIL<small>CONTENT STUDIO</small></span></a>
       <div className="workspace-label">ESPAÇO DE CRIAÇÃO <span>LOCAL</span></div><nav aria-label="Conteúdo do jogo">{navigation.map((item) => <button type="button" key={item.id} aria-current={entity === item.id ? 'page' : undefined} onClick={() => {
@@ -123,7 +124,15 @@ export function Studio() {
           {records.length === 0 ? <div className="empty-state"><span aria-hidden="true">{selected.icon}</span><h2>{search ? 'Nenhum resultado' : 'Uma página em branco'}</h2><p>{search ? 'Tente outro nome ou ID.' : `Crie o primeiro registro de ${selected.name.toLowerCase()}.`}</p></div>
             : <div className={`record-list ${entity === 'characters' ? 'character-records' : ''}`}>{records.map((record) => <div className="record-row" key={record.id}><button type="button" className={`record ${existing && record.id === draft?.id ? 'selected' : ''}`} aria-pressed={existing && record.id === draft?.id} onClick={() => open(record)}>
               <div className={`record-image ${entity}`}>{thumbnail(record) ? <img src={thumbnail(record)!} alt="" loading="lazy" /> : <span aria-hidden="true">{entity === 'encounters' && 'position' in record ? String(record.position).padStart(2, '0') : selected.icon}</span>}</div>
-              <div className="record-info"><strong>{title(record)}</strong><small>{record.id}</small><span className="record-meta">{'maxHp' in record ? `${record.enabled ? 'Habilitado' : 'Desabilitado'} · ${record.maxHp} HP · ${record.abilityIds.length} habilidades` : 'energyCost' in record ? `${record.energyCost} energia · ${record.effects.length} efeito(s)` : 'chapterNumber' in record ? `Capítulo ${record.chapterNumber} · ${record.released ? 'Publicada' : 'Rascunho'}` : `Batalha ${record.position} · ${catalog.campaigns.find((c) => c.id === record.campaignId)?.title ?? record.campaignId}`}</span></div><span className="record-arrow" aria-hidden="true">↗</span>
+              <div className="record-info"><strong>{title(record)}</strong><small>{record.id}</small><span className="record-meta">{'maxHp' in record ? `${record.enabled ? 'Habilitado' : 'Desabilitado'} · ${record.maxHp} HP · ${record.abilityIds.length} habilidades` : 'energyCost' in record ? `${record.energyCost} energia · ${record.effects.length} efeito(s)` : 'chapterNumber' in record ? `Capítulo ${record.chapterNumber} · ${record.released ? 'Publicada' : 'Rascunho'}` : `Batalha ${record.position} · ${catalog.campaigns.find((c) => c.id === record.campaignId)?.title ?? record.campaignId}`}</span></div>
+              {'abilityIds' in record && <span className="record-abilities" role="list" aria-label={`Habilidades de ${record.name}`}>{record.abilityIds.map((id, slot) => {
+                const ability = abilitiesById.get(id);
+                const label = `Habilidade ${slot + 1}: ${ability?.name ?? id}`;
+                return <span className="record-ability" role="listitem" key={`${slot}:${id}`} title={`${label}\n${id}`}>
+                  {ability?.icon ? <img src={ability.icon} alt={label} width={36} height={36} loading="lazy" /> : <span role="img" aria-label={label}>?</span>}
+                </span>;
+              })}</span>}
+              <span className="record-arrow" aria-hidden="true">↗</span>
             </button>{entity === 'characters' && <div className="record-order" role="group" aria-label={`Ordem de ${title(record)}`}><span>{catalog.characters.findIndex((c) => c.id === record.id) + 1}</span>
               <button type="button" className="icon-button" aria-label={`Subir ${title(record)}`} disabled={busy || uploads > 0 || dirty || record.id === catalog.characters[0]?.id} onClick={() => { void moveCharacter(record.id, -1); }}>↑</button>
               <button type="button" className="icon-button" aria-label={`Descer ${title(record)}`} disabled={busy || uploads > 0 || dirty || record.id === catalog.characters.at(-1)?.id} onClick={() => { void moveCharacter(record.id, 1); }}>↓</button>
@@ -136,7 +145,7 @@ export function Studio() {
               if ('unlockRule' in draft) update({ ...draft, id, unlockRule: draft.unlockRule ? { ...draft.unlockRule, unitId: id } : null }); else update({ ...draft, id });
             }} /></div>
             {entity === 'characters' && <CharacterForm value={draft as Character} onChange={update} catalog={catalog} />}
-            {entity === 'abilities' && <AbilityForm value={draft as AbilityDefinition} onChange={update} catalog={catalog} aiReady={status.aiReady} />}
+            {entity === 'abilities' && <AbilityForm value={draft as AbilityDefinition} onChange={update} catalog={catalog} />}
             {entity === 'campaigns' && <CampaignForm value={draft as Campaign} onChange={update} catalog={catalog} openEncounter={(e) => open(e, 'encounters')} createEncounter={() => open(createDraft('encounters', catalog, draft.id), 'encounters', false)} />}
             {entity === 'encounters' && <EncounterForm value={draft as Encounter} onChange={update} catalog={catalog} existing={existing} />}
           </fieldset></UploadActivity.Provider><div className="save-bar"><span className="draft-state"><i className={dirty ? 'unsaved' : ''} />{uploads ? 'Enviando imagem…' : dirty ? 'Alterações não salvas' : existing ? 'Sincronizado com o banco' : 'Novo rascunho'}</span><div>

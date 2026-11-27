@@ -20,6 +20,9 @@ export const effectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('bleed'), amount, turns: teamTurns }).strict(),
   z.object({ kind: z.literal('invulnerable'), teamTurns }).strict(), z.object({ kind: z.literal('attack-block'), teamTurns }).strict(),
   z.object({ kind: z.literal('damage-boost'), amount, teamTurns }).strict(),
+  z.object({ kind: z.literal('burn'), teamTurns }).strict(),
+  z.object({ kind: z.literal('damage-reflection'), percent: integer(1, 100), teamTurns }).strict(),
+  z.object({ kind: z.literal('concentration'), teamTurns }).strict(),
 ]);
 const abilityShape = {
   id, name: text, description, energyCost: integer(0, 100),
@@ -30,7 +33,8 @@ export const configSchema = z.object({ energyCost: abilityShape.energyCost, targ
   for (const effect of ability.effects) {
     const allowed = effect.kind === 'restore-energy' || effect.kind === 'extra-turn' ? ['team']
       : effect.kind === 'revive' ? ['defeated-ally']
-      : ['damage', 'drain', 'bleed', 'attack-block', 'ability-block', 'dispel-shields'].includes(effect.kind) ? ['enemy', 'all-enemies']
+      : effect.kind === 'concentration' ? ['self']
+      : ['damage', 'drain', 'bleed', 'burn', 'attack-block', 'ability-block', 'dispel-shields'].includes(effect.kind) ? ['enemy', 'all-enemies']
       : ['ally', 'self', 'all-allies'];
     if (!allowed.includes(ability.target)) ctx.addIssue({ code: 'custom', path: ['effects'], message: `${effect.kind}: alvo incompatível (${allowed.join(', ')}).` });
   }

@@ -81,11 +81,11 @@ describe('catálogo compartilhado', () => {
     expect(abilities['heal-plus']).toMatchObject({ energyCost: 50, effects: [{ kind: 'heal', amount: 30 }] });
     expect(abilities.resurrection).toMatchObject({ energyCost: 50 });
     expect(abilities['extra-turn']).toMatchObject({ energyCost: 40 });
-    expect(abilities['fury-scream']).toMatchObject({ energyCost: 40, effects: [{ kind: 'damage', amount: 35 }] });
+    expect(abilities['fury-scream']).toMatchObject({ energyCost: 60, effects: [{ kind: 'damage', amount: 45 }] });
     expect(abilities['simple-strike-ii']).toMatchObject({ name: 'Golpe simples II', energyCost: 20, target: 'enemy',
       icon: '/media/abilities/simple-strike-II.png', effects: [{ kind: 'damage', amount: 30 }] });
-    expect(abilities['quick-slash']).toMatchObject({ energyCost: 30, target: 'enemy',
-      effects: [{ kind: 'damage', amount: 20 }, { kind: 'bleed', amount: 5, turns: 3 }] });
+    expect(abilities['quick-slash']).toMatchObject({ energyCost: 35, target: 'enemy',
+      effects: [{ kind: 'damage', amount: 25 }, { kind: 'bleed', amount: 5, turns: 3 }] });
     expect(abilities['dark-vortex']).toMatchObject({ energyCost: 35, target: 'all-enemies',
       effects: [{ kind: 'damage', amount: 15 }, { kind: 'attack-block', teamTurns: 1 }] });
     expect(abilities['fast-move']).toMatchObject({ name: 'Invulnerabilidade', energyCost: 25, target: 'self',

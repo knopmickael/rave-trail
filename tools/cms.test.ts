@@ -48,6 +48,17 @@ it('valida cura vinculada ao escudo, remoção de escudos e bloqueio total com a
   expect(abilitySchema.safeParse({ ...valid[0], effects: [{ kind: 'guard', reduction: 10, teamTurns: 3, healPerTurn: -10 }] }).success).toBe(false);
 });
 
+it('aceita queimadura, reflexão e concentração com seus alvos e limites reais', () => {
+  for (const id of ['wolfs-howl', 'damage-reflection', 'deep-concentration', 'dragons-roar', 'seismic-explosion', 'frozen-throne'] as const) {
+    expect(abilitySchema.safeParse(abilities[id]).success, id).toBe(true);
+  }
+  expect(abilitySchema.safeParse({ ...abilities['wolfs-howl'], target: 'ally' }).success).toBe(false);
+  expect(abilitySchema.safeParse({ ...abilities['deep-concentration'], target: 'team' }).success).toBe(false);
+  expect(abilitySchema.safeParse({ ...abilities['deep-concentration'], target: 'ally' }).success).toBe(false);
+  expect(abilitySchema.safeParse({ ...abilities['damage-reflection'], effects: [{ kind: 'damage-reflection', percent: 101, teamTurns: 1 }] }).success).toBe(false);
+  expect(abilitySchema.safeParse({ ...abilities['damage-reflection'], effects: [{ kind: 'damage-reflection', percent: 30, teamTurns: 0 }] }).success).toBe(false);
+});
+
 it('valida propostas de IA e não transforma uma mecânica inédita em efeito executável', async () => {
   vi.stubEnv('CMS_AI_BASE_URL', 'http://127.0.0.1:11434/v1'); vi.stubEnv('CMS_AI_MODEL', 'local-test');
   const input = chatSchema.parse({ messages: [{ role: 'user', content: 'Crie um atordoamento total.' }], ability: null });

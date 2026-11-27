@@ -8,7 +8,7 @@ import { afterAll, afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { CmsRepository } from './repository';
 import { CmsMigrationWriter } from './migration-writer';
 import { createCmsApp } from './app';
-import { migrate } from '../../backend/src/db/migrations';
+import { migrate } from '../../backend/src/db/test-migrations';
 import { seedDatabase } from '../../backend/src/db/seed';
 import { PostgresAuthRepository } from '../../backend/src/db/auth-repository';
 

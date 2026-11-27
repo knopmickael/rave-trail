@@ -108,7 +108,11 @@ it('pesquisa habilidades e apresenta imagem, custo, alvo e efeitos; oferece some
   await user.click(await screen.findByRole('button', { name: /^Ravi de Berdal/ }));
   const search = screen.getByRole('searchbox', { name: 'Pesquisar habilidade 1 por nome' });
   await user.type(search, 'guarda');
-  await user.selectOptions(screen.getByRole('combobox', { name: 'Habilidade 1' }), 'guard');
+  const choices = screen.getByRole('group', { name: 'Habilidade 1' });
+  const guard = within(choices).getByRole('radio', { name: /Guarda/ });
+  expect(guard.closest('label')?.querySelector('img')).toHaveAttribute('src', abilities.guard.icon);
+  await user.click(guard);
+  expect(guard).toBeChecked();
   expect(screen.getAllByRole('img', { name: 'Ícone de Guarda' }).length).toBeGreaterThan(0);
   expect(screen.getAllByText(`${abilities.guard.energyCost} energia · Próprio usuário`).length).toBeGreaterThan(0);
   expect(screen.getAllByText(/Redução por golpe: 10/).length).toBeGreaterThan(0);
