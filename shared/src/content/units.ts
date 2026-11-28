@@ -85,12 +85,14 @@ const common = ['simple-strike', 'guard', 'retain-energy'] as const;
 const starter = { kind: 'starter', description: 'Disponível desde o início da jornada.' } as const;
 const unitNameOverrides: Readonly<Record<string, string>> = {
   'jung-de-grimoria-ii': 'Jung de Grimória II',
-  'protagonist-main-transformed': 'Ravi Berserk',
+  'protagonist-main-transformed': 'Ravi Berzerk',
+  'legendary-beast-premium': 'Besta Lendária Zéfiro',
   'rival-b-final-mode': 'Exal - Verdadeiro poder',
   'exal-de-grimoria-ii': 'Exal de Grimória II',
   'monnica-de-grimoria-ii': 'Monnica de Grimória II',
 };
 const unitAssetOverrides: Readonly<Record<string, { portrait: string; illustration: string }>> = {
+  'protagonist-main-transformed': { portrait: '/media/characters/ravi-berserk-face.png', illustration: '/media/characters/ravi-berserk-body.png' },
   ...Object.fromEntries([
     ['saqueador-da-estrada-iii', 'saqueador-iii'], ['saqueador-da-estrada-iv', 'saqueador-iv'],
     ['saqueadora-da-estrada-ii', 'saqueadora-ii'], ['exal-de-grimoria-ii', 'exal-ii'], ['monnica-de-grimoria-ii', 'monnica-ii'],

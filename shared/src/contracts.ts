@@ -48,6 +48,7 @@ export type CharacterUnlockProgress = Pick<UnitDefinition, 'id' | 'name' | 'port
   campaignAvailable: boolean;
 } & ({
   kind: 'battle-wins';
+  priceUsd?: number;
   revealRequirement?: string;
   requirements: readonly { description: string; current: number; target: number }[];
 } | {

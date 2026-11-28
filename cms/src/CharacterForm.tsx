@@ -12,7 +12,7 @@ export function CharacterForm({ value: c, onChange, catalog }: { value: Characte
   const updateRule = (patch: Partial<BattleUnlockRule>) => {
     const next = { ...rule, ...patch, unitId: c.id };
     const description = next.requirements.map((r) => r.description).join(' ') || 'Complete os requisitos para desbloquear.';
-    update({ unlockRule: { ...next, description }, unlock: { kind: 'battle-wins', description } });
+    update({ unlockRule: { ...next, description }, unlock: c.unlock.kind === 'premium' ? c.unlock : { kind: 'battle-wins', description } });
   };
   const requirements = rule.requirements;
   const gateCampaign = catalog.encounters.find((e) => e.id === rule.availableAfterEncounterId)?.campaignId ?? '';
@@ -36,10 +36,15 @@ export function CharacterForm({ value: c, onChange, catalog }: { value: Characte
     <section className="form-section"><div className="section-heading"><span>03</span><h3>Desbloqueio e requisitos</h3></div>
       <Select label="Forma de desbloqueio" value={c.unlock.kind} options={[
         { id: 'starter', name: 'Disponível desde o início' }, { id: 'premium', name: 'Premium (aquisição desabilitada no jogo)' }, { id: 'battle-wins', name: 'Missão com requisitos' },
-      ]} onChange={(kind) => update({ unlock: { kind: kind as Character['unlock']['kind'], description: kind === 'starter' ? 'Disponível desde o início da jornada.' : kind === 'premium' ? 'Personagem premium.' : rule.description }, unlockRule: kind === 'battle-wins' ? rule : null,
+      ]} onChange={(kind) => update({ unlock: { kind: kind as Character['unlock']['kind'], description: kind === 'starter' ? 'Disponível desde o início da jornada.' : kind === 'premium' ? 'Personagem premium.' : rule.description }, unlockRule: kind === 'battle-wins' ? rule : kind === 'premium' ? c.unlockRule : null,
         priceUsd: kind === 'premium' ? c.priceUsd ?? 9.9 : null })} />
       {c.unlock.kind === 'premium' && <NumberField label="Preço em USD" min={0.01} step={0.01} max={10000} value={c.priceUsd ?? 9.9} onChange={(priceUsd) => update({ priceUsd })} />}
-      {c.unlock.kind === 'battle-wins' && <>
+      {c.unlock.kind === 'premium' && <label className="check"><input type="checkbox" checked={c.unlockRule !== null} onChange={(e) => update({
+        unlockRule: e.target.checked ? { ...rule, requirements: rule.requirements.length ? rule.requirements : [
+          { kind: 'battle-wins', mode: 'quick', target: 5, description: 'Vença 5 partidas no modo Batalha rápida.' },
+        ] } : null,
+      })} />Também desbloquear por missão</label>}
+      {(c.unlock.kind === 'battle-wins' || c.unlock.kind === 'premium' && c.unlockRule) && <>
         <Select label="Quando revelar a lista de requisitos" value={rule.availableFromStart ? 'start' : 'encounter'} options={[
           { id: 'start', name: 'Desde o início' }, { id: 'encounter', name: 'Após vencer uma batalha específica de uma campanha' },
         ]} onChange={(kind) => {
@@ -58,6 +63,10 @@ export function CharacterForm({ value: c, onChange, catalog }: { value: Characte
           {r.kind === 'encounter' ? <Select label="Confronto a finalizar" value={r.encounterId} options={encounterOptions(catalog)} empty="Escolha o confronto" onChange={(encounterId) => changeRequirement(index, { ...r, encounterId })} /> : <>
             <div className="form-grid"><Select label="Modo de batalha" value={r.mode} options={[{ id: 'quick', name: 'Batalha rápida' }, { id: 'multiplayer', name: 'Multiplayer' }]} onChange={(mode) => changeRequirement(index, { ...r, mode: mode as 'quick' | 'multiplayer' })} />
               <NumberField label="Vitórias necessárias" min={1} value={r.target} onChange={(target) => changeRequirement(index, { ...r, target })} /></div>
+            <label className="check"><input type="checkbox" checked={r.requireNoDeaths === true} onChange={(e) => {
+              const { requireNoDeaths: _noDeaths, ...rest } = r;
+              changeRequirement(index, { ...rest, ...(e.target.checked ? { requireNoDeaths: true } : {}) });
+            }} />Exigir vitória sem nenhuma morte de aliado</label>
             <div className="form-grid"><MultiSelect label="Adversários específicos" value={r.opponentUnitIds ?? []} options={catalog.characters} hint="Nenhum = qualquer adversário. Vários = pelo menos um deles." onChange={(ids) => {
               const { opponentUnitIds: _ids, ...rest } = r; changeRequirement(index, { ...rest, ...(ids.length ? { opponentUnitIds: ids } : {}) });
             }} /><MultiSelect label="Personagens usados pelo jogador" value={r.requiredPlayerUnitIds ?? []} options={catalog.characters} hint="Nenhum = qualquer equipe. Vários = pelo menos um deles." onChange={(ids) => {

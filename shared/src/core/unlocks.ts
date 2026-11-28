@@ -7,6 +7,7 @@ export interface BattleVictory {
   readonly playerUnitIds: readonly string[];
   readonly enemyUnitIds: readonly string[];
   readonly completedAt?: string;
+  readonly noPlayerDeaths?: boolean;
 }
 
 /** Cada registro representa uma batalha vencida, independentemente do número de turnos ou de alvos repetidos. */
@@ -21,8 +22,8 @@ export function characterUnlockProgress(units: readonly Pick<UnitDefinition, 'id
   const opponents = campaignOpponentUnitIds ? new Set(campaignOpponentUnitIds) : null;
   const characters: CharacterUnlockProgress[] = [];
   for (const unit of units) {
-    const campaignAvailable = unlocked.has(unit.id) || configuration.prices[unit.id] !== undefined || opponents === null || opponents.has(unit.id);
     const rule = configuration.rules.find((entry) => entry.unitId === unit.id);
+    const campaignAvailable = unlocked.has(unit.id) || (!rule && configuration.prices[unit.id] !== undefined) || opponents === null || opponents.has(unit.id);
     if (rule) {
       const resetAt = resetAtByUnitId[unit.id];
       const revealedAt = rule.availableFromStart ? undefined : (rule.availableAfterEncounterId ? [rule.availableAfterEncounterId]
@@ -35,13 +36,15 @@ export function characterUnlockProgress(units: readonly Pick<UnitDefinition, 'id
       const missionVictories = !campaignAvailable ? [] : cutoff ? victories.filter((victory) => victory.completedAt
         && Date.parse(victory.completedAt) > Date.parse(cutoff)) : victories;
       characters.push({ id: unit.id, name: unit.name, portrait: unit.portrait, unlocked: unlocked.has(unit.id), campaignAvailable, kind: 'battle-wins',
+        ...(configuration.prices[unit.id] !== undefined ? { priceUsd: configuration.prices[unit.id] } : {}),
         requirements: rule.requirements.map((requirement) => ({
           description: requirement.description,
           target: requirement.target,
           current: requirement.kind === 'encounter'
             ? (completedEncounters.has(requirement.encounterId) ? 1 : 0)
             : Math.min(requirement.target, missionVictories.filter((victory) => victory.mode === requirement.mode
-              && (!requirement.opponentUnitIds || requirement.opponentUnitIds.some((id) => victory.enemyUnitIds.includes(id)))
+               && (!requirement.opponentUnitIds || requirement.opponentUnitIds.some((id) => victory.enemyUnitIds.includes(id)))
+               && (!requirement.requireNoDeaths || victory.noPlayerDeaths === true)
               && (!requirement.requiredPlayerUnitIds || requirement.requiredPlayerUnitIds.some((id) => victory.playerUnitIds.includes(id)))).length),
         })),
       });

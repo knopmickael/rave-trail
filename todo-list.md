@@ -1,57 +1,146 @@
-# Redefinição de habilidades
+# Novo Quadro de missões
 
-Corte rápido
-Novo efeito: o dano inicial da habilidade agora é de 25 ao invés de 20, os demais danos por turno permanecem iguais
-Nova descrição textual: "Causa 25 de dano a um inimigo imediatamente e provoca sangramento, causando 5 de dano à cada turno de sua equipe pelos próximos 3 turnos."
-Novo custo: 35
+Saqueador da estrada I
+Vença 3 partidas no modo batalha rápida
+Derrote Saqueador da estrada I ao menos uma vez no modo batalha rápida
 
-Uivo do lobo
-Novo efeito: o dano inicial da habilidade agora é de 25 ao invés de 20 e ao invés de paralizar o usuário, causa queimadura, impedindo que ele receba curas e escudos por 3 turnos do seu time
-Nova descrição textual: "Causa 25 de dano a um inimigo imediatamente e provoca queimadura, impedindo que ele receba curas e escudos pelos próximos 3 turnos de sua equipe."
+Saqueador da estrada II
+Vença 3 partidas no modo batalha rápida
+Derrote Saqueador da estrada II ao menos uma vez no modo batalha rápida
 
-Fúria devastadora
-Novo efeito: o dano causado à cada inimigo vivo agora é de 45 ao invés de 35
-Novo custo: 60
+Saqueadora da estrada I
+Vença 3 partidas no modo batalha rápida
+Derrote Saqueadora da estrada I ao menos uma vez no modo batalha rápida
 
-# Novas habilidades
+Jung I
+Vença 5 partidas no modo batalha rápida
+Derrote Jung I ao menos 3 vezes no modo batalha rápida
+Derrote Jung I ao menos 1 vezes no modo batalha rápida utilizando Ravi de Berdal
 
-Repelir dano
-Custo: 35
-Efeito: Protege um aliado fazendo com que qualquer habilidade de dano direcionada à ele no próximo turno inimigo devolva 30% do dano causado ao caster da habilidade (somente danos explícitos, não se aplica à efeitos de sangramento, envenenamento e etc).
-Asset: /frontend/public/media/abilites/damage-reflection.png
+Exal I
+Vença 5 partidas no modo batalha rápida
+Derrote Exal I ao menos 3 vezes no modo batalha rápida
+Derrote Exal I ao menos 1 vezes no modo batalha rápida utilizando Dokko de Berdal
 
-Concentração profunda
-Custo: 45
-Efeito: Passa os próximos 2 turnos de sua equipe sem poder utilizar nenhuma habilidade, porém ao finalizar esse tempo, leva a barra de energia da equipe ao máximo independente de quanto já houver na barra.
-Asset: /frontend/public/media/abilites/deep-concentration.png
+Monnica I
+Vença 5 partidas no modo batalha rápida
+Derrote Monnica I ao menos 3 vezes no modo batalha rápida
+Derrote Monnica I ao menos 1 vezes no modo batalha rápida utilizando Anna de Berdal
 
-Rugido do dragão
-Custo: 35
-Efeito: Causa 25 de dano a um inimigo imediatamente e provoca congelamento, impedindo que ele utilize qualquer habilidade no próximo turno de sua equipe.
-Descrição textual: "Causa 25 de dano a um inimigo imediatamente e provoca congelamento, impedindo que ele utilize qualquer habilidade no próximo turno de sua equipe."
-Asset: /frontend/public/media/abilites/dragons-roar.png
+Curandeiro de Pontes
+Vença 5 partidas no modo batalha rápida
+Derrote Curandeiro de Pontes ao menos 3 vezes no modo batalha rápida
+Derrote Curandeiro de Pontes ao menos 1 vezes no modo batalha rápida utilizando algum Saqueador da estrada
 
-Explosão sísmica
-Custo: 50
-Efeito: Causa 35 de dano a cada inimigo vivo.
-Asset: /frontend/public/media/abilites/seismic-explosion.png
+Curandeira de Pontes
+Vença 5 partidas no modo batalha rápida
+Derrote Curandeira de Pontes ao menos 3 vezes no modo batalha rápida
+Derrote Curandeira de Pontes ao menos 1 vezes no modo batalha rápida utilizando algum Saqueador da estrada
 
-Trono de gelo
-Custo: 45
-Efeito: Impede que o time inimigo utilize habilidades ofensivas pelos próximos 2 turnos deles.
-Asset: /frontend/public/media/abilites/frozen-throner.png
+Drak de Pontes
+Vença 10 partidas no modo batalha rápida
+Derrote Drak de Pontes ao menos 5 vezes no modo batalha rápida
+Derrote Drak de Pontes ao menos 3 vezes no modo batalha rápida utilizando algum Saqueador da estrada
 
-## Implementação
+Saqueador da estrada III
+Vença 10 partidas no modo batalha rápida
+Derrote Saqueador da estrada III ao menos 5 vezes no modo batalha rápida
 
-- [x] Corte rápido: 25 de dano inicial, sangramento preservado, custo 35 e descrição atualizada.
-- [x] Uivo do lobo: 25 de dano e queimadura por 3 turnos, substituindo o bloqueio total.
-- [x] Fúria devastadora: 45 de dano em área e custo 60.
-- [x] Repelir dano: reflexão de dano direto no próximo turno inimigo.
-- [x] Concentração profunda: dois turnos futuros sem agir e energia completa ao finalizar.
-- [x] Rugido do dragão: 25 de dano e congelamento por um turno.
-- [x] Explosão sísmica: 35 de dano em área e custo 50.
-- [x] Trono de gelo: bloqueio de ataques por dois turnos inimigos.
-- [x] Contratos, campos do CMS, ícones de status, traduções e migration 055.
+Saqueador da estrada IV
+Vença 10 partidas no modo batalha rápida
+Derrote Saqueador da estrada IV ao menos 5 vezes no modo batalha rápida
 
-Detalhes e regras de duração: [docs/ability-redefinition.md](docs/ability-redefinition.md).
-Assets encontrados em `frontend/public/media/abilities/`; Trono de gelo usa `frozen-throne.png`.
+Saqueadora da estrada II
+Vença 10 partidas no modo batalha rápida
+Derrote Saqueadora da estrada II ao menos 5 vezes no modo batalha rápida
+
+Trinity
+Vença 10 partidas no modo batalha rápida
+Derrote Trinity ao menos 5 vezes no modo batalha rápida
+Derrote Trinity ao menos 3 vezes no modo batalha rápida utilizando alguém de Pontes
+
+Vlade
+Vença 10 partidas no modo batalha rápida
+Derrote Vlade ao menos 5 vezes no modo batalha rápida
+Derrote Vlade ao menos 3 vezes no modo batalha rápida utilizando alguém de Pontes
+
+Passago
+Vença 10 partidas no modo batalha rápida
+Derrote Passago ao menos 5 vezes no modo batalha rápida
+Derrote Passago ao menos 3 vezes no modo batalha rápida utilizando alguém de Pontes
+
+Jung II
+Vença 15 partidas no modo batalha rápida
+Derrote Jung II ao menos 10 vezes no modo batalha rápida
+Vença 5 partidas no modo batalha rápida utilizando Jung I
+
+Exal II
+Vença 15 partidas no modo batalha rápida
+Derrote Exal II ao menos 10 vezes no modo batalha rápida
+Vença 5 partidas no modo batalha rápida utilizando Exal I
+
+Monnica II
+Vença 15 partidas no modo batalha rápida
+Derrote Monnica II ao menos 10 vezes no modo batalha rápida
+Vença 5 partidas no modo batalha rápida utilizando Monnica I
+
+Ravi Berzerk (altere o nome de Ravi para Berzerk com "Z" ao invés de "S")
+Vença 25 partidas no modo batalha rápida
+Derrote Jung II ao menos 15 vezes no modo batalha rápida
+Derrote Exal II ao menos 15 vezes no modo batalha rápida
+Derrote Monnica II ao menos 15 vezes no modo batalha rápida
+Vença 10 partidas no modo batalha rápida utilizando Ravi de Berdal
+
+Exal - Verdadeiro poder (agora estará disponível via Requisitos, além da forma paga/premium)
+(Somente desbloqueável no Quadro de missões ao finalizar a batalha 7 da campanha 1)
+Vença 50 partidas no modo batalha rápida
+Derrote Ravi Berserk ao menos 30 vezes no modo batalha rápida
+Vença 30 partidas no modo batlha rápida utilizando Exal II
+Vença 15 partidas no modo batlha rápida utilizando Exal I
+
+Besta Lendária Zéfiro (agora estará disponível via Requisitos, além da forma paga/premium)
+(Somente desbloqueável no Quadro de missões ao finalizar a batalha 7 da campanha 1)
+Vença 100 partidas no modo batalha rápida
+Vença 50 partidas sem que nenhum membro da equipe morra
+Vença 30 partidas contra alguém de Grimória
+Vença 30 partidas contra alguém de Pontes
+Vença 30 partidas contra alguém de Espinea
+
+-
+
+General Abel
+Vença 10 partidas no modo batalha rápida
+Derrote General Abel ao menos 5 vezes no modo batalha rápida
+
+Guardiã da fronteira
+Vença 10 partidas no modo batalha rápida
+Derrote Guardiã da fronteira ao menos 5 vezes no modo batalha rápida
+
+Samurai Erlang
+Vença 10 partidas no modo batalha rápida
+Derrote Samurai Erlang ao menos 5 vezes no modo batalha rápida
+
+
+Sábio do castelo
+Vença 15 partidas no modo batalha rápida
+Derrote Sábio do castelo ao menos 10 vezes no modo batalha rápida
+
+Emissário do castelo
+Vença 15 partidas no modo batalha rápida
+Derrote Emissário do castelo ao menos 10 vezes no modo batalha rápida
+
+Grande rei Osíris
+Vença 25 partidas no modo batalha rápida
+Derrote Grande rei Osíris ao menos 15 vezes no modo batalha rápida
+
+## Implementação concluída
+
+- [x] Atualizar os requisitos dos 27 personagens listados, incluindo grupos e versões específicas.
+- [x] Renomear Ravi para **Ravi Berzerk**, preservando IDs e assets.
+- [x] Disponibilizar Exal — Verdadeiro poder e Besta Lendária Zéfiro por missão, mantendo Premium e preço.
+- [x] Exigir a batalha 7 da campanha 1 para revelar as duas novas missões Premium.
+- [x] Rastrear vitórias sem nenhuma morte, preservando o resultado após ressurreição e compactação do histórico.
+- [x] Expor dupla via e condição sem mortes no CMS, com persistência e validação no servidor.
+- [x] Adicionar migration 056, traduções e testes de regressão.
+
+Regras, grupos e persistência: [docs/mission-board.md](docs/mission-board.md).

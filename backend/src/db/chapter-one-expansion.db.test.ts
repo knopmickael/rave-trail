@@ -43,7 +43,7 @@ it('atualiza catálogo e missões editadas sem reescrever snapshots nem campos n
   const slash = before.abilities.find((a) => a.id === 'quick-slash')!;
   await cms.save('abilities', { ...slash, energyCost: 35, effects: [{ kind: 'damage', amount: 24 }, { kind: 'bleed', amount: 10, turns: 3 }, { kind: 'attack-block', teamTurns: 1 }] }, false);
   await pool.query("UPDATE units SET unlock_rule='{\"unitId\":\"guerreiros-habilidosos-a\",\"availableAfterEncounterId\":\"path-1-encounter-4\",\"requirements\":[]}' WHERE id='guerreiros-habilidosos-a'");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql','056_new_mission_board.sql')");
   await migrate(pool); await seedDatabase(pool); await migrate(pool);
   const updated = await game.getCatalog();
   expect(updated.units.find((u) => u.id === drak.id)).toMatchObject({ name: 'Drak personalizado', maxHp: 170, abilityIds: ['simple-strike', 'guard', 'retain-energy-plus', 'extra-turn'] });

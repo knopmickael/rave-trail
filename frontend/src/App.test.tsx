@@ -458,7 +458,7 @@ it('troca para inglês nas configurações e localiza personagens, missões e ca
   await user.click(screen.getByRole('button', { name: 'Back to main menu' }));
   await user.click(screen.getByRole('button', { name: 'Mission board' }));
   expect(await screen.findByRole('heading', { name: 'Road Raider I' })).toBeInTheDocument();
-  expect(screen.getAllByText('Win 3 Quick battles.')).toHaveLength(2);
+  expect(screen.getAllByText('Win 3 Quick battles.')).toHaveLength(5);
   await user.click(screen.getByRole('button', { name: 'Back to main menu' }));
   await user.click(screen.getByRole('button', { name: 'Campaign' }));
   await user.click(await screen.findByRole('button', { name: 'Chapter 1: Setting Out on the Road' }));

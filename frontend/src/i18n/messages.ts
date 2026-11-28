@@ -156,6 +156,7 @@ export const messages = {
   'Bloqueada na campanha': 'Campaign locked',
   'Disponível': 'Available',
   'Premium': 'Premium',
+  'Também disponível como Premium': 'Also available as Premium',
   'Em progresso': 'In progress',
   'Personagem adquirido': 'Character owned',
   'Adquirir personagem': 'Purchase character',

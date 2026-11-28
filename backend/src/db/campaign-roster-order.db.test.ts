@@ -47,7 +47,7 @@ it('migra catálogo e missões para a ordem da campanha mesmo após reordenaçã
   const missions = await game.getCharacterUnlocks(user.id);
   const remaining = previous.filter((id) => !ordered.includes(id));
   expect(missions.characters.filter((u) => u.kind === 'battle-wins').map((u) => u.id))
-    .toEqual([...ordered.filter((id) => !['protagonist-main-base', 'protagonist-secondary-base', 'protagonist-female-base', 'rival-b-final-mode', 'legendary-beast-premium'].includes(id)),
+    .toEqual([...ordered.filter((id) => !['protagonist-main-base', 'protagonist-secondary-base', 'protagonist-female-base'].includes(id)),
       ...remaining.filter((id) => !['maga-artemis', 'cms-roster-extra'].includes(id))]);
   expect((await cms.catalog()).characters.slice(26).map((u) => u.id)).toEqual(remaining);
   const withoutOrder = (characters: typeof before.characters) => characters.map(({ rosterOrder: _order, ...u }) => u).sort((a, b) => a.id.localeCompare(b.id));

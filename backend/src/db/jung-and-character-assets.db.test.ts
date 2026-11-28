@@ -89,14 +89,14 @@ it('coloca Jung II somente no encontro 6 e o disponibiliza no sorteio rápido de
   expect((await battles.getQuickBattle(user.id)).opponents.find((unit) => unit.id === second.id)?.portrait).toBe(second.portrait);
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ campaignAvailable: true, unlocked: false,
     requirements: [
-      expect.objectContaining({ current: 0, target: 25 }),
-      expect.objectContaining({ current: 0, target: 20 }),
+      expect.objectContaining({ current: 0, target: 15 }),
       expect.objectContaining({ current: 0, target: 10 }),
+      expect.objectContaining({ current: 0, target: 5 }),
     ] });
   await expect(game.setTeamSlot(user.id, 1, second.id)).rejects.toMatchObject({ statusCode: 403 });
 });
 
-it('a 10ª vitória rápida contra Jung II usando Ravi base libera a unidade sem duplicar o progresso', async () => {
+it('a quinta vitória rápida usando Jung original completa as metas de Jung II sem duplicar o progresso', async () => {
   const user = await player(6);
   await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'campaign');
   await new Promise((resolve) => setTimeout(resolve, 10));
@@ -105,23 +105,23 @@ it('a 10ª vitória rápida contra Jung II usando Ravi base libera a unidade sem
   await history(user.id, 'jung-de-grimoria-ii', 30, undefined, 'multiplayer');
   await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'quick', 'defeat');
   expect(mission(await game.getCharacterUnlocks(user.id)).requirements[2].current).toBe(0);
-  await history(user.id, 'jung-de-grimoria-ii', 9);
+  await history(user.id, 'road-raider-1-base', 4, 'rival-a-base');
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ unlocked: false,
     requirements: [
-      expect.objectContaining({ current: 25, target: 25 }),
-      expect.objectContaining({ current: 20, target: 20 }),
-      expect.objectContaining({ current: 9, target: 10 }),
+      expect.objectContaining({ current: 15, target: 15 }),
+      expect.objectContaining({ current: 10, target: 10 }),
+      expect.objectContaining({ current: 4, target: 5 }),
     ] });
   await expect(game.setTeamSlot(user.id, 1, 'jung-de-grimoria-ii')).rejects.toMatchObject({ statusCode: 403 });
-  const [last] = await history(user.id, 'jung-de-grimoria-ii', 1, undefined, 'quick', 'active');
+  const [last] = await history(user.id, 'road-raider-1-base', 1, 'rival-a-base', 'quick', 'active');
   const requestId = randomUUID();
   const response = await finish(user.id, last, requestId);
   expect(response.battle.state.status).toBe('victory');
   expect(mission(await game.getCharacterUnlocks(user.id))).toMatchObject({ unlocked: true,
     requirements: [
-      expect.objectContaining({ current: 25, target: 25 }),
-      expect.objectContaining({ current: 20, target: 20 }),
+      expect.objectContaining({ current: 15, target: 15 }),
       expect.objectContaining({ current: 10, target: 10 }),
+      expect.objectContaining({ current: 5, target: 5 }),
     ] });
   const repeated = await battles.submitTurn(user.id, last.id, 0, requestId,
     [{ actorId: 'player-0', abilityId: 'simple-strike', targetId: 'enemy-0' }]);
@@ -140,7 +140,7 @@ it('migra a formação antiga e reaplica o balanceamento de Jung II sem alterar 
   await pool.query("UPDATE encounter_enemies SET unit_id = 'rival-a-base' WHERE encounter_id = 'path-1-encounter-6' AND slot_index = 0");
   await pool.query("DELETE FROM unit_abilities WHERE unit_id = 'jung-de-grimoria-ii'");
   await pool.query("DELETE FROM units WHERE id = 'jung-de-grimoria-ii'");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('020_jung_de_grimoria_ii.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '044_divine_protection_retaliation_and_wolfs_howl.sql', '045_wolfs_howl_one_turn.sql', '046_chapter_one_expansion.sql', '049_execution_and_heal_plus_energy.sql', '051_existence_drain_and_dark_vortex_energy.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('020_jung_de_grimoria_ii.sql', '022_abilities_balance_and_new_skills.sql', '023_collective_guard_reduction.sql', '024_healing_and_drain_energy_costs.sql', '044_divine_protection_retaliation_and_wolfs_howl.sql', '045_wolfs_howl_one_turn.sql', '046_chapter_one_expansion.sql', '049_execution_and_heal_plus_energy.sql', '051_existence_drain_and_dark_vortex_energy.sql', '056_new_mission_board.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);

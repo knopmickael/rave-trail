@@ -239,6 +239,8 @@ export class PostgresMultiplayer {
     const loserId = winner === null ? null : match.players[1 - winner].userId;
     const result: MultiplayerResult = { id: match.id, participantIds: match.players.map((p) => p.userId) as [string, string], winnerId, loserId,
       teams: Object.fromEntries(match.players.map((p) => [p.userId, p.team])), startedAt: new Date(match.startedAt).toISOString(),
+      noDeathsByUserId: Object.fromEntries(match.players.map((p, i) => [p.userId,
+        match.battle.state.teams[i === 0 ? 'player' : 'enemy'].units.every((u) => u.hp > 0 && u.wasDefeated === false)])),
       completedAt: new Date(this.now()).toISOString(), rounds: match.rounds, totalTurns: match.totalTurns, reason };
     const progresses = await client.query<{ user_id: string; data: PlayerProgress }>('SELECT user_id,data FROM player_progress WHERE user_id=ANY($1::uuid[]) ORDER BY user_id FOR UPDATE', [result.participantIds]);
     await client.query('INSERT INTO multiplayer_results(id,player_id,enemy_id,winner_id,loser_id,completed_at,data) VALUES($1,$2,$3,$4,$5,$6,$7)',

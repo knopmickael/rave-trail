@@ -25,13 +25,13 @@ async function openBeast() {
   const user = userEvent.setup();
   render(<Store onBack={vi.fn()} onSessionExpired={vi.fn()} />);
   await user.click(await screen.findByRole('button', { name: 'Personagens' }));
-  await user.click(screen.getByRole('button', { name: 'Besta Lendária' }));
-  return screen.getByRole('region', { name: 'Detalhes de Besta Lendária' });
+  await user.click(screen.getByRole('button', { name: 'Besta Lendária Zéfiro' }));
+  return screen.getByRole('region', { name: 'Detalhes de Besta Lendária Zéfiro' });
 }
 
 it('mostra a arte original da Loja sem cadeado e mantém a compra desabilitada', async () => {
   const details = await openBeast();
-  expect(within(details).getByRole('img', { name: 'Ilustração de corpo inteiro de Besta Lendária' })).toBeInTheDocument();
+  expect(within(details).getByRole('img', { name: 'Ilustração de corpo inteiro de Besta Lendária Zéfiro' })).toBeInTheDocument();
   expect(within(details).queryByRole('img', { name: /bloqueada/ })).not.toBeInTheDocument();
   expect(details.querySelector('.character-lock')).toBeNull();
   expect(details.querySelector('.character-illustration--locked')).toBeNull();

@@ -5,6 +5,7 @@ import { campaigns } from '@game/content/campaigns.js';
 import { encounters } from '@game/content/encounters.js';
 import { synchronizeCharacterUnlocks } from './character-unlocks.js';
 import type { PlayerProgress } from '@game/contracts.js';
+import { battleUnlockRules } from '@game/content/unlocks.js';
 
 export async function seedCatalog(client: PoolClient): Promise<void> {
   const overrides = await client.query<{ entity: string; id: string }>('SELECT entity, id FROM cms_content_overrides');
@@ -48,12 +49,13 @@ export async function seedCatalog(client: PoolClient): Promise<void> {
   }
   for (const unit of units) {
     if (managed.has(`characters:${unit.id}`)) continue;
-    await client.query(`INSERT INTO units (id, character_id, name, version, description, max_hp, portrait_path, illustration_path, unlock_condition, roster_order, enabled)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT (id) DO UPDATE SET
+    await client.query(`INSERT INTO units (id, character_id, name, version, description, max_hp, portrait_path, illustration_path, unlock_condition, roster_order, enabled, unlock_rule)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT (id) DO UPDATE SET
       name = EXCLUDED.name, version = EXCLUDED.version, description = EXCLUDED.description,
       portrait_path = EXCLUDED.portrait_path, illustration_path = EXCLUDED.illustration_path, roster_order = EXCLUDED.roster_order,
-      unlock_condition = EXCLUDED.unlock_condition`,
-    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), rosterOrders.get(unit.id), true]);
+       unlock_condition = EXCLUDED.unlock_condition, unlock_rule = COALESCE(units.unlock_rule,EXCLUDED.unlock_rule)`,
+    [unit.id, unit.characterId, unit.name, unit.version, unit.description, unit.maxHp, unit.portrait, unit.illustration, JSON.stringify(unit.unlock), rosterOrders.get(unit.id), true,
+      JSON.stringify(battleUnlockRules.find((rule) => rule.unitId === unit.id) ?? null)]);
     for (const [slot, abilityId] of unit.abilityIds.entries()) {
       await client.query('INSERT INTO unit_abilities (unit_id, slot_index, ability_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING', [unit.id, slot, abilityId]);
     }

@@ -31,7 +31,7 @@ function renderList() {
   return render(<CharacterList onBack={vi.fn()} onSessionExpired={vi.fn()} />);
 }
 
-it.each(['Exal - Verdadeiro poder', 'Besta Lendária'])('mostra somente aquisição desabilitada para %s bloqueado', async (name) => {
+it.each(['Exal - Verdadeiro poder', 'Besta Lendária Zéfiro'])('mostra somente aquisição desabilitada para %s bloqueado', async (name) => {
   const user = userEvent.setup();
   renderList();
   await user.click(await screen.findByRole('button', { name: `Selecionar ${name} — bloqueado` }));
@@ -75,8 +75,8 @@ it('exibe todo o catálogo do banco sem textos auxiliares e com os novos inimigo
   expect(within(catalog).getByRole('button', { name: 'Selecionar Doko de Berdal' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Anna de Berdal' })).toBeEnabled();
   expect(within(catalog).getByRole('button', { name: 'Selecionar Drak de Pontes — bloqueado' })).toBeEnabled();
-  expect(within(catalog).getByRole('button', { name: 'Selecionar Ravi Berserk — bloqueado' })).toBeEnabled();
-  expect(within(catalog).getByRole('button', { name: 'Selecionar Besta Lendária — bloqueado' })).toBeEnabled();
+  expect(within(catalog).getByRole('button', { name: 'Selecionar Ravi Berzerk — bloqueado' })).toBeEnabled();
+  expect(within(catalog).getByRole('button', { name: 'Selecionar Besta Lendária Zéfiro — bloqueado' })).toBeEnabled();
   expect(screen.queryByText(/Seus companheiros de jornada/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/unidades desbloqueadas/i)).not.toBeInTheDocument();
   expect(screen.queryByText('Retratos e ilustrações provisórios.')).not.toBeInTheDocument();

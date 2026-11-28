@@ -37,6 +37,22 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
+it('edita missão e vitória sem mortes mantendo a aquisição Premium e o preço', async () => {
+  catalog.characters[0] = { ...catalog.characters[0], unlock: { kind: 'premium', description: 'Premium.' }, priceUsd: 9.9, unlockRule: null };
+  const user = userEvent.setup(); render(<Studio />);
+  await user.click(await screen.findByRole('button', { name: /^Ravi de Berdal/ }));
+  const dual = screen.getByRole('checkbox', { name: 'Também desbloquear por missão' });
+  expect(dual).not.toBeChecked();
+  await user.click(dual);
+  await user.click(screen.getByRole('checkbox', { name: 'Exigir vitória sem nenhuma morte de aliado' }));
+  await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+  await screen.findByText('Alterações salvas no banco com sucesso.');
+  expect(request).toHaveBeenCalledWith(`/api/characters/${units[0].id}`, 'PUT', expect.objectContaining({
+    unlock: expect.objectContaining({ kind: 'premium' }), priceUsd: 9.9,
+    unlockRule: expect.objectContaining({ requirements: [expect.objectContaining({ requireNoDeaths: true })] }),
+  }));
+});
+
 it.each([
   ['Personagens', 'Ravi de Berdal', 'Nome', 'characters'],
   ['Habilidades', 'Guarda', 'Nome da habilidade', 'abilities'],

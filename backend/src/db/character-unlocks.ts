@@ -10,7 +10,7 @@ export async function readCharacterUnlocks(client: Pool | PoolClient, userId: st
   const configured = await client.query<{ id: string; unlock: UnitDefinition['unlock'] & { priceUsd?: number }; rule: BattleUnlockRule | null }>(
     'SELECT id, unlock_condition AS unlock, unlock_rule AS rule FROM units WHERE enabled');
   const rules = configured.rows.flatMap((unit): BattleUnlockRule[] => {
-    if (unit.unlock.kind === 'battle-wins') {
+    if (unit.unlock.kind === 'battle-wins' || unit.unlock.kind === 'premium' && unit.rule) {
       const rule = unit.rule ?? battleUnlockRules.find((entry) => entry.unitId === unit.id);
       return rule ? [rule] : [];
     }
@@ -29,13 +29,18 @@ export async function readCharacterUnlocks(client: Pool | PoolClient, userId: st
     CASE WHEN state IS NOT NULL THEN ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,player,units}') AS fighter)
       ELSE ARRAY(SELECT jsonb_array_elements_text(summary->'playerUnitIds')) END AS "playerUnitIds",
     CASE WHEN state IS NOT NULL THEN ARRAY(SELECT DISTINCT fighter->>'unitId' FROM jsonb_array_elements(state #> '{teams,enemy,units}') AS fighter)
-      ELSE ARRAY(SELECT jsonb_array_elements_text(summary->'enemyUnitIds')) END AS "enemyUnitIds"
+      ELSE ARRAY(SELECT jsonb_array_elements_text(summary->'enemyUnitIds')) END AS "enemyUnitIds",
+     CASE WHEN state IS NOT NULL THEN jsonb_array_length(state #> '{teams,player,units}') > 0
+       AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(state #> '{teams,player,units}') f
+         WHERE f->>'wasDefeated' IS DISTINCT FROM 'false' OR COALESCE((f->>'hp')::int,0)<=0)
+       ELSE COALESCE((summary->>'noPlayerDeaths')::boolean,false) END AS "noPlayerDeaths"
     FROM battles WHERE user_id = $1 AND status = 'victory' AND mode IN ('quick', 'multiplayer')
     UNION ALL
     SELECT 'multiplayer' AS mode,
       to_char(completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt",
       ARRAY(SELECT jsonb_array_elements_text(data->'teams'->$1::text)) AS "playerUnitIds",
-      ARRAY(SELECT jsonb_array_elements_text(data->'teams'->(data->>'loserId'))) AS "enemyUnitIds"
+       ARRAY(SELECT jsonb_array_elements_text(data->'teams'->(data->>'loserId'))) AS "enemyUnitIds",
+       COALESCE((data->'noDeathsByUserId'->>$1::text)::boolean,false) AS "noPlayerDeaths"
     FROM multiplayer_results WHERE winner_id=$1`, [userId]);
   const campaignCompletions = await client.query<{ encounterId: string; completedAt: string }>(`SELECT encounter_id AS "encounterId",
     to_char(MIN(updated_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "completedAt"

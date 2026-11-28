@@ -146,7 +146,7 @@ describe('catálogo compartilhado', () => {
       'Saqueador da estrada III', 'Saqueador da estrada IV', 'Saqueadora da estrada II',
       'Trinity de Espinea', 'Vlade de Espinea', 'Passago de Espinea',
       'Jung de Grimória II', 'Exal de Grimória II', 'Monnica de Grimória II',
-      'Ravi Berserk', 'Exal - Verdadeiro poder', 'Besta Lendária',
+      'Ravi Berzerk', 'Exal - Verdadeiro poder', 'Besta Lendária Zéfiro',
       ...SECOND_CAMPAIGN_CHARACTERS.map((character) => character.name),
     ]);
     expect(rosterUnits.map((unit) => unit.rosterOrder)).toEqual(Array.from({ length: units.length }, (_, index) => index));

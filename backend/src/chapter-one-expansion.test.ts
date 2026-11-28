@@ -15,28 +15,29 @@ const mission = (id: string, history: BattleVictory[]) => {
 };
 
 it.each([
-  ['saqueador-da-estrada-iii', 4, 15, 10, '/media/characters/saqueador-iii.png'],
-  ['saqueador-da-estrada-iv', 4, 15, 10, '/media/characters/saqueador-iv.png'],
-  ['saqueadora-da-estrada-ii', 4, 15, 10, '/media/characters/saqueadora-ii.png'],
-  ['exal-de-grimoria-ii', 6, 25, 20, '/media/characters/exal-ii.png'],
-  ['monnica-de-grimoria-ii', 6, 25, 20, '/media/characters/monnica-ii.png'],
+  ['saqueador-da-estrada-iii', 4, 10, 5, '/media/characters/saqueador-iii.png'],
+  ['saqueador-da-estrada-iv', 4, 10, 5, '/media/characters/saqueador-iv.png'],
+  ['saqueadora-da-estrada-ii', 4, 10, 5, '/media/characters/saqueadora-ii.png'],
+  ['exal-de-grimoria-ii', 6, 15, 10, '/media/characters/exal-ii.png'],
+  ['monnica-de-grimoria-ii', 6, 15, 10, '/media/characters/monnica-ii.png'],
 ] as const)('integra %s ao combate e à missão após a batalha %s', (id, gate, wins, defeats, illustration) => {
   const unit = units.find((u) => u.id === id)!;
   expect(unit).toBeDefined();
   expect(unit.illustration).toBe(illustration);
   expect(createBattle([unit], [units[0]], Object.values(abilities)).teams.player.units[0]).toMatchObject({ unitId: id, hp: 100 });
   expect(battleUnlockRules.find((r) => r.unitId === id)?.availableAfterEncounterId).toBe(`path-1-encounter-${gate}`);
-  const history = Array.from({ length: wins }, (_, i) => victory(i < defeats ? id : 'protagonist-secondary-base'));
-  expect(mission(id, history).map((r) => [r.current, r.target])).toEqual([[wins, wins], [defeats, defeats]]);
+  const original = id === 'exal-de-grimoria-ii' ? 'rival-b-base' : id === 'monnica-de-grimoria-ii' ? 'rival-female-base' : undefined;
+  const history = Array.from({ length: wins }, (_, i) => victory(i < defeats ? id : 'protagonist-secondary-base', original));
+  expect(mission(id, history).map((r) => [r.current, r.target])).toEqual([[wins, wins], [defeats, defeats], ...(original ? [[5, 5]] : [])]);
 });
 
-it('Jung II distingue o original e exige Ravi base; Berserk exige as duas versões II com Ravi', () => {
+it('Jung II exige o original e Berzerk distingue as três versões II e a utilização de Ravi', () => {
   const baseHistory = Array.from({ length: 30 }, () => victory('rival-a-base'));
-  expect(mission('jung-de-grimoria-ii', baseHistory).map((r) => r.current)).toEqual([25, 0, 0]);
+  expect(mission('jung-de-grimoria-ii', baseHistory).map((r) => r.current)).toEqual([15, 0, 0]);
   const qualified = [...Array.from({ length: 20 }, () => victory('jung-de-grimoria-ii')),
     ...Array.from({ length: 20 }, () => victory('exal-de-grimoria-ii'))];
-  expect(mission('protagonist-main-transformed', qualified).map((r) => r.current)).toEqual([30, 20, 20]);
-  expect(mission('protagonist-main-transformed', qualified.map((v) => ({ ...v, playerUnitIds: ['protagonist-main-transformed'] }))).map((r) => r.current)).toEqual([30, 0, 0]);
+  expect(mission('protagonist-main-transformed', qualified).map((r) => r.current)).toEqual([25, 15, 15, 0, 10]);
+  expect(mission('protagonist-main-transformed', qualified.map((v) => ({ ...v, playerUnitIds: ['protagonist-main-transformed'] }))).map((r) => r.current)).toEqual([25, 15, 15, 0, 0]);
 });
 
 it('as batalhas 4, 5 e 6 mantêm IDs e usam as novas formações', () => {

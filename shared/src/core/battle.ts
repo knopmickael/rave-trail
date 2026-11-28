@@ -14,6 +14,7 @@ export interface Fighter {
   portrait: string;
   hp: number;
   maxHp: number;
+  wasDefeated?: boolean;
   abilityIds: readonly string[];
   guardExpiresAt: number | null;
   guardAbilityId?: string | null;
@@ -142,6 +143,7 @@ function takeDamage(unit: Fighter, amount: number, events: BattleEvent[], metada
     events.push({ kind: 'guard', message: `A Benção divina impede a morte de ${unit.name}: resta 1 HP.`, ...metadata, abilityId });
   }
   if (unit.hp === 0) {
+    unit.wasDefeated = true;
     unit.concentrationExpiresAt = null;
     unit.concentrationAbilityId = null;
   }
@@ -271,7 +273,7 @@ export function createBattle(player: readonly UnitDefinition[], enemy: readonly 
   const makeTeam = (units: readonly UnitDefinition[], side: BattleSide): BattleTeam => ({
     energy: 0, turns: 0, extraTurns: 0,
     units: units.map((unit, index) => ({ id: `${side}-${index}`, unitId: unit.id, name: unit.name, portrait: unit.portrait,
-      hp: unit.maxHp, maxHp: unit.maxHp, abilityIds: [...unit.abilityIds], guardExpiresAt: null, guardReduction: null, guardHealPerTurn: null,
+      hp: unit.maxHp, maxHp: unit.maxHp, wasDefeated: false, abilityIds: [...unit.abilityIds], guardExpiresAt: null, guardReduction: null, guardHealPerTurn: null,
       bleedTurns: 0, bleedAmount: 0, invulnerableExpiresAt: null, attackBlockedExpiresAt: null,
       abilitiesBlockedExpiresAt: null, abilityBlockAbilityId: null,
       deathWardAbilityId: null,

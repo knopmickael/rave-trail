@@ -95,7 +95,7 @@ it('persiste a transformação inicial uma única vez após recarga e conclui a 
   expect(transformed.revision).toBe(2);
   expect(transformed.state.teams.player.units).toHaveLength(3);
   expect(transformed.state.teams.player.units[0]).toMatchObject({ id: 'player-0', unitId: 'protagonist-main-transformed',
-    name: 'Ravi Berserk', abilityIds: units.find((unit) => unit.id === 'protagonist-main-transformed')!.abilityIds });
+    name: 'Ravi Berzerk', abilityIds: units.find((unit) => unit.id === 'protagonist-main-transformed')!.abilityIds });
   expect(transformed.log?.filter((event) => event.kind === 'transform')).toHaveLength(1);
   expect(await battles.submitTurn(user.id, final.id, 0, requestId, actions)).toEqual(opening);
   expect(await new PostgresBattleRepository(pool, () => 0, () => now).getBattle(user.id, final.id)).toEqual(transformed);

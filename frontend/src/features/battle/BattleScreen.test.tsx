@@ -125,17 +125,17 @@ it('substitui o único Ravi por Berserk com novas habilidades e registra a trans
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={record} title="Exal — Verdadeiro poder" {...handlers()} />);
   await user.click(skill('Reter energia'));
-  expect(screen.queryByRole('group', { name: 'Aliado: Ravi Berserk' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Aliado: Ravi Berzerk' })).not.toBeInTheDocument();
   await user.click(endTurn());
-  const ravi = await screen.findByRole('group', { name: 'Aliado: Ravi Berserk' });
+  const ravi = await screen.findByRole('group', { name: 'Aliado: Ravi Berzerk' });
   expect(within(screen.getByRole('region', { name: 'Sua equipe' })).getAllByRole('group')).toHaveLength(1);
   expect(within(screen.getByRole('region', { name: 'Equipe inimiga' })).getAllByRole('group')).toHaveLength(1);
   expect(ravi.querySelector('.fighter-portrait img')).toHaveAttribute('src', '/media/characters/ravi-berserk-face.png');
-  expect(skill('Reter muita energia', 'Ravi Berserk')).toBeEnabled();
+  expect(skill('Reter muita energia', 'Ravi Berzerk')).toBeEnabled();
   expect(screen.queryByRole('button', { name: 'Reter energia — Ravi de Berdal' })).not.toBeInTheDocument();
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Registro do combate' }));
-  expect(within(screen.getByRole('dialog', { name: 'Registro do combate' })).getByText('Ravi de Berdal despertou como Ravi Berserk!')).toBeInTheDocument();
+  expect(within(screen.getByRole('dialog', { name: 'Registro do combate' })).getByText('Ravi de Berdal despertou como Ravi Berzerk!')).toBeInTheDocument();
 });
 
 it.each(['victory', 'defeat'] as const)('emite o som de %s ao concluir a batalha oficialmente, sem tocar na prévia ou repetir no histórico', async (status) => {
@@ -345,10 +345,10 @@ it('ressurreição reserva 50 de energia e permite selecionar somente um aliado 
   });
   const user = userEvent.setup();
   render(<BattleScreen initialBattle={record} title="Batalha" {...handlers()} />);
-  await user.click(skill('Trazer dos mortos', 'Besta Lendária'));
+  await user.click(skill('Trazer dos mortos', 'Besta Lendária Zéfiro'));
   expect(energy()).toHaveAttribute('aria-valuenow', '50');
   expect(screen.getByRole('status')).toHaveTextContent('Escolha um aliado derrotado');
-  expect(screen.getByRole('button', { name: 'Personagem: Besta Lendária' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Personagem: Besta Lendária Zéfiro' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Adversário: Saqueador da estrada I' })).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Alvo: Ravi de Berdal' }));
   await user.click(endTurn());

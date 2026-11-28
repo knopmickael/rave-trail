@@ -21,7 +21,10 @@ type Pattern = readonly [RegExp, (match: RegExpMatchArray, text: (source: string
 const patterns: readonly Pattern[] = [
   [/^Finalize a batalha (\d+) da campanha (\d+)\.?$/, ([, battle, campaign]) => `Complete battle ${battle} of campaign ${campaign}`],
   [/^Vença (\d+) (?:partidas no modo|batalhas na) [Bb]atalha rápida\.$/, ([, count]) => `Win ${count} Quick battles.`],
-  [/^Derrote (.+) na Batalha rápida (\d+) vezes(?: utilizando (.+))?\.$/, ([, name, count, allies], text) =>
+  [/^Vença (\d+) partidas no modo Batalha rápida utilizando (.+)\.$/, ([, count, name], text) => `Win ${count} Quick battles using ${text(name)}.`],
+  [/^Vença (\d+) partidas no modo Batalha rápida sem que nenhum membro da equipe morra\.$/, ([, count]) => `Win ${count} Quick battles without any teammate dying.`],
+  [/^Vença (\d+) partidas no modo Batalha rápida contra alguém de (Grimória|Pontes|Espinea)\.$/, ([, count, group]) => `Win ${count} Quick battles against a character from ${group}.`],
+  [/^Derrote (.+) na Batalha rápida (\d+) (?:vez|vezes)(?: utilizando (.+))?\.$/, ([, name, count, allies], text) =>
     `Defeat ${text(name)} in Quick battle ${count} times${allies ? ` using ${text(allies)}` : ''}.`],
   [/^(.+) está impedido de atacar neste turno\.$/, ([, name], text) => `${text(name)} cannot attack this turn.`],
   [/^(.+) está impedido de usar habilidades neste turno\.$/, ([, name], text) => `${text(name)} cannot use abilities this turn.`],

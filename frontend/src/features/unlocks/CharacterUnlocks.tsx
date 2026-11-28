@@ -65,6 +65,7 @@ export function CharacterUnlocks({ onBack, onSessionExpired }: {
                 <img src={unit.portrait} alt={t('Retrato de {name}', { name: text(unit.name) })} draggable={false} />
                 <div><h2 id={`unlock-${unit.id}`}>{text(unit.name)}</h2>
                   <span className="unlock-status">{t(locked ? 'Bloqueada na campanha' : unit.unlocked ? 'Disponível' : 'Em progresso')}</span>
+                  {unit.kind === 'battle-wins' && unit.priceUsd !== undefined && <small className="unlock-status">{t('Também disponível como Premium')}</small>}
                 </div>
               </header>
               <ul className="unlock-requirements" tabIndex={locked ? -1 : 0} aria-label={t('Requisitos de {name}', { name: text(unit.name) })}>

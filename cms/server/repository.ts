@@ -24,7 +24,8 @@ export class CmsRepository {
         unlock_rule AS "unlockRule", (unlock_condition->>'priceUsd')::float AS "priceUsd", roster_order AS "rosterOrder", enabled,
         ARRAY(SELECT ability_id FROM unit_abilities WHERE unit_id = u.id ORDER BY slot_index) AS "abilityIds" FROM units u ORDER BY roster_order NULLS LAST, u.id`);
       for (const unit of characters.rows) {
-        unit.unlockRule = unit.unlock.kind === 'battle-wins' ? unit.unlockRule ?? battleUnlockRules.find((rule) => rule.unitId === unit.id) ?? null : null;
+        unit.unlockRule = unit.unlock.kind === 'battle-wins' ? unit.unlockRule ?? battleUnlockRules.find((rule) => rule.unitId === unit.id) ?? null
+          : unit.unlock.kind === 'premium' ? unit.unlockRule : null;
         unit.priceUsd ??= premiumUnitPrices[unit.id] ?? null;
         // O preço é um detalhe de autoria, enviado separadamente do unlock.
         const { kind, description } = unit.unlock;
@@ -178,7 +179,7 @@ export class CmsRepository {
     await client.query(`INSERT INTO units (id,character_id,name,version,description,max_hp,portrait_path,illustration_path,unlock_condition,unlock_rule,enabled,roster_order)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,(SELECT COALESCE(MAX(roster_order),-1)+1 FROM units)) ON CONFLICT (id) DO UPDATE SET character_id=$2,name=$3,version=$4,description=$5,max_hp=$6,portrait_path=$7,illustration_path=$8,unlock_condition=$9,unlock_rule=$10,enabled=$11`,
     [c.id, c.characterId, c.name, c.version, c.description, c.maxHp, c.portrait, c.illustration, JSON.stringify(unlock),
-      c.unlock.kind === 'battle-wins' ? JSON.stringify({ ...c.unlockRule, description }) : null, c.enabled]);
+      c.unlockRule && c.unlock.kind !== 'starter' ? JSON.stringify({ ...c.unlockRule, description: c.unlockRule.requirements.map((r) => r.description).join(' ') }) : null, c.enabled]);
     if (!c.enabled) {
       await client.query(`WITH removed AS (DELETE FROM encounter_enemies WHERE unit_id=$1 RETURNING encounter_id)
         INSERT INTO cms_content_overrides (entity,id,deleted) SELECT DISTINCT 'encounters',encounter_id,false FROM removed

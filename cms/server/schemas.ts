@@ -47,7 +47,7 @@ const ids = z.array(id).max(100).refine((values) => new Set(values).size === val
 const requirement = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('encounter'), encounterId: id, target: z.literal(1), description }).strict(),
   z.object({ kind: z.literal('battle-wins'), mode: z.enum(['quick', 'multiplayer']), target: integer(1, 100000), description,
-    opponentUnitIds: ids.min(1).optional(), requiredPlayerUnitIds: ids.min(1).optional() }).strict(),
+    opponentUnitIds: ids.min(1).optional(), requiredPlayerUnitIds: ids.min(1).optional(), requireNoDeaths: z.boolean().optional() }).strict(),
 ]);
 export const characterSchema = z.object({
   id, characterId: id, name: text, version: text, description, maxHp: integer(1, 10000), portrait: image, illustration: image,
@@ -57,8 +57,9 @@ export const characterSchema = z.object({
   priceUsd: z.number().positive().max(10000).nullable(),
 }).strict().superRefine((value, ctx) => {
   if (value.unlock.kind === 'battle-wins' && (!value.unlockRule || value.unlockRule.unitId !== value.id)) ctx.addIssue({ code: 'custom', path: ['unlockRule'], message: 'Configure os requisitos de desbloqueio deste personagem.' });
-  if (value.unlock.kind === 'battle-wins' && value.unlockRule && (value.unlockRule.availableFromStart === true) === !!value.unlockRule.availableAfterEncounterId) ctx.addIssue({ code: 'custom', path: ['unlockRule'], message: 'Escolha exatamente uma revelação: desde o início ou após uma batalha específica.' });
-  if (value.unlock.kind !== 'battle-wins' && value.unlockRule !== null) ctx.addIssue({ code: 'custom', path: ['unlockRule'], message: 'Somente missões possuem requisitos de desbloqueio.' });
+  if (value.unlockRule && value.unlockRule.unitId !== value.id) ctx.addIssue({ code: 'custom', path: ['unlockRule'], message: 'O ID da missão deve corresponder ao personagem.' });
+  if (value.unlockRule && (value.unlockRule.availableFromStart === true) === !!value.unlockRule.availableAfterEncounterId) ctx.addIssue({ code: 'custom', path: ['unlockRule'], message: 'Escolha exatamente uma revelação: desde o início ou após uma batalha específica.' });
+  if (value.unlock.kind === 'starter' && value.unlockRule !== null) ctx.addIssue({ code: 'custom', path: ['unlockRule'], message: 'Personagens iniciais não possuem requisitos de desbloqueio.' });
   if (value.unlock.kind === 'premium' && !value.priceUsd) ctx.addIssue({ code: 'custom', path: ['priceUsd'], message: 'Informe o preço.' });
 });
 export const campaignSchema = z.object({ id, chapterNumber: integer(1, 100000), title: text, description, background: image,

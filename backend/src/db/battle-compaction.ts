@@ -16,7 +16,10 @@ export async function compactCompletedBattles(pool: Pool, before = new Date(Date
       'loserId',CASE WHEN status IN ('defeat','abandoned') THEN user_id ELSE NULL END,
       'startedAt',created_at,'completedAt',updated_at,'initialTeams',initial_teams,
       'playerUnitIds',(SELECT jsonb_agg(f->>'unitId') FROM jsonb_array_elements(state #> '{teams,player,units}') f),
-      'enemyUnitIds',(SELECT jsonb_agg(f->>'unitId') FROM jsonb_array_elements(state #> '{teams,enemy,units}') f),
+       'enemyUnitIds',(SELECT jsonb_agg(f->>'unitId') FROM jsonb_array_elements(state #> '{teams,enemy,units}') f),
+       'noPlayerDeaths',jsonb_array_length(state #> '{teams,player,units}') > 0
+         AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(state #> '{teams,player,units}') f
+           WHERE f->>'wasDefeated' IS DISTINCT FROM 'false' OR COALESCE((f->>'hp')::int,0)<=0),
       'rounds',COALESCE(round_count, (state #>> '{teams,player,turns}')::int),
       'totalTurns',COALESCE(executed_turns, GREATEST(0,(state->>'turn')::int-CASE WHEN status='abandoned' THEN 1 ELSE 0 END)),
       'countersExact',counters_exact,

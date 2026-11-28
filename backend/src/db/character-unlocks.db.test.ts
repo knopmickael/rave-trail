@@ -71,12 +71,12 @@ async function finish(userId: string, battle: BattleRecord, requestId = randomUU
   return battles.submitTurn(userId, battle.id, 0, requestId, [{ actorId: 'player-0', abilityId: 'simple-strike', targetId: 'enemy-0' }]);
 }
 
-it('a quinta vitória rápida libera os saqueadores na mesma transação e o reenvio não duplica progresso', async () => {
+it('a terceira vitória rápida libera os saqueadores na mesma transação e o reenvio não duplica progresso', async () => {
   const user = await player();
   const raiders = ['road-raider-1-base', 'road-raider-2-base', 'road-raider-3-base'];
   await pool.query(`UPDATE player_progress SET data = jsonb_set(data, '{completedEncounters}', '["path-1-encounter-1"]') WHERE user_id = $1`, [user.id]);
-  await history(user.id, raiders, 4);
-  expect(current(await game.getCharacterUnlocks(user.id), raiders[0], 1)).toBe(4);
+  await history(user.id, raiders, 2);
+  expect(current(await game.getCharacterUnlocks(user.id), raiders[0], 0)).toBe(2);
   expect((await auth.getProgress(user.id))!.unlockedUnitIds).not.toContain(raiders[0]);
   const quick = await new PostgresBattleRepository(pool, (maximum) => maximum - 1).startQuickBattle(user.id);
   const requestId = randomUUID();
@@ -86,7 +86,8 @@ it('a quinta vitória rápida libera os saqueadores na mesma transação e o ree
   const data = await game.getCharacterUnlocks(user.id);
   for (const id of raiders) {
     expect(entry(data, id).unlocked).toBe(true);
-    expect(current(data, id, 1)).toBe(5);
+    expect(current(data, id, 0)).toBe(3);
+    expect(current(data, id, 1)).toBe(1);
   }
   const progress = (await auth.getProgress(user.id))!;
   const repeated = await battles.submitTurn(user.id, quick.id, 0, requestId, [{ actorId: 'player-0', abilityId: 'simple-strike', targetId: 'enemy-0' }]);
@@ -94,33 +95,32 @@ it('a quinta vitória rápida libera os saqueadores na mesma transação e o ree
   expect(await auth.getProgress(user.id)).toEqual(progress);
   await game.setTeamSlot(user.id, 1, raiders[0]);
   expect((await new PostgresAuthRepository(pool).getProgress(user.id))!.selectedTeam[1]).toBe(raiders[0]);
-  expect((await pool.query("SELECT count(*)::int AS count FROM battles WHERE user_id = $1 AND mode = 'quick' AND status = 'victory'", [user.id])).rows[0].count).toBe(5);
+  expect((await pool.query("SELECT count(*)::int AS count FROM battles WHERE user_id = $1 AND mode = 'quick' AND status = 'victory'", [user.id])).rows[0].count).toBe(3);
 });
 
 it('usa a equipe congelada da batalha para Jung, mesmo depois de alterar a escalação atual', async () => {
   const user = await player();
-  await history(user.id, ['rival-a-base'], 2, ['protagonist-main-base']);
   await history(user.id, ['rival-a-base'], 9, ['protagonist-secondary-base']);
   const [withoutRavi] = await history(user.id, ['rival-a-base'], 1, ['protagonist-secondary-base'], 'quick', 'active');
   await finish(user.id, withoutRavi);
-  expect(current(await game.getCharacterUnlocks(user.id), 'rival-a-base', 3)).toBe(2);
+  expect(current(await game.getCharacterUnlocks(user.id), 'rival-a-base', 2)).toBe(0);
   expect((await auth.getProgress(user.id))!.unlockedUnitIds).not.toContain('rival-a-base');
   const [withRavi] = await history(user.id, ['rival-a-base'], 1, ['protagonist-main-base'], 'quick', 'active');
   await game.setTeamSlot(user.id, 0, 'protagonist-secondary-base');
   await finish(user.id, withRavi);
   expect((await auth.getProgress(user.id))!.unlockedUnitIds).toContain('rival-a-base');
-  expect(current(await game.getCharacterUnlocks(user.id), 'rival-a-base', 3)).toBe(3);
+  expect(current(await game.getCharacterUnlocks(user.id), 'rival-a-base', 2)).toBe(1);
 });
 
 it('distingue Multiplayer de Batalha rápida e ignora derrotas e vitórias da campanha', async () => {
   const user = await player();
   await history(user.id, ['road-raider-1-base'], 5, undefined, 'campaign');
   await new Promise((resolve) => setTimeout(resolve, 10));
-  await history(user.id, ['road-raider-1-base'], 4);
+  await history(user.id, ['road-raider-1-base'], 2);
   await history(user.id, ['road-raider-1-base'], 5, undefined, 'multiplayer');
   await history(user.id, ['road-raider-1-base'], 5, undefined, 'quick', 'defeat');
   const before = await game.getCharacterUnlocks(user.id);
-  expect(current(before, 'road-raider-1-base', 1)).toBe(4);
+  expect(current(before, 'road-raider-1-base', 0)).toBe(2);
   expect(entry(before, 'road-raider-1-base').unlocked).toBe(false);
   expect(entry(before, 'protagonist-main-transformed').campaignAvailable).toBe(false);
   const [last] = await history(user.id, ['road-raider-1-base'], 1, undefined, 'quick', 'active');
@@ -160,18 +160,18 @@ it('mesmo a quinquagésima vitória não revela Ravi Berserk sem derrotá-lo com
   expect((await auth.getProgress(user.id))!.unlockedUnitIds).not.toContain('protagonist-main-transformed');
 });
 
-it('a décima quinta vitória contra os guerreiros de Espinea libera Trinity, Vlade e Passago', async () => {
+it('a quinta vitória contra Espinea completa dez vitórias totais e libera o trio com alguém de Pontes', async () => {
   const user = await player();
   const trio = ['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'];
-  await history(user.id, trio, 14, ['road-raider-1-base']);
+  await history(user.id, trio, 4, ['guardian-healer-male-base']);
   await history(user.id, ['protagonist-secondary-base'], 5);
   const before = await game.getCharacterUnlocks(user.id);
   for (const id of trio) {
     expect(entry(before, id).unlocked).toBe(false);
-    expect(current(before, id, 0)).toBe(19);
-    expect(current(before, id, 1)).toBe(14);
+    expect(current(before, id, 0)).toBe(9);
+    expect(current(before, id, 1)).toBe(4);
   }
-  const [lastQuick] = await history(user.id, trio, 1, ['road-raider-1-base'], 'quick', 'active');
+  const [lastQuick] = await history(user.id, trio, 1, ['guardian-healer-male-base'], 'quick', 'active');
   await finish(user.id, lastQuick);
   const afterQuick = await game.getCharacterUnlocks(user.id);
   for (const id of trio) {
@@ -179,17 +179,17 @@ it('a décima quinta vitória contra os guerreiros de Espinea libera Trinity, Vl
   }
 });
 
-it('Passago permanece bloqueado com 14 vitórias rápidas contra ele e desbloqueia na 15ª', async () => {
+it('Passago permanece bloqueado com quatro vitórias contra ele e completa as metas na quinta com Pontes', async () => {
   const user = await player();
   await history(user.id, ['rival-female-base'], 10, undefined, 'multiplayer');
-  await history(user.id, ['guerreiros-habilidosos-c'], 14);
+  await history(user.id, ['guerreiros-habilidosos-c'], 4, ['guardian-healer-female-base']);
   await history(user.id, ['protagonist-secondary-base'], 5);
   await seedDatabase(pool);
   const incomplete = await game.getCharacterUnlocks(user.id);
-  expect(current(incomplete, 'guerreiros-habilidosos-c', 0)).toBe(19);
-  expect(current(incomplete, 'guerreiros-habilidosos-c', 1)).toBe(14);
+  expect(current(incomplete, 'guerreiros-habilidosos-c', 0)).toBe(9);
+  expect(current(incomplete, 'guerreiros-habilidosos-c', 1)).toBe(4);
   expect(entry(incomplete, 'guerreiros-habilidosos-c').unlocked).toBe(false);
-  const [last] = await history(user.id, ['guerreiros-habilidosos-c'], 1, undefined, 'quick', 'active');
+  const [last] = await history(user.id, ['guerreiros-habilidosos-c'], 1, ['guardian-healer-female-base'], 'quick', 'active');
   await finish(user.id, last);
   expect(entry(await game.getCharacterUnlocks(user.id), 'guerreiros-habilidosos-c').unlocked).toBe(true);
 });
@@ -197,11 +197,11 @@ it('Passago permanece bloqueado com 14 vitórias rápidas contra ele e desbloque
 it('migra a habilidade de Drak e recalcula o histórico de Espinea com as novas metas', async () => {
   const user = await player();
   const other = await player();
-  await history(user.id, ['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'], 15);
+  await history(user.id, ['guerreiros-habilidosos-a', 'guerreiros-habilidosos-b', 'guerreiros-habilidosos-c'], 5, ['guardian-healer-male-base']);
   await history(user.id, ['protagonist-secondary-base'], 5);
   await history(user.id, ['rival-b-base'], 10, undefined, 'multiplayer');
   await pool.query("UPDATE unit_abilities SET ability_id = 'fast-move' WHERE unit_id = 'passage-guardian-base' AND slot_index=1");
-  await pool.query("DELETE FROM schema_migrations WHERE name IN ('046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql')");
+  await pool.query("DELETE FROM schema_migrations WHERE name IN ('046_chapter_one_expansion.sql','049_execution_and_heal_plus_energy.sql','056_new_mission_board.sql')");
   await migrate(pool);
   await seedDatabase(pool);
   await migrate(pool);
@@ -214,16 +214,16 @@ it('migra a habilidade de Drak e recalcula o histórico de Espinea com as novas 
     expect((await auth.getProgress(user.id))!.unlockedUnitIds).toContain(id);
   }
   expect((await game.getCatalog()).units.find((unit) => unit.id === 'guerreiros-habilidosos-c')?.unlock.description)
-    .toContain('Derrote Passago de Espinea na Batalha rápida 15 vezes.');
+    .toContain('Derrote Passago de Espinea na Batalha rápida 5 vezes.');
   expect((await auth.getProgress(other.id))!.unlockedUnitIds).toEqual([...STARTER_UNIT_IDS]);
 });
 
 it('vitórias concorrentes preservam os dois desbloqueios sem duplicar IDs', async () => {
   const user = await player();
-  await history(user.id, ['road-raider-1-base'], 4);
-  await history(user.id, ['rival-female-base'], 9);
+  await history(user.id, ['road-raider-1-base'], 2);
+  await history(user.id, ['rival-female-base'], 2);
   const [first] = await history(user.id, ['road-raider-1-base'], 1, undefined, 'quick', 'active');
-  const [second] = await history(user.id, ['rival-female-base'], 1, undefined, 'quick', 'active');
+  const [second] = await history(user.id, ['rival-female-base'], 1, ['protagonist-female-base'], 'quick', 'active');
   await Promise.all([finish(user.id, first), finish(user.id, second)]);
   const unlocked = (await auth.getProgress(user.id))!.unlockedUnitIds;
   expect(unlocked).toContain('road-raider-1-base');
@@ -307,8 +307,8 @@ it('habilita as metas pelos encontros vencidos e mantém os Premium visíveis', 
   expect(entry(third, 'guerreiros-habilidosos-a').campaignAvailable).toBe(false);
   await complete(user.id, 7);
   const final = await game.getCharacterUnlocks(user.id);
-  expect(final.characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable)).toHaveLength(21);
-  expect(entry(final, 'rival-b-final-mode').kind).toBe('premium');
+  expect(final.characters.filter((unit) => unit.kind === 'battle-wins' && unit.campaignAvailable)).toHaveLength(23);
+  expect(entry(final, 'rival-b-final-mode')).toMatchObject({ kind: 'battle-wins', priceUsd: 9.9 });
   expect(entry(final, 'legendary-beast-premium').campaignAvailable).toBe(true);
   expect(entry(final, 'protagonist-main-transformed').campaignAvailable).toBe(true);
 });
@@ -337,7 +337,7 @@ it('não concede missões ocultas por vitória ou seed e sincroniza a liberaçã
   expect(entry(visible, 'guerreiros-habilidosos-c').unlocked).toBe(false);
   expect(current(visible, 'guerreiros-habilidosos-a', 1)).toBe(0);
   await new Promise((resolve) => setTimeout(resolve, 10));
-  await history(user.id, pair, 20);
+  await history(user.id, pair, 10, ['guardian-healer-male-base']);
   await seedDatabase(pool);
   const earned = await game.getCharacterUnlocks(user.id);
   expect(entry(earned, 'guerreiros-habilidosos-a').unlocked).toBe(true);
@@ -354,13 +354,13 @@ it('não conta vitórias rápidas anteriores à revelação do personagem na cam
   const revealed = await game.getCharacterUnlocks(user.id);
   expect(entry(revealed, raider).campaignAvailable).toBe(true);
   expect(entry(revealed, raider).unlocked).toBe(false);
+  expect(current(revealed, raider, 0)).toBe(0);
   expect(current(revealed, raider, 1)).toBe(0);
-  expect(current(revealed, raider, 2)).toBe(0);
   await new Promise((resolve) => setTimeout(resolve, 10));
-  await history(user.id, [raider], 5);
+  await history(user.id, [raider], 3);
   const earned = await game.getCharacterUnlocks(user.id);
-  expect(current(earned, raider, 1)).toBe(5);
-  expect(current(earned, raider, 2)).toBe(3);
+  expect(current(earned, raider, 0)).toBe(3);
+  expect(current(earned, raider, 1)).toBe(1);
   expect(entry(earned, raider).unlocked).toBe(false);
   await seedDatabase(pool);
   expect(entry(await game.getCharacterUnlocks(user.id), raider).unlocked).toBe(true);
@@ -412,6 +412,6 @@ it('a correção da conta solicitada zera somente missões não reveladas, prese
   await seedDatabase(pool);
   const updated = await game.getCharacterUnlocks(user.id);
   expect(current(updated, 'guerreiros-habilidosos-a', 0)).toBe(1);
-  expect(current(updated, 'rival-a-base', 2)).toBe(4);
+  expect(current(updated, 'rival-a-base', 2)).toBe(1);
   expect(current(await game.getCharacterUnlocks(other.id), 'guerreiros-habilidosos-a', 0)).toBe(2);
 });

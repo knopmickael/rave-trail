@@ -15,6 +15,7 @@ export interface MultiplayerResult {
   winnerId: string | null;
   loserId: string | null;
   teams: Record<string, string[]>;
+  noDeathsByUserId?: Record<string, boolean>;
   startedAt: string;
   completedAt: string;
   rounds: number;

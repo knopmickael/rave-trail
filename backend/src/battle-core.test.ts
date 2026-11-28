@@ -39,7 +39,7 @@ describe('motor determinístico de combate', () => {
     expect(transformed.state.pendingTransformation).toBeUndefined();
     expect(transformed.state.teams.player.units).toHaveLength(1);
     expect(transformed.state.teams.player.units[0]).toMatchObject({ id: 'player-0', unitId: 'protagonist-main-transformed',
-      name: 'Ravi Berserk', hp: 80, maxHp: 100, guardExpiresAt: 3, abilityIds: definition('protagonist-main-transformed').abilityIds });
+      name: 'Ravi Berzerk', hp: 80, maxHp: 100, guardExpiresAt: 3, abilityIds: definition('protagonist-main-transformed').abilityIds });
     expect(transformed.state.teams.player.energy).toBe(20);
     expect(transformed.events.filter((event) => event.kind === 'transform')).toHaveLength(1);
     expect(() => previewActions(transformed.state, [action(0, 'retain-energy')])).toThrow(/habilidade inválidos/);
